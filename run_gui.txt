@@ -1,0 +1,8 @@
+Copy Paste following commands into terminal in GUI's directory:
+
+javac -cp ".:postgresql-42.2.8.jar" GUI.java
+java -cp ".:postgresql-42.2.8.jar" GUI
+
+OR
+
+java -cp . -p . GUI.java

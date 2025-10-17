@@ -1,0 +1,118 @@
+-- use ? instead of $number if using jdbc
+
+-- Add employee
+INSERT INTO employee (name, role, password_hash, is_active)
+VALUES ($1, $2::employee_role_enum, $3, COALESCE($4, TRUE))
+RETURNING employee_id, name, role, is_active;
+
+
+
+
+-- Update employee partial
+UPDATE employee e
+SET name          = COALESCE($1, e.name),
+    role          = COALESCE($2::employee_role_enum, e.role),
+    password_hash = COALESCE($3, e.password_hash),
+    is_active     = COALESCE($4, e.is_active)
+WHERE employee_id = $5
+RETURNING employee_id, name, role, is_active;
+
+
+
+
+
+-- Deactivate employee
+UPDATE employee
+SET is_active = FALSE
+WHERE employee_id = $1
+RETURNING employee_id, name, role, is_active;
+
+
+
+
+-- Reactivate employee
+UPDATE employee
+SET is_active = TRUE
+WHERE employee_id = $1
+RETURNING employee_id, name, role, is_active;
+
+
+
+
+
+-- Change Role (promote/demote)
+UPDATE employee
+SET role = $2::employee_role_enum
+WHERE employee_id = $1
+RETURNING employee_id, name, role, is_active;
+
+
+
+
+-- Reset Password (replace stored hash)
+UPDATE employee
+SET password_hash = $2
+WHERE employee_id = $1
+RETURNING employee_id, name, role, is_active;
+
+
+
+
+
+-- List everyone (active first)
+SELECT employee_id, name, role, is_active
+FROM employee
+ORDER BY is_active DESC, role, name;
+
+
+
+
+-- Search by name
+SELECT employee_id, name, role, is_active
+FROM employee
+WHERE name ILIKE '%' || $1 || '%'
+ORDER BY name;
+
+
+
+
+-- recent orders by employees
+SELECT
+  o.order_id,
+  o.created_at AT TIME ZONE 'America/Chicago' AS local_time,
+  COALESCE(SUM(oi.unit_price*oi.qty + oi.tax_amount - oi.discount_amount), 0) AS line_total,
+  COUNT(oi.order_item_id) AS items
+FROM "order" o
+LEFT JOIN order_item oi ON oi.order_id = o.order_id
+WHERE o.employee_id = $1
+GROUP BY o.order_id
+ORDER BY o.created_at DESC
+LIMIT 50;
+
+
+
+-- Assign to schedule (upsert role on conflict)
+INSERT INTO shift_assignment (schedule_id, employee_id, role)
+VALUES ($1, $2, $3::employee_role_enum)
+ON CONFLICT (schedule_id, employee_id) DO UPDATE
+SET role = EXCLUDED.role
+RETURNING schedule_id, employee_id, role;
+
+
+
+-- Remove from schedule
+DELETE FROM shift_assignment
+WHERE schedule_id = $1 AND employee_id = $2;
+
+
+
+
+-- Upcoming shifts for an employee
+SELECT
+  s.shift_date, s.start_time, s.end_time, sa.role
+FROM shift_assignment sa
+JOIN shift_schedule s ON s.schedule_id = sa.schedule_id
+WHERE sa.employee_id = $1
+  AND s.shift_date >= CURRENT_DATE
+ORDER BY s.shift_date, s.start_time;
+
