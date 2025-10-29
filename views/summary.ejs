@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Order Summary</title>
+    <style>
+        .item { margin: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Your Order #15</h1>
+    <p>Total: $<%= order.total %></p>
+    <ul>
+        <% order.items.forEach(item => { %>
+            <li class="item"><%= item.name %> - $<%= item.price %></li>
+        <% }); %>
+    </ul>
+    <a href="/">Back to Home</a>
+    <!-- Placeholder for PAY button, to be enhanced later -->
+    <button disabled>PAY</button>
+</body>
+</html>

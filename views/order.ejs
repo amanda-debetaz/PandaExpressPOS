@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Your Order</title>
+    <style>
+        .item { margin: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Your Order</h1>
+    <form action="/summary" method="get">
+        <select name="entree">
+            <% menu.entrees.forEach(item => { %>
+                <option value="<%= item %>"><%= item %> ($<%= menu.prices[item] %>)</option>
+            <% }); %>
+        </select>
+        <select name="side">
+            <% menu.sides.forEach(item => { %>
+                <option value="<%= item %>"><%= item %> ($<%= menu.prices[item] %>)</option>
+            <% }); %>
+        </select>
+        <button type="submit">Add to Order</button>
+    </form>
+    <a href="/">Back</a>
+</body>
+</html>

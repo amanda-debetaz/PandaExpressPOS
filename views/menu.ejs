@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu - Panda Express</title>
+    <style>
+        body {font-family: Arial, sans-serif; margin:0; padding:0; display:flex;}
+        .sidebar {width:200px; background:#f4f4f4; padding:20px; height:100vh; border-right:1px solid #ddd;}
+        .sidebar h2 {margin-top:0; font-size:1.5em; color:#d32f2f;}
+        .sidebar ul {list-style:none; padding:0;}
+        .sidebar li {margin:15px 0;}
+        .sidebar a {text-decoration:none; color:#333; font-weight:bold; font-size:1.1em;
+                    cursor:pointer; padding:8px 12px; display:block; border-radius:4px;
+                    transition:background .2s;}
+        .sidebar a:hover, .sidebar a.active {background:#d32f2f; color:white;}
+        .content {flex:1; padding:30px;}
+        .category-section {display:none;}
+        .category-section.active {display:block;}
+        .menu-item {margin:12px 0; font-size:1.1em; padding:10px; background:#fff;
+                    border:1px solid #eee; border-radius:4px; box-shadow:0 1px 3px rgba(0,0,0,.1);}
+        .back-link {margin-top:30px; display:inline-block; padding:10px 20px;
+                    background:#333; color:white; text-decoration:none; border-radius:4px;}
+        .back-link:hover {background:#555;}
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2>Panda Express</h2>
+        <ul>
+            <li><a data-category="entrees" class="active">Entrees</a></li>
+            <li><a data-category="a_la_carte">A La Carte</a></li>
+            <li><a data-category="sides">Sides</a></li>
+            <li><a data-category="appetizers">Appetizers</a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+        <h1 id="category-title">Entrees</h1>
+
+        <!-- Entrees (category_id 1) -->
+        <div id="entrees" class="category-section active">
+            <% menu.entrees.forEach(item => { %>
+                <div class="menu-item"><%= item.name %> - $<%= item.price.toFixed(2) %></div>
+            <% }); %>
+        </div>
+
+        <!-- A La Carte (category_id 3) -->
+        <div id="a_la_carte" class="category-section">
+            <% menu.a_la_carte.forEach(item => { %>
+                <div class="menu-item"><%= item.name %> - $<%= item.price.toFixed(2) %></div>
+            <% }); %>
+        </div>
+
+        <!-- Sides (category_id 4) -->
+        <div id="sides" class="category-section">
+            <% menu.sides.forEach(item => { %>
+                <div class="menu-item"><%= item.name %> - $<%= item.price.toFixed(2) %></div>
+            <% }); %>
+        </div>
+
+        <!-- Appetizers (category_id 2) -->
+        <div id="appetizers" class="category-section">
+            <% menu.appetizers.forEach(item => { %>
+                <div class="menu-item"><%= item.name %> - $<%= item.price.toFixed(2) %></div>
+            <% }); %>
+        </div>
+
+        <a href="/order" class="back-link">Next</a>
+    </div>
+
+    <script>
+        document.querySelectorAll('.sidebar a').forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                // Reset active states
+                document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+                document.querySelectorAll('.category-section').forEach(sec => sec.classList.remove('active'));
+
+                // Activate clicked tab
+                this.classList.add('active');
+                const cat = this.getAttribute('data-category');
+                document.getElementById(cat).classList.add('active');
+
+                // Update title
+                const titles = {
+                    entrees: 'Entrees',
+                    a_la_carte: 'A La Carte',
+                    sides: 'Sides',
+                    appetizers: 'Appetizers'
+                };
+                document.getElementById('category-title').textContent = titles[cat];
+            });
+        });
+    </script>
+
+</body>
+</html>
