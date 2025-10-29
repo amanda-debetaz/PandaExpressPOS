@@ -110,14 +110,18 @@ model option_group {
 }
 
 model order {
-  order_id    Int              @id @default(autoincrement())
-  dine_option dine_option_enum @default(takeout)
-  employee_id Int
-  notes       String?
-  created_at  DateTime         @default(now()) @db.Timestamptz(6)
-  employee    employee         @relation(fields: [employee_id], references: [employee_id], onUpdate: NoAction)
-  order_item  order_item[]
-  payment     payment[]
+  order_id     Int              @id @default(autoincrement())
+  dine_option  dine_option_enum @default(takeout)
+  employee_id  Int
+  notes        String?
+  created_at   DateTime         @default(now()) @db.Timestamptz(6)
+  status       kitchen_status   @default(queued)
+  completed_at DateTime?        @db.Timestamptz(6)
+  employee     employee         @relation(fields: [employee_id], references: [employee_id], onUpdate: NoAction)
+  order_item   order_item[]
+  payment      payment[]
+
+  @@index([status, created_at], map: "order_status_created_idx")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -239,4 +243,10 @@ enum payment_method_enum {
   giftcard
   dining_dollars
   meal_swipe
+}
+
+enum kitchen_status {
+  queued
+  prepping
+  done
 }
