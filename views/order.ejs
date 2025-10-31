@@ -1,26 +1,51 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Your Order</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Order – Panda Express</title>
+    <link rel="stylesheet" href="/css/style.css"> <!-- optional, if you add a CSS file -->
     <style>
-        .item { margin: 10px; }
+        body {font-family: Arial, sans-serif; margin:0; padding:20px;}
+        select, button {margin:10px 0; padding:8px; font-size:1em;}
+        .back-link {display:inline-block; margin-top:20px; padding:10px 20px;
+                    background:#333; color:white; text-decoration:none; border-radius:4px;}
+        .back-link:hover {background:#555;}
     </style>
 </head>
 <body>
-    <h1>Your Order</h1>
-    <form action="/summary" method="get">
-        <select name="entree">
-            <% menu.entrees.forEach(item => { %>
-                <option value="<%= item %>"><%= item %> ($<%= menu.prices[item] %>)</option>
-            <% }); %>
-        </select>
-        <select name="side">
-            <% menu.sides.forEach(item => { %>
-                <option value="<%= item %>"><%= item %> ($<%= menu.prices[item] %>)</option>
-            <% }); %>
-        </select>
-        <button type="submit">Add to Order</button>
-    </form>
-    <a href="/">Back</a>
+
+<h1>Build Your Plate</h1>
+
+<form action="/summary" method="GET">
+    <!-- ---------- ENTREES ---------- -->
+    <label for="entree">Choose an Entrée:</label><br>
+    <select id="entree" name="entree" required>
+        <option value="" disabled selected>-- Select --</option>
+        <% menu.entrees.forEach(item => { %>
+            <option value="<%= item.name %>">
+                <%= item.name %> – $<%= item.price.toFixed(2) %>
+            </option>
+        <% }); %>
+    </select>
+    <br>
+
+    <!-- ---------- SIDES ---------- -->
+    <label for="side">Choose a Side:</label><br>
+    <select id="side" name="side" required>
+        <option value="" disabled selected>-- Select --</option>
+        <% menu.sides.forEach(item => { %>
+            <option value="<%= item.name %>">
+                <%= item.name %> – $<%= item.price.toFixed(2) %>
+            </option>
+        <% }); %>
+    </select>
+    <br>
+
+    <button type="submit">Add to Order</button>
+</form>
+
+<a href="/" class="back-link">Back to Menu</a>
+
 </body>
 </html>
