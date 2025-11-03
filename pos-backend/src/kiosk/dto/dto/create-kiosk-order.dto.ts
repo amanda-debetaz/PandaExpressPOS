@@ -1,7 +1,7 @@
 export type KioskOrderItem = {
     menuItemId: number;
     qty: number;
-    optionIds?: number[]; // e.g., “no side”, “extra sauce”, etc.
+    optionIds?: number[]; // e.g., "no side", "extra sauce", etc.
   };
   
   export class CreateKioskOrderDto {
