@@ -43,9 +43,14 @@
             box-shadow:0 6px 12px rgba(0,0,0,.15);
         }
         .cube-img {
-            width:100%;
-            height:120px;
-            object-fit:cover;
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            display: block;
+            background:
+                /* fallback SVG – shows instantly, no file needed */
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' fill='%23f0f0f0'/%3E%3Ctext x='60' y='70' font-family='Arial' font-size='16' text-anchor='middle' fill='%23999'%3ENo Image%3C/text%3E%3C/svg%3E")
+                center / contain no-repeat;
         }
         .cube-info {
             padding:10px 8px;
@@ -84,8 +89,7 @@
                 <% menu.entrees.forEach(item => { %>
                     <button class="cube-btn" data-name="<%= item.name %>">
                         <img src="/images/<%= item.name.toLowerCase().replace(/ /g,'-') %>.jpg"
-                             alt="<%= item.name %>" class="cube-img"
-                             onerror="this.src='/images/placeholder.jpg'">
+                             alt="<%= item.name %>" class="cube-img">
                         <div class="cube-info">
                             <div class="cube-name"><%= item.name %></div>
                             <div class="cube-price">$<%= item.price.toFixed(2) %></div>
@@ -101,8 +105,7 @@
                 <% menu.a_la_carte.forEach(item => { %>
                     <button class="cube-btn" data-name="<%= item.name %>">
                         <img src="/images/<%= item.name.toLowerCase().replace(/ /g,'-') %>.jpg"
-                             alt="<%= item.name %>" class="cube-img"
-                             onerror="this.src='/images/placeholder.jpg'">
+                             alt="<%= item.name %>" class="cube-img">
                         <div class="cube-info">
                             <div class="cube-name"><%= item.name %></div>
                             <div class="cube-price">$<%= item.price.toFixed(2) %></div>
@@ -118,8 +121,7 @@
                 <% menu.sides.forEach(item => { %>
                     <button class="cube-btn" data-name="<%= item.name %>">
                         <img src="/images/<%= item.name.toLowerCase().replace(/ /g,'-') %>.jpg"
-                             alt="<%= item.name %>" class="cube-img"
-                             onerror="this.src='/images/placeholder.jpg'">
+                             alt="<%= item.name %>" class="cube-img">
                         <div class="cube-info">
                             <div class="cube-name"><%= item.name %></div>
                             <div class="cube-price">$<%= item.price.toFixed(2) %></div>
@@ -135,8 +137,7 @@
                 <% menu.appetizers.forEach(item => { %>
                     <button class="cube-btn" data-name="<%= item.name %>">
                         <img src="/images/<%= item.name.toLowerCase().replace(/ /g,'-') %>.jpg"
-                             alt="<%= item.name %>" class="cube-img"
-                             onerror="this.src='/images/placeholder.jpg'">
+                             alt="<%= item.name %>" class="cube-img">
                         <div class="cube-info">
                             <div class="cube-name"><%= item.name %></div>
                             <div class="cube-price">$<%= item.price.toFixed(2) %></div>
