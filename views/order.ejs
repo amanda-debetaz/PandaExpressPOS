@@ -1,137 +1,145 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Build Your Plate – Panda Express</title>
     <style>
-        * { box-sizing: border-box; }
-        body {
-            font-family: 'Arial', sans-serif;
-            margin: 0;
-            padding: 0;
-            background: #f4f4f4;
-            color: #333;
-        }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Arial", sans-serif;
+        margin: 0;
+        padding: 0;
+        background: #f4f4f4;
+        color: #333;
+      }
+      .container {
+        max-width: 600px;
+        margin: 40px auto;
+        padding: 30px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        text-align: center;
+        color: #d32f2f;
+        margin-bottom: 30px;
+        font-size: 2em;
+      }
+      .form-group {
+        margin-bottom: 25px;
+      }
+      label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: #444;
+        font-size: 1.1em;
+      }
+      select {
+        width: 100%;
+        padding: 12px;
+        font-size: 1em;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        background: #fff;
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23666'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 16px;
+      }
+      select:focus {
+        outline: none;
+        border-color: #d32f2f;
+        box-shadow: 0 0 0 2px rgba(211, 47, 47, 0.2);
+      }
+      .btn {
+        display: block;
+        width: 100%;
+        padding: 14px;
+        margin-top: 20px;
+        background: #d32f2f;
+        color: white;
+        font-weight: bold;
+        font-size: 1.1em;
+        text-align: center;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .btn:hover {
+        background: #b71c1c;
+      }
+      .back-link {
+        display: block;
+        text-align: center;
+        margin-top: 20px;
+        color: #666;
+        text-decoration: none;
+        font-size: 0.95em;
+      }
+      .back-link:hover {
+        color: #d32f2f;
+        text-decoration: underline;
+      }
+      .price {
+        color: #d32f2f;
+        font-weight: bold;
+      }
+      @media (max-width: 480px) {
         .container {
-            max-width: 600px;
-            margin: 40px auto;
-            padding: 30px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+          margin: 20px;
+          padding: 20px;
         }
         h1 {
-            text-align: center;
-            color: #d32f2f;
-            margin-bottom: 30px;
-            font-size: 2em;
+          font-size: 1.6em;
         }
-        .form-group {
-            margin-bottom: 25px;
-        }
-        label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 8px;
-            color: #444;
-            font-size: 1.1em;
-        }
-        select {
-            width: 100%;
-            padding: 12px;
-            font-size: 1em;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            background: #fff;
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23666'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 12px center;
-            background-size: 16px;
-        }
-        select:focus {
-            outline: none;
-            border-color: #d32f2f;
-            box-shadow: 0 0 0 2px rgba(211, 47, 47, 0.2);
-        }
-        .btn {
-            display: block;
-            width: 100%;
-            padding: 14px;
-            margin-top: 20px;
-            background: #d32f2f;
-            color: white;
-            font-weight: bold;
-            font-size: 1.1em;
-            text-align: center;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .btn:hover {
-            background: #b71c1c;
-        }
-        .back-link {
-            display: block;
-            text-align: center;
-            margin-top: 20px;
-            color: #666;
-            text-decoration: none;
-            font-size: 0.95em;
-        }
-        .back-link:hover {
-            color: #d32f2f;
-            text-decoration: underline;
-        }
-        .price {
-            color: #d32f2f;
-            font-weight: bold;
-        }
-        @media (max-width: 480px) {
-            .container { margin: 20px; padding: 20px; }
-            h1 { font-size: 1.6em; }
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Build Your Plate</h1>
 
-<div class="container">
-    <h1>Build Your Plate</h1>
-
-    <form action="/summary" method="GET">
+      <form action="/summary" method="GET">
         <!-- ENTREE SELECTION -->
         <div class="form-group">
-            <label for="entree">Choose an Entrée</label>
-            <select id="entree" name="entree" required>
-                <option value="" disabled selected>Select an entrée</option>
-                <% menu.entrees.forEach(item => { %>
-                    <option value="<%= item.name %>">
-                        <%= item.name %> <span class="price">$<%= item.price.toFixed(2) %></span>
-                    </option>
-                <% }); %>
-            </select>
+          <label for="entree">Choose an Entrée</label>
+          <select id="entree" name="entree" required>
+            <option value="" disabled selected>Select an entrée</option>
+            <% menu.entrees.forEach(item => { %>
+            <option value="<%= item.name %>">
+              <%= item.name %>
+              <span class="price">$<%= item.price.toFixed(2) %></span>
+            </option>
+            <% }); %>
+          </select>
         </div>
 
         <!-- SIDE SELECTION -->
         <div class="form-group">
-            <label for="side">Choose a Side</label>
-            <select id="side" name="side" required>
-                <option value="" disabled selected>Select a side</option>
-                <% menu.sides.forEach(item => { %>
-                    <option value="<%= item.name %>">
-                        <%= item.name %> <span class="price">$<%= item.price.toFixed(2) %></span>
-                    </option>
-                <% }); %>
-            </select>
+          <label for="side">Choose a Side</label>
+          <select id="side" name="side" required>
+            <option value="" disabled selected>Select a side</option>
+            <% menu.sides.forEach(item => { %>
+            <option value="<%= item.name %>">
+              <%= item.name %>
+              <span class="price">$<%= item.price.toFixed(2) %></span>
+            </option>
+            <% }); %>
+          </select>
         </div>
 
         <button type="submit" class="btn">Add to Order →</button>
-    </form>
+      </form>
 
-    <a href="/" class="back-link">← Back to Menu</a>
-</div>
-
-</body>
+      <a href="/kiosk" class="back-link">← Back to Menu</a>
+      <!-- linked back to kiosk view bc I added the navigation page (Amanda) -->
+    </div>
+  </body>
 </html>
