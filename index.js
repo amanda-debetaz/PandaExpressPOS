@@ -1,11 +1,14 @@
 // index.js
 const express = require("express");
 const { Pool } = require("pg");
+const session = require("express-session");
+const passport = require("passport");
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// ---------- PostgreSQL pool (Render.com) ----------
+// ---------- PostgreSQL ----------
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
@@ -21,127 +24,130 @@ process.on("SIGINT", () => {
 // ---------- View engine & static ----------
 app.set("view engine", "ejs");
 app.use(express.static("public"));
-app.use(express.urlencoded({ extended: true })); // for POST body
+app.use(express.urlencoded({ extended: true }));
 
-// ---------------------------------------------------------------------
-//  GLOBAL LOGIN STATE
-// ---------------------------------------------------------------------
-let LOGGED_IN = false;
-let lastActivity = Date.now();
+// ---------- Session ----------
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "fallback-secret-change-me",
+    resave: false,
+    saveUninitialized: false,
+    cookie: { maxAge: 30 * 60 * 1000, secure: process.env.NODE_ENV === "production" },
+  })
+);
 
-// Update activity on every request when logged in
-app.use((req, res, next) => {
-  if (LOGGED_IN) lastActivity = Date.now();
-  next();
+// ---------- Passport ----------
+app.use(passport.initialize());
+app.use(passport.session());
+
+passport.serializeUser((user, done) => done(null, user.id));
+passport.deserializeUser(async (id, done) => {
+  try {
+    const res = await pool.query("SELECT * FROM employee WHERE id = $1", [id]);
+    done(null, res.rows[0] || { id });
+  } catch (e) {
+    done(e);
+  }
 });
 
-// Auto-logout after 30 minutes of inactivity
-setInterval(() => {
-  if (LOGGED_IN && Date.now() - lastActivity > 30 * 60 * 1000) {
-    console.log("Auto-logout: 30 minutes of inactivity");
-    LOGGED_IN = false;
-  }
-}, 60_000); // check every minute
+// ---------- Google Strategy ----------
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: process.env.GOOGLE_REDIRECT_URI,
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      const googleId = profile.id;
+      const email = profile.emails?.[0]?.value?.toLowerCase();
 
-// ---------------------------------------------------------------------
-//  AUTH MIDDLEWARE
-// ---------------------------------------------------------------------
-function requireAuth(req, res, next) {
-  if (LOGGED_IN) {
-    return next();
+      // ---- Restrict to your domain (customise) ----
+      if (!email?.endsWith("@pandaexpress.com")) {
+        return done(null, false, { message: "Use a Panda Express account" });
+      }
+
+      try {
+        // Upsert employee record (you may keep employee_id = 9999)
+        const upsert = await pool.query(
+          `INSERT INTO employee (google_id, email, employee_id)
+           VALUES ($1, $2, 9999)
+           ON CONFLICT (google_id) DO UPDATE SET email = $2
+           RETURNING id`,
+          [googleId, email]
+        );
+        const user = upsert.rows[0];
+        return done(null, user);
+      } catch (e) {
+        return done(e);
+      }
+    }
+  )
+);
+
+// ---------- Activity / auto-logout ----------
+let lastActivity = Date.now();
+app.use((req, res, next) => {
+  if (req.isAuthenticated()) lastActivity = Date.now();
+  next();
+});
+setInterval(() => {
+  if (Date.now() - lastActivity > 30 * 60 * 1000) {
+    console.log("Auto-logout (30 min inactivity)");
+    // Sessions will expire via cookie maxAge anyway
   }
+}, 60_000);
+
+// ---------- Auth middleware ----------
+function requireAuth(req, res, next) {
+  if (req.isAuthenticated()) return next();
   res.redirect("/login?next=" + encodeURIComponent(req.originalUrl));
 }
 
-// ---------------------------------------------------------------------
-//  LOGIN PAGE
-// ---------------------------------------------------------------------
+// ---------- Login routes ----------
 app.get("/login", (req, res) => {
   const next = req.query.next || "/kiosk";
-  res.render("login", { next, error: null });
+  const error = req.query.error;
+  res.render("login", { next, error });
 });
 
-app.post("/login", async (req, res) => {
-  const { employee_id, password_hash, next } = req.body;
-  let debug = null;
-
-  // ---- 1. Validate input ----
-  const empId = parseInt(employee_id, 10);
-  if (isNaN(empId) || empId !== 9999) {
-    debug = `Invalid ID: "${employee_id}" → parsed as ${empId}`;
-    console.warn("Login blocked: non-9999 ID", { employee_id });
-    return res.render("login", {
-      next,
-      error: "Kiosk access denied.",
-      debug,
-    });
-  }
-
-  // ---- 2. Query DB (force INTEGER) ----
-  try {
-    const result = await pool.query(
-      `SELECT password_hash FROM employee WHERE employee_id = $1`,
-      [9999]  // always number
-    );
-
-    if (result.rowCount === 0) {
-    debug = "No row found for employee_id = 9999";
-      console.error(debug);
-      return res.render("login", {
-        next,
-        error: "Kiosk user missing in DB.",
-        debug,
-      });
-    }
-
-    const stored = result.rows[0].password_hash.trim(); // trim just in case
-    debug = `DB: "${stored}" | Input: "${password_hash}"`;
-
-    if (password_hash === stored) {
-      LOGGED_IN = true;
-      lastActivity = Date.now();
-      console.log("KIOSK LOGIN SUCCESS: 9999");
-      return res.redirect(next);
-    } else {
-      console.log("LOGIN FAILED: wrong password");
-      return res.render("login", {
-        next,
-        error: "Incorrect password.",
-        debug,
-      });
-    }
-  } catch (err) {
-    const msg = `DB ERROR: ${err.message} (code: ${err.code})`;
-    console.error("Login DB error:", err);
-    return res.render("login", {
-      next,
-      error: msg,
-      debug: msg,
-    });
-  }
+app.post("/login", (req, res) => {
+  const next = req.body.next || "/kiosk";
+  // Pass the desired redirect as OAuth "state"
+  res.redirect(`/auth/google?state=${encodeURIComponent(next)}`);
 });
 
-// ---------------------------------------------------------------------
-//  LOGOUT
-// ---------------------------------------------------------------------
+// Google OAuth entry point
+app.get(
+  "/auth/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
+
+// Google OAuth callback
+app.get(
+  "/auth/google/callback",
+  passport.authenticate("google", { failureRedirect: "/login?error=oauth_failed" }),
+  (req, res) => {
+    const redirectTo = req.query.state ? decodeURIComponent(req.query.state) : "/kiosk";
+    console.log(`OAuth success → ${req.user.email || "unknown"}`);
+    res.redirect(redirectTo);
+  }
+);
+
+// Logout
 app.get("/logout", (req, res) => {
-  LOGGED_IN = false;
-  console.log("Kiosk logged out");
+  req.logout(() => {});
   res.redirect("/login");
 });
 
-// ---------------------------------------------------------------------
-//  NAVIGATION
-// ---------------------------------------------------------------------
+// ---------- Navigation (unchanged) ----------
 app.get("/", (req, res) => res.render("navigation"));
-app.get("/manager", (req, res) => res.render("manager"));
-app.get("/cashier", (req, res) => res.render("cashier"));
-app.get("/kitchen", (req, res) => res.render("kitchen"));
-app.get("/menu-board", (req, res) => res.render("menu-board"));
+app.get("/manager", requireAuth, (req, res) => res.render("manager"));
+app.get("/cashier", requireAuth, (req, res) => res.render("cashier"));
+app.get("/kitchen", requireAuth, (req, res) => res.render("kitchen"));
+app.get("/menu-board", requireAuth, (req, res) => res.render("menu-board"));
 
-// ---------------------------------------------------------------------
-//  1. KIOSK MENU – PROTECTED
-// ---------------------------------------------------------------------
+// ---------- 1. KIOSK MENU ----------
 let menuCache = { entrees: [], a_la_carte: [], sides: [], appetizers: [] };
 
 app.get("/kiosk", requireAuth, async (req, res) => {
@@ -170,12 +176,9 @@ app.get("/kiosk", requireAuth, async (req, res) => {
   }
 });
 
-// ---------------------------------------------------------------------
-//  2. ORDER PAGE – PROTECTED
-// ---------------------------------------------------------------------
+// ---------- 2. ORDER ----------
 app.get("/order", requireAuth, async (req, res) => {
   let menu = { entrees: [], sides: [] };
-
   try {
     const result = await pool.query(`
       SELECT name, price, category_id
@@ -183,7 +186,6 @@ app.get("/order", requireAuth, async (req, res) => {
       WHERE is_active = true
       ORDER BY name
     `);
-
     result.rows.forEach((row) => {
       const price = parseFloat(row.price);
       if (row.category_id === 1) menu.entrees.push({ name: row.name, price });
@@ -193,39 +195,26 @@ app.get("/order", requireAuth, async (req, res) => {
     console.error("DB error in /order:", err);
     return res.status(500).send("Database error");
   }
-
   res.render("order", { menu });
 });
 
-// ---------------------------------------------------------------------
-//  3. SUMMARY PAGE – PROTECTED
-// ---------------------------------------------------------------------
+// ---------- 3. SUMMARY ----------
 app.get("/summary", requireAuth, (req, res) => {
   const { entree, side } = req.query;
-
   const find = (arr, name) => arr.find((i) => i.name === name) || null;
   const selEntree = entree ? find(menuCache.entrees, entree) : null;
   const selSide = side ? find(menuCache.sides, side) : null;
 
   const items = [];
   let total = 0;
-
-  if (selEntree) {
-    items.push(selEntree);
-    total += selEntree.price;
-  }
-  if (selSide) {
-    items.push(selSide);
-    total += selSide.price;
-  }
+  if (selEntree) { items.push(selEntree); total += selEntree.price; }
+  if (selSide)   { items.push(selSide);   total += selSide.price;   }
 
   const order = { items, total: total.toFixed(2) };
   res.render("summary", { order });
 });
 
-// ---------------------------------------------------------------------
-//  4. TEST DB CONNECTION
-// ---------------------------------------------------------------------
+// ---------- 4. TEST DB ----------
 app.get("/test-db", async (req, res) => {
   try {
     const result = await pool.query("SELECT NOW()");
@@ -236,10 +225,8 @@ app.get("/test-db", async (req, res) => {
   }
 });
 
-// ---------------------------------------------------------------------
-//  START SERVER
-// ---------------------------------------------------------------------
+// ---------- START ----------
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
-  console.log("Kiosk login: employee_id = 9999 + password from DB");
+  console.log("Login → /login (Google OAuth)");
 });
