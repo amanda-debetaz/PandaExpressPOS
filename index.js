@@ -63,47 +63,60 @@ app.get("/login", (req, res) => {
 
 app.post("/login", async (req, res) => {
   const { employee_id, password_hash, next } = req.body;
+  let debug = null;
 
-  // Only allow kiosk employee_id = 9999
-  if (employee_id !== "9999") {
+  // ---- 1. Validate input ----
+  const empId = parseInt(employee_id, 10);
+  if (isNaN(empId) || empId !== 9999) {
+    debug = `Invalid ID: "${employee_id}" → parsed as ${empId}`;
+    console.warn("Login blocked: non-9999 ID", { employee_id });
     return res.render("login", {
       next,
-      error: "Access denied. Kiosk login only.",
+      error: "Kiosk access denied.",
+      debug,
     });
   }
 
+  // ---- 2. Query DB (force INTEGER) ----
   try {
     const result = await pool.query(
       `SELECT password_hash FROM employee WHERE employee_id = $1`,
-      [9999]
+      [9999]  // always number
     );
 
     if (result.rowCount === 0) {
+    debug = "No row found for employee_id = 9999";
+      console.error(debug);
       return res.render("login", {
         next,
-        error: "Kiosk user not found in database.",
+        error: "Kiosk user missing in DB.",
+        debug,
       });
     }
 
-    const storedHash = result.rows[0].password_hash;
+    const stored = result.rows[0].password_hash.trim(); // trim just in case
+    debug = `DB: "${stored}" | Input: "${password_hash}"`;
 
-    if (password_hash === storedHash) {
+    if (password_hash === stored) {
       LOGGED_IN = true;
       lastActivity = Date.now();
-      console.log("Kiosk login successful (9999)");
+      console.log("KIOSK LOGIN SUCCESS: 9999");
       return res.redirect(next);
     } else {
-      res.render("login", {
+      console.log("LOGIN FAILED: wrong password");
+      return res.render("login", {
         next,
         error: "Incorrect password.",
+        debug,
       });
     }
   } catch (err) {
-    console.error("Login DB query failed:", {
-      message: err.message,
-      code: err.code,          // e.g. "ECONNREFUSED", "42P01"
-      detail: err.detail,
-      hint: err.hint,
+    const msg = `DB ERROR: ${err.message} (code: ${err.code})`;
+    console.error("Login DB error:", err);
+    return res.render("login", {
+      next,
+      error: "Database error.",
+      debug: msg,
     });
   }
 });
