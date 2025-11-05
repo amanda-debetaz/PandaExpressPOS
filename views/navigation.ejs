@@ -1,46 +1,124 @@
 <!DOCTYPE html>
+
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Navigation - Panda Express</title>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Navigation - Panda Express</title>
 
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100vh;
-      }
-    </style>
-  </head>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    padding: 20px;
+    text-align: center;
+  }
+  .nav-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+  }
+  .nav-card, .btn-link {
+    display: inline-block;
+    padding: 12px 25px;
+    background: #d32f2f;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: bold;
+    transition: background 0.2s;
+    border: none;
+    font-size: 1em;
+    cursor: pointer;
+  }
+  .nav-card:hover, .btn-link:hover {
+    background: #b71c1c;
+  }
+  .btn-link.logout {
+    background: #555;
+  }
+  .btn-link.logout:hover {
+    background: #333;
+  }
+  .user-info {
+    margin-bottom: 20px;
+    font-size: 1.1em;
+  }
+  .error-message {
+    color: #d32f2f;
+    font-weight: bold;
+    margin-bottom: 15px;
+  }
+  hr {
+    width: 80%;
+    max-width: 400px;
+    margin: 30px 0;
+    border: 0;
+    border-top: 1px solid #ddd;
+  }
+</style>
 
-  <body>
-    <h1>Panda Express - Employee Navigation</h1>
+
+</head>
+
+<body>
+<h1>Panda Express - Navigation</h1>
+
+<!-- Display any error messages -->
+<% if (typeof error !== 'undefined' && error && error.length > 0) { %>
+  <div class="error-message"><%= error %></div>
+<% } %>
+
+<% if (user) { %>
+    <!-- User is logged in -->
+    <div class="user-info">
+      <!-- Use display_name (from DB) first, then email, then ID -->
+      Welcome, <strong><%= user.display_name || user.email || `Employee #${user.employee_id}` %></strong>!
+    </div>
 
     <div class="nav-container">
-      <div class="nav-card">
-        <a href="/manager"> Manager </a>
-      </div>
-
-      <div class="nav-card">
-        <a href="/cashier"> Cashier </a>
-      </div>
-
-      <div class="nav-card">
-        <a href="/kitchen"> Kitchen </a>
-      </div>
-
-      <div class="nav-card">
-        <a href="/menu-board"> Menu </a>
-      </div>
-
-      <div class="nav-card">
-        <a href="/kiosk"> Customer Kiosk </a>
-      </div>
+        <a href="/manager" class="nav-card">Manager</a>
+        <a href="/cashier" class="nav-card">Cashier</a>
+        <a href="/kitchen" class="nav-card">Kitchen</a>
     </div>
-  </body>
+    
+    <hr>
+    
+    <div class="nav-container">
+        <a href="/kiosk" class="nav-card">Customer Kiosk</a>
+        <a href="/menu-board" class="nav-card">Menu Board</a>
+    </div>
+
+    <div class="nav-container" style="margin-top: 30px;">
+      <a href="/logout" class="btn-link logout">Logout</a>
+    </div>
+
+<% } else { %>
+    <!-- User is NOT logged in -->
+    <div class="user-info">Please log in to continue.</div>
+    
+    <div class="nav-container">
+      <!-- Link to the local login page -->
+      <a href="/login" class="nav-card">Employee ID Login</a>
+      
+      <!-- Link to Google OAuth -->
+      <a href="/auth/google" class="nav-card">Login with Google</a>
+    </div>
+
+    <hr>
+
+    <div class="nav-container">
+      <a href="/menu-board" class="nav-card">View Menu Board (Public)</a>
+    </div>
+<% } %>
+
+
+</body>
 </html>
