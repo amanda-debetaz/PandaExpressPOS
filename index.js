@@ -99,8 +99,12 @@ app.post("/login", async (req, res) => {
       });
     }
   } catch (err) {
-    console.error("Login DB error:", err);
-    res.render("login", { next, error: "Database error." });
+    console.error("Login DB query failed:", {
+      message: err.message,
+      code: err.code,          // e.g. "ECONNREFUSED", "42P01"
+      detail: err.detail,
+      hint: err.hint,
+    });
   }
 });
 
