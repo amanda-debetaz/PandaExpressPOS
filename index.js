@@ -16,22 +16,22 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // ---------- PostgreSQL pool (Render.com) ----------
-  console.log("Running in development mode, using postgres.env variables.");
-  poolConfig = {
-    user: process.env.PSQL_USER,
-    host: process.env.PSQL_HOST,
-    database: process.env.PSQL_DATABASE,
-    password: process.env.PSQL_PASSWORD,
-    port: process.env.PSQL_PORT,
-    ssl: undefined // Explicitly disable SSL for local dev
-  };
+//  console.log("Running in development mode, using postgres.env variables.");
+//  poolConfig = {
+//    user: process.env.PSQL_USER,
+//    host: process.env.PSQL_HOST,
+//    database: process.env.PSQL_DATABASE,
+//    password: process.env.PSQL_PASSWORD,
+//    port: process.env.PSQL_PORT,
+//    ssl: undefined // Explicitly disable SSL for local dev
+//  };
 
-const pool = new Pool(poolConfig);
+//const pool = new Pool(poolConfig);
 
-//const pool = new Pool({
-//  connectionString: process.env.DATABASE_URL,
-//  ssl: { rejectUnauthorized: false },
-//});
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
 
 app.use(session({
     secret: process.env.SESSION_SECRET,
