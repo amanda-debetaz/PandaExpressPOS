@@ -115,7 +115,7 @@ app.post("/login", async (req, res) => {
     console.error("Login DB error:", err);
     return res.render("login", {
       next,
-      error: "Database error.",
+      error: msg,
       debug: msg,
     });
   }
