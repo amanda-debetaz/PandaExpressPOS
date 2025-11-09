@@ -1,11 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Menu Board</title>
-  </head>
-  <body>
-    <h1>Menu Board</h1>
-  </body>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Menu Board</title>
+</head>
+<body>
+  <h1>Menu Board</h1>
+
+  <% if (menu) { %>
+    <% Object.keys(menu).forEach(category => { %>
+      <h2><%= category.replace(/_/g, ' ').toUpperCase() %></h2>
+      <% if (menu[category].length > 0) { %>
+        <ul>
+          <% menu[category].forEach(item => { %>
+            <li><%= item.name %> - $<%= item.price.toFixed(2) %></li>
+          <% }) %>
+        </ul>
+      <% } else { %>
+        <p>No items in this category.</p>
+      <% } %>
+    <% }) %>
+  <% } else { %>
+    <p>No menu available.</p>
+  <% } %>
+
+</body>
 </html>
