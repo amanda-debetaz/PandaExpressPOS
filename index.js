@@ -3,16 +3,38 @@ const express = require("express");
 const { Pool } = require("pg");
 const session = require("express-session");
 const passport = require("passport");
+const LocalStrategy = require("passport-local").Strategy;
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
+const flash = require("connect-flash");
 
 const app = express();
+app.set('trust proxy', 1);
 const port = process.env.PORT || 3000;
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 // ---------- PostgreSQL ----------
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-});
+let poolConfig;
+
+if (isProduction) {
+  console.log("Running in production mode, using DATABASE_URL.");
+  poolConfig = {
+    connectionString: process.env.DATABASE_URL, 
+    ssl: { rejectUnauthorized: false }
+  };
+} else {
+  console.log("Running in development mode, using postgres.env variables.");
+  poolConfig = {
+    user: process.env.PSQL_USER,
+    host: process.env.PSQL_HOST,
+    database: process.env.PSQL_DATABASE,
+    password: process.env.PSQL_PASSWORD,
+    port: process.env.PSQL_PORT,
+    ssl: undefined
+  };
+}
+
+const pool = new Pool(poolConfig);
 
 // ---------- Graceful shutdown ----------
 process.on("SIGINT", () => {
@@ -32,58 +54,123 @@ app.use(
     secret: process.env.SESSION_SECRET || "fallback-secret-change-me",
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 30 * 60 * 1000, secure: process.env.NODE_ENV === "production" },
+    cookie: { maxAge: 30 * 60 * 1000, secure: isProduction},
   })
 );
 
 // ---------- Passport ----------
+app.use(flash()); 
 app.use(passport.initialize());
 app.use(passport.session());
 
-passport.serializeUser((user, done) => done(null, user.id));
+passport.serializeUser((user, done) => {
+  done(null, user.employee_id);
+});
 passport.deserializeUser(async (id, done) => {
   try {
-    const res = await pool.query("SELECT * FROM employee WHERE id = $1", [id]);
-    done(null, res.rows[0] || { id });
-  } catch (e) {
-    done(e);
+    const result = await pool.query(
+      'SELECT * FROM employee WHERE employee_id = $1', [id]
+    );
+    if (result.rowCount > 0) {
+      done(null, result.rows[0]); 
+    } else {
+      done(null, false); 
+    }
+  } catch (err) {
+    done(err);
   }
 });
 
-// ---------- Google Strategy ----------
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.GOOGLE_REDIRECT_URI,
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      const googleId = profile.id;
-      const email = profile.emails?.[0]?.value?.toLowerCase();
-
-      // ---- Restrict to your domain (customise) ----
-      if (!email?.endsWith("@pandaexpress.com")) {
-        return done(null, false, { message: "Use a Panda Express account" });
-      }
-
-      try {
-        // Upsert employee record (you may keep employee_id = 9999)
-        const upsert = await pool.query(
-          `INSERT INTO employee (google_id, email, employee_id)
-           VALUES ($1, $2, 9999)
-           ON CONFLICT (google_id) DO UPDATE SET email = $2
-           RETURNING id`,
-          [googleId, email]
-        );
-        const user = upsert.rows[0];
-        return done(null, user);
-      } catch (e) {
-        return done(e);
-      }
+// --- 1. LOCAL (Employee ID / Password) STRATEGY ---
+passport.use(new LocalStrategy(
+  { usernameField: 'employee_id', passwordField: 'password_hash' }, 
+  async (employee_id, password, done) => {
+    
+    const empId = parseInt(employee_id, 10);
+    if (isNaN(empId)) {
+      console.log(`LOCAL LOGIN FAILED: Invalid ID format "${employee_id}"`);
+      return done(null, false, { message: 'Employee ID must be a number.' });
     }
-  )
-);
+
+    try {
+      const result = await pool.query(
+        `SELECT employee_id, password_hash, display_name, role 
+         FROM employee WHERE employee_id = $1`,
+        [empId]
+      );
+
+      if (result.rowCount === 0) {
+        console.log(`LOCAL LOGIN FAILED: No user for ID ${empId}`);
+        return done(null, false, { message: 'Incorrect Employee ID.' });
+      }
+
+      const user = result.rows[0];
+      const storedHash = user.password_hash.trim();
+
+      if (password === storedHash) { 
+        console.log(`LOCAL LOGIN SUCCESS: ${user.employee_id}`);
+        return done(null, user);
+      } else {
+        console.log(`LOCAL LOGIN FAILED: Wrong password for ${user.employee_id}`);
+        return done(null, false, { message: 'Incorrect password.' });
+      }
+    } catch (err) {
+      console.error("Local Strategy DB Error:", err);
+      return done(err);
+    }
+  }
+));
+
+// --- 2. GOOGLE (OAuth2) STRATEGY ---
+passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: "/auth/google/callback"
+  },
+  async (accessToken, refreshToken, profile, done) => {
+    const google_id = profile.id;
+    const email = profile.emails[0].value;
+    const display_name = profile.displayName;
+
+    try {
+      let result = await pool.query(
+        'SELECT * FROM employee WHERE google_id = $1', [google_id]
+      );
+
+      if (result.rowCount > 0) {
+        const user = result.rows[0];
+        console.log(`GOOGLE LOGIN: Found user by google_id ${user.employee_id}`);
+        return done(null, user);
+      }
+
+      console.log(`GOOGLE LOGIN: No user found for google_id. Checking email: ${email}`);
+      result = await pool.query(
+        'SELECT * FROM employee WHERE email = $1', [email]
+      );
+
+      if (result.rowCount === 0) {
+        console.warn(`GOOGLE LOGIN DENIED: No employee found with email ${email}`);
+        return done(null, false, { message: 'This Google account is not associated with an authorized employee.' });
+      }
+
+      const user = result.rows[0];
+      console.log(`GOOGLE LOGIN: Linking google_id to user ${user.employee_id}`);
+      
+      await pool.query(
+        'UPDATE employee SET google_id = $1, display_name = $2 WHERE employee_id = $3',
+        [google_id, user.display_name || display_name, user.employee_id]
+      );
+      
+      user.google_id = google_id; 
+      user.display_name = user.display_name || display_name;
+      return done(null, user);
+
+    } catch (err) {
+      console.error("Google Strategy DB Error:", err);
+      return done(err);
+    }
+  }
+));
 
 // ---------- Activity / auto-logout ----------
 let lastActivity = Date.now();
@@ -100,21 +187,40 @@ setInterval(() => {
 
 // ---------- Auth middleware ----------
 function requireAuth(req, res, next) {
-  if (req.isAuthenticated()) return next();
-  res.redirect("/login?next=" + encodeURIComponent(req.originalUrl));
+  if (req.isAuthenticated()) {
+    return next(); 
+  }
+  console.log("requireAuth: User not logged in. Redirecting to /");
+  req.flash('error', 'You must be logged in to view that page.');
+  res.redirect('/');
 }
 
 // ---------- Login routes ----------
 app.get("/login", (req, res) => {
-  const next = req.query.next || "/kiosk";
-  const error = req.query.error;
-  res.render("login", { next, error });
+  if (req.isAuthenticated()) {
+    return res.redirect('/kiosk'); 
+  }
+  const next = req.query.next || '/kiosk';
+  res.render("login", { 
+    error: req.flash('error'),
+    next: next
+  });
 });
 
-app.post("/login", (req, res) => {
-  const next = req.body.next || "/kiosk";
-  // Pass the desired redirect as OAuth "state"
-  res.redirect(`/auth/google?state=${encodeURIComponent(next)}`);
+app.post("/login", (req, res, next) => {
+  const nextRedirect = req.body.next || '/kiosk';
+
+  passport.authenticate('local', (err, user, info) => {
+    if (err) { return next(err); }
+    if (!user) {
+      req.flash('error', info.message);
+      return res.redirect('/login?next=' + encodeURIComponent(nextRedirect));
+    }
+    req.logIn(user, (err) => {
+      if (err) { return next(err); }
+      return res.redirect(nextRedirect);
+    });
+  })(req, res, next);
 });
 
 // Google OAuth entry point
@@ -135,13 +241,22 @@ app.get(
 );
 
 // Logout
-app.get("/logout", (req, res) => {
-  req.logout(() => {});
-  res.redirect("/login");
+app.get('/logout', (req, res, next) => {
+  req.logout((err) => {
+    if (err) { return next(err); }
+    req.flash('error', 'You have been logged out.');
+    res.redirect('/');
+  });
 });
 
 // ---------- Navigation (unchanged) ----------
-app.get("/", (req, res) => res.render("navigation"));
+app.get("/", (req, res) => {
+  res.render("navigation", { 
+    user: req.user,
+    error: req.flash('error'),
+    success: req.flash('success')
+  });
+});
 app.get("/manager", requireAuth, (req, res) => res.render("manager"));
 app.get("/cashier", requireAuth, (req, res) => res.render("cashier"));
 app.get("/kitchen", requireAuth, (req, res) => res.render("kitchen"));
