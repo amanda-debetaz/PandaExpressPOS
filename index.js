@@ -54,7 +54,7 @@ app.use(
     secret: process.env.SESSION_SECRET || "fallback-secret-change-me",
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 30 * 60 * 1000, secure: process.env.NODE_ENV === "production" },
+    cookie: { maxAge: 30 * 60 * 1000, secure: isProduction},
   })
 );
 
@@ -63,13 +63,21 @@ app.use(flash());
 app.use(passport.initialize());
 app.use(passport.session());
 
-passport.serializeUser((user, done) => done(null, user.id));
+passport.serializeUser((user, done) => {
+  done(null, user.employee_id);
+});
 passport.deserializeUser(async (id, done) => {
   try {
-    const res = await pool.query("SELECT * FROM employee WHERE id = $1", [id]);
-    done(null, res.rows[0] || { id });
-  } catch (e) {
-    done(e);
+    const result = await pool.query(
+      'SELECT * FROM employee WHERE employee_id = $1', [id]
+    );
+    if (result.rowCount > 0) {
+      done(null, result.rows[0]); 
+    } else {
+      done(null, false); 
+    }
+  } catch (err) {
+    done(err);
   }
 });
 
