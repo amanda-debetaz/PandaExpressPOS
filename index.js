@@ -3,6 +3,7 @@ const express = require("express");
 const { Pool } = require("pg");
 const dotenv = require("dotenv");
 const flash = require("connect-flash");
+const pgSession = require('connect-pg-simple')(session);
 
 // Authentication
 const session = require("express-session");
@@ -13,6 +14,7 @@ const LocalStrategy = require("passport-local").Strategy;
 dotenv.config({ path: "./postgres.env" });
 
 const app = express();
+app.set('trust proxy', 1);
 const port = process.env.PORT || 3000;
 
 // ---------- PostgreSQL pool ----------
