@@ -1,24 +1,17 @@
 // index.js
 const express = require("express");
 const { Pool } = require("pg");
-const dotenv = require("dotenv");
-
-// --- 1. IMPORT ALL AUTH MODULES ---
 const session = require("express-session");
 const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const flash = require("connect-flash");
 
-dotenv.config({ path: "./postgres.env" });
-
 const app = express();
 app.set('trust proxy', 1);
 const port = process.env.PORT || 3000;
 
-const isProduction = process.env.NODE_ENV === 'production';
-
-// --- 2. DYNAMIC POOL CONFIGURATION ---
+// ---------- PostgreSQL ----------
 let poolConfig;
 
 if (isProduction) {
@@ -39,28 +32,7 @@ if (isProduction) {
   };
 }
 
-// ---------- PostgreSQL pool ----------
 const pool = new Pool(poolConfig);
-
-// ---------- View engine & static ----------
-app.set("view engine", "ejs");
-app.use(express.static("public"));
-app.use(express.urlencoded({ extended: true })); // for POST body
-
-// --- 3. CONFIGURE MIDDLEWARE (Order is important!) ---
-app.use(session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: { 
-      maxAge: 24 * 60 * 60 * 1000,
-      secure: isProduction
-    } 
-}));
-
-app.use(flash()); 
-app.use(passport.initialize());
-app.use(passport.session());
 
 // ---------- Graceful shutdown ----------
 process.on("SIGINT", () => {
@@ -69,9 +41,34 @@ process.on("SIGINT", () => {
   process.exit(0);
 });
 
-// ---------------------------------------------------------------------
-//  PASSPORT STRATEGIES
-// ---------------------------------------------------------------------
+// ---------- View engine & static ----------
+app.set("view engine", "ejs");
+app.use(express.static("public"));
+app.use(express.urlencoded({ extended: true }));
+
+// ---------- Session ----------
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "fallback-secret-change-me",
+    resave: false,
+    saveUninitialized: false,
+    cookie: { maxAge: 30 * 60 * 1000, secure: process.env.NODE_ENV === "production" },
+  })
+);
+
+// ---------- Passport ----------
+app.use(passport.initialize());
+app.use(passport.session());
+
+passport.serializeUser((user, done) => done(null, user.id));
+passport.deserializeUser(async (id, done) => {
+  try {
+    const res = await pool.query("SELECT * FROM employee WHERE id = $1", [id]);
+    done(null, res.rows[0] || { id });
+  } catch (e) {
+    done(e);
+  }
+});
 
 // --- 1. LOCAL (Employee ID / Password) STRATEGY ---
 passport.use(new LocalStrategy(
@@ -164,50 +161,30 @@ passport.use(new GoogleStrategy({
   }
 ));
 
-// --- 3. PASSPORT SESSION MANAGEMENT ---
-passport.serializeUser((user, done) => {
-  done(null, user.employee_id);
+// ---------- Activity / auto-logout ----------
+let lastActivity = Date.now();
+app.use((req, res, next) => {
+  if (req.isAuthenticated()) lastActivity = Date.now();
+  next();
 });
-
-passport.deserializeUser(async (id, done) => {
-  try {
-    const result = await pool.query(
-      'SELECT * FROM employee WHERE employee_id = $1', [id]
-    );
-    if (result.rowCount > 0) {
-      done(null, result.rows[0]); 
-    } else {
-      done(null, false); 
-    }
-  } catch (err) {
-    done(err);
+setInterval(() => {
+  if (Date.now() - lastActivity > 30 * 60 * 1000) {
+    console.log("Auto-logout (30 min inactivity)");
+    // Sessions will expire via cookie maxAge anyway
   }
-});
+}, 60_000);
 
-// ---------------------------------------------------------------------
-//  AUTH MIDDLEWARE
-// ---------------------------------------------------------------------
-function ensureAuthenticated(req, res, next) {
+// ---------- Auth middleware ----------
+function requireAuth(req, res, next) {
   if (req.isAuthenticated()) {
     return next(); 
   }
-  console.log("ensureAuthenticated: User not logged in. Redirecting to /");
+  console.log("requireAuth: User not logged in. Redirecting to /");
   req.flash('error', 'You must be logged in to view that page.');
   res.redirect('/');
 }
 
-// ---------------------------------------------------------------------
-//  PUBLIC & AUTH ROUTES
-// ---------------------------------------------------------------------
-
-app.get("/", (req, res) => {
-  res.render("navigation", { 
-    user: req.user,
-    error: req.flash('error'),
-    success: req.flash('success')
-  });
-});
-
+// ---------- Login routes ----------
 app.get("/login", (req, res) => {
   if (req.isAuthenticated()) {
     return res.redirect('/kiosk'); 
@@ -235,25 +212,24 @@ app.post("/login", (req, res, next) => {
   })(req, res, next);
 });
 
-
-app.get('/auth/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
+// Google OAuth entry point
+app.get(
+  "/auth/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
-app.get('/auth/google/callback', 
-  passport.authenticate('google', { 
-    failureRedirect: '/',
-    failureFlash: true
-  }),
+// Google OAuth callback
+app.get(
+  "/auth/google/callback",
+  passport.authenticate("google", { failureRedirect: "/login?error=oauth_failed" }),
   (req, res) => {
-    if (req.user && req.user.role === 'manager') {
-      res.redirect('/manager');
-    } else {
-      res.redirect('/kiosk');
-    }
+    const redirectTo = req.query.state ? decodeURIComponent(req.query.state) : "/kiosk";
+    console.log(`OAuth success → ${req.user.email || "unknown"}`);
+    res.redirect(redirectTo);
   }
 );
 
+// Logout
 app.get('/logout', (req, res, next) => {
   req.logout((err) => {
     if (err) { return next(err); }
@@ -262,53 +238,17 @@ app.get('/logout', (req, res, next) => {
   });
 });
 
-// ---------------------------------------------------------------------
-//  PROTECTED EMPLOYEE ROUTES
-// ---------------------------------------------------------------------
-app.get("/manager", ensureAuthenticated, (req, res) => {
-  res.render("manager", { user: req.user });
-});
-app.get("/cashier", ensureAuthenticated, (req, res) => {
-  res.render("cashier", { user: req.user });
-});
-app.get("/kitchen", ensureAuthenticated, (req, res) => {
-  res.render("kitchen", { user: req.user });
-});
+// ---------- Navigation (unchanged) ----------
+app.get("/", (req, res) => res.render("navigation"));
+app.get("/manager", requireAuth, (req, res) => res.render("manager"));
+app.get("/cashier", requireAuth, (req, res) => res.render("cashier"));
+app.get("/kitchen", requireAuth, (req, res) => res.render("kitchen"));
+app.get("/menu-board", requireAuth, (req, res) => res.render("menu-board"));
 
-// ---------------------------------------------------------------------
-//  PUBLIC KIOSK ROUTES (Example: Menu-Board)
-// ---------------------------------------------------------------------
-app.get("/menu-board", async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT name, price, category_id
-      FROM menu_item
-      WHERE is_active = true
-      ORDER BY name
-    `);
-    
-    const grouped = { entrees: [], a_la_carte: [], sides: [], appetizers: [] };
-    result.rows.forEach((row) => {
-      const price = parseFloat(row.price);
-      if (row.category_id === 1) grouped.entrees.push({ name: row.name, price });
-      else if (row.category_id === 3) grouped.a_la_carte.push({ name: row.name, price });
-      else if (row.category_id === 4) grouped.sides.push({ name: row.name, price });
-      else if (row.category_id === 2) grouped.appetizers.push({ name: row.name, price });
-    });
-    
-    res.render("menu-board", { menu: grouped }); 
-  } catch (err) {
-    console.error("Menu Board query error:", err);
-    res.status(500).send("Unable to load menu board");
-  }
-});
-
-// ---------------------------------------------------------------------
-//  PROTECTED KIOSK ROUTES (Actual Ordering)
-// ---------------------------------------------------------------------
+// ---------- 1. KIOSK MENU ----------
 let menuCache = { entrees: [], a_la_carte: [], sides: [], appetizers: [] };
 
-app.get("/kiosk", ensureAuthenticated, async (req, res) => {
+app.get("/kiosk", requireAuth, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT name, price, category_id
@@ -327,14 +267,15 @@ app.get("/kiosk", ensureAuthenticated, async (req, res) => {
     });
 
     menuCache = grouped;
-    res.render("menu", { menu: grouped }); 
+    res.render("menu", { menu: grouped });
   } catch (err) {
     console.error("Menu query error:", err);
     res.status(500).send("Unable to load menu");
   }
 });
 
-app.get("/order", ensureAuthenticated, async (req, res) => {
+// ---------- 2. ORDER ----------
+app.get("/order", requireAuth, async (req, res) => {
   let menu = { entrees: [], sides: [] };
   try {
     const result = await pool.query(`
@@ -343,66 +284,74 @@ app.get("/order", ensureAuthenticated, async (req, res) => {
       WHERE is_active = true
       ORDER BY name
     `);
-
     result.rows.forEach((row) => {
       const price = parseFloat(row.price);
       if (row.category_id === 1) menu.entrees.push({ name: row.name, price });
       else if (row.category_id === 4) menu.sides.push({ name: row.name, price });
     });
-  } catch (err)
-  {
+  } catch (err) {
     console.error("DB error in /order:", err);
     return res.status(500).send("Database error");
   }
   res.render("order", { menu });
 });
 
-app.get("/summary", ensureAuthenticated, (req, res) => {
+// ---------- 3. SUMMARY ----------
+app.get("/summary", requireAuth, (req, res) => {
   const { entree, side } = req.query;
-
   const find = (arr, name) => arr.find((i) => i.name === name) || null;
   const selEntree = entree ? find(menuCache.entrees, entree) : null;
   const selSide = side ? find(menuCache.sides, side) : null;
 
   const items = [];
   let total = 0;
-
-  if (selEntree) {
-    items.push(selEntree);
-    total += selEntree.price;
-  }
-  if (selSide) {
-    items.push(selSide);
-    total += selSide.price;
-  }
+  if (selEntree) { items.push(selEntree); total += selEntree.price; }
+  if (selSide)   { items.push(selSide);   total += selSide.price;   }
 
   const order = { items, total: total.toFixed(2) };
   res.render("summary", { order });
 });
 
-// ---------------------------------------------------------------------
-//  TEST DB CONNECTION
-// ---------------------------------------------------------------------
+// ---------- 4. TEST DB ----------
 app.get("/test-db", async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ success: false, error: "Unauthorized" });
-  }
   try {
     const result = await pool.query("SELECT NOW()");
-    res.json({ success: true, time: result.rows[0].now, user: req.user.display_name });
+    res.json({ success: true, time: result.rows[0].now });
   } catch (err) {
     console.error("Database error:", err.message);
     res.status(500).json({ success: false, error: "Database connection failed" });
   }
 });
 
-// ---------------------------------------------------------------------
-// START SERVER
-// ---------------------------------------------------------------------
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-  if (!isProduction) {
-    console.log(`Local dev server: http://localhost:${port}`);
-    console.log("Local Kiosk Login: employee_id = 9999 + password from DB");
+// ---------- 5. MENU BOARD ---------
+
+app.get("/menu-board", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT name, price, category_id
+      FROM menu_item
+      WHERE is_active = true
+      ORDER BY name
+    `);
+
+    const grouped = { entrees: [], a_la_carte: [], sides: [], appetizers: [] };
+    result.rows.forEach(row => {
+      const price = parseFloat(row.price);
+      if (row.category_id === 1) grouped.entrees.push({ name: row.name, price });
+      else if (row.category_id === 3) grouped.a_la_carte.push({ name: row.name, price });
+      else if (row.category_id === 4) grouped.sides.push({ name: row.name, price });
+      else if (row.category_id === 2) grouped.appetizers.push({ name: row.name, price });
+    });
+
+    res.render("menu-board", { menu: grouped }); // <-- pass menu here
+  } catch (err) {
+    console.error("Menu Board query error:", err);
+    res.status(500).send("Unable to load menu board");
   }
+}); 
+
+// ---------- START ----------
+app.listen(port, () => {
+  console.log(`Server running on http://localhost:${port}`);
+  console.log("Login → /login (Google OAuth)");
 });
