@@ -6,6 +6,7 @@ const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const flash = require("connect-flash");
+require('dotenv').config({ path: './postgres.env' });
 
 const app = express();
 app.set('trust proxy', 1);
