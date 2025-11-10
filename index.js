@@ -15,22 +15,17 @@ dotenv.config({ path: "./postgres.env" });
 const app = express();
 const port = process.env.PORT || 3000;
 
-// ---------- PostgreSQL pool (Render.com) ----------
-//  console.log("Running in development mode, using postgres.env variables.");
-//  poolConfig = {
-//    user: process.env.PSQL_USER,
-//    host: process.env.PSQL_HOST,
-//    database: process.env.PSQL_DATABASE,
-//    password: process.env.PSQL_PASSWORD,
-//    port: process.env.PSQL_PORT,
-//    ssl: undefined // Explicitly disable SSL for local dev
-//  };
-
-//const pool = new Pool(poolConfig);
-
+// ---------- PostgreSQL pool ----------
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
+});
+
+// ---------- Graceful shutdown ----------
+process.on("SIGINT", () => {
+  pool.end();
+  console.log("Application shutdown");
+  process.exit(0);
 });
 
 app.use(session({
@@ -62,14 +57,11 @@ passport.use(new LocalStrategy({
         `SELECT * FROM employee WHERE employee_id = $1`,
         [empId]
       );
-
       if (result.rowCount === 0) {
         return done(null, false, { message: 'No employee found with that ID.' });
       }
-
       const user = result.rows[0];
       const stored = user.password_hash.trim();
-
       if (password_hash === stored) {
         console.log(`LOCAL LOGIN SUCCESS: ${user.employee_id}`);
         return done(null, user); 
@@ -97,26 +89,21 @@ passport.use(new GoogleStrategy({
     try {
       // 1. Find user by their Google ID
       let result = await pool.query('SELECT * FROM employee WHERE google_id = $1', [googleId]);
-      
       if (result.rowCount > 0) {
-        // --- User found by Google ID ---
         console.log(`GOOGLE LOGIN: Found user by google_id ${result.rows[0].employee_id}`);
         return done(null, result.rows[0]);
       }
 
       // 2. Not found? Try to link by email
       result = await pool.query('SELECT * FROM employee WHERE email = $1', [email]);
-      
       if (result.rowCount > 0) {
         // --- User found by email, link their Google ID ---
         const user = result.rows[0];
         console.log(`GOOGLE LOGIN: Linking google_id to user ${user.employee_id}`);
-        
         await pool.query(
           'UPDATE employee SET google_id = $1, display_name = $2 WHERE employee_id = $3',
           [googleId, displayName, user.employee_id]
         );
-        
         // Return the updated user
         user.google_id = googleId;
         user.display_name = displayName;
@@ -174,8 +161,8 @@ function ensureAuthenticated(req, res, next) {
 // ---------------------------------------------------------------------
 app.get("/login", (req, res) => {
   const next = req.query.next || "/kiosk";
-  res.render("login", { next, error: req.flash('error') });
-  
+  const errorMsg = req.flash('error') || req.flash('message');
+  res.render("login", { next, error: errorMsg });
 });
 
 app.post("/login", (req, res, next) => {
@@ -197,8 +184,12 @@ app.get('/auth/google',
 );
 
 app.get('/auth/google/callback', 
-  passport.authenticate('google', { failureRedirect: '/', failureFlash: true }),
-  (req, res) => {    if (req.user.role === 'manager') {
+  passport.authenticate('google', { 
+    failureRedirect: '/', 
+    failureFlash: true 
+  }),
+  (req, res) => {
+    if (req.user.role === 'manager') {
       res.redirect('/manager');
     } else {
       res.redirect('/kiosk');
@@ -219,11 +210,40 @@ app.get('/logout', (req, res, next) => {
 // ---------------------------------------------------------------------
 //  NAVIGATION
 // ---------------------------------------------------------------------
-app.get("/", (req, res) => { res.render("navigation", { user: req.user, error: req.flash('error') }); });
+app.get("/", (req, res) => { 
+  res.render("navigation", { user: req.user, error: req.flash('error') }); 
+});
 app.get("/manager", ensureAuthenticated, (req, res) => {res.render("manager", { user: req.user });});
 app.get("/cashier", ensureAuthenticated, (req, res) => {res.render("cashier", { user: req.user });});
 app.get("/kitchen", ensureAuthenticated, (req, res) => {res.render("kitchen", { user: req.user });});
-app.get("/menu-board", (req, res) => res.render("menu-board"));
+
+// ---------------------------------------------------------------------
+//  MENU BOARD
+// ---------------------------------------------------------------------
+app.get("/menu-board", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT name, price, category_id
+      FROM menu_item
+      WHERE is_active = true
+      ORDER BY name
+    `);
+
+    const grouped = { entrees: [], a_la_carte: [], sides: [], appetizers: [] };
+    result.rows.forEach(row => {
+      const price = parseFloat(row.price);
+      if (row.category_id === 1) grouped.entrees.push({ name: row.name, price });
+      else if (row.category_id === 3) grouped.a_la_carte.push({ name: row.name, price });
+      else if (row.category_id === 4) grouped.sides.push({ name: row.name, price });
+      else if (row.category_id === 2) grouped.appetizers.push({ name: row.name, price });
+    });
+
+    res.render("menu-board", { menu: grouped });
+  } catch (err) {
+    console.error("Menu Board query error:", err);
+    res.status(500).send("Unable to load menu board");
+  }
+}); 
 
 // ---------------------------------------------------------------------
 //  1. KIOSK MENU – PROTECTED
