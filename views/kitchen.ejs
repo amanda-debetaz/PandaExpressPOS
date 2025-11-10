@@ -57,6 +57,7 @@
             <button class="done" onclick="updateStatus(${o.orderId}, 'done')">Complete</button>
           </section>
         `).join('');
+      } catch (err) {
         console.error('Failed to load queue', err);
         document.getElementById('queue').innerHTML = '<p>Error loading orders.</p>';
       }
