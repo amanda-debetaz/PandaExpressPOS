@@ -2,13 +2,13 @@
 const express = require("express");
 const { Pool } = require("pg");
 const dotenv = require("dotenv");
-const flash = require("connect-flash");
 
-// Authentication
+// --- 1. IMPORT ALL AUTH MODULES ---
 const session = require("express-session");
 const passport = require("passport");
-const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const LocalStrategy = require("passport-local").Strategy;
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
+const flash = require("connect-flash");
 
 dotenv.config({ path: "./postgres.env" });
 
@@ -16,11 +16,51 @@ const app = express();
 app.set('trust proxy', 1);
 const port = process.env.PORT || 3000;
 
+const isProduction = process.env.NODE_ENV === 'production';
+
+// --- 2. DYNAMIC POOL CONFIGURATION ---
+let poolConfig;
+
+if (isProduction) {
+  console.log("Running in production mode, using DATABASE_URL.");
+  poolConfig = {
+    connectionString: process.env.DATABASE_URL, 
+    ssl: { rejectUnauthorized: false }
+  };
+} else {
+  console.log("Running in development mode, using postgres.env variables.");
+  poolConfig = {
+    user: process.env.PSQL_USER,
+    host: process.env.PSQL_HOST,
+    database: process.env.PSQL_DATABASE,
+    password: process.env.PSQL_PASSWORD,
+    port: process.env.PSQL_PORT,
+    ssl: undefined
+  };
+}
+
 // ---------- PostgreSQL pool ----------
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-});
+const pool = new Pool(poolConfig);
+
+// ---------- View engine & static ----------
+app.set("view engine", "ejs");
+app.use(express.static("public"));
+app.use(express.urlencoded({ extended: true })); // for POST body
+
+// --- 3. CONFIGURE MIDDLEWARE (Order is important!) ---
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: { 
+      maxAge: 24 * 60 * 60 * 1000,
+      secure: isProduction
+    } 
+}));
+
+app.use(flash()); 
+app.use(passport.initialize());
+app.use(passport.session());
 
 // ---------- Graceful shutdown ----------
 process.on("SIGINT", () => {
@@ -29,91 +69,93 @@ process.on("SIGINT", () => {
   process.exit(0);
 });
 
-app.use(session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: { maxAge: 24 * 60 * 60 * 1000 } // 24-hour session
-}));
-app.use(flash());
+// ---------------------------------------------------------------------
+//  PASSPORT STRATEGIES
+// ---------------------------------------------------------------------
 
-// Initialize Passport
-app.use(passport.initialize());
-app.use(passport.session());
-
-passport.use(new LocalStrategy({
-    usernameField: 'employee_id',
-    passwordField: 'password_hash'
-  },
-  async (employee_id, password_hash, done) => {
-    // ---- 1. Validate input ----
+// --- 1. LOCAL (Employee ID / Password) STRATEGY ---
+passport.use(new LocalStrategy(
+  { usernameField: 'employee_id', passwordField: 'password_hash' }, 
+  async (employee_id, password, done) => {
+    
     const empId = parseInt(employee_id, 10);
     if (isNaN(empId)) {
-      return done(null, false, { message: 'Invalid Employee ID.' });
+      console.log(`LOCAL LOGIN FAILED: Invalid ID format "${employee_id}"`);
+      return done(null, false, { message: 'Employee ID must be a number.' });
     }
 
-    // ---- 2. Query DB ----
     try {
       const result = await pool.query(
-        `SELECT * FROM employee WHERE employee_id = $1`,
+        `SELECT employee_id, password_hash, display_name, role 
+         FROM employee WHERE employee_id = $1`,
         [empId]
       );
+
       if (result.rowCount === 0) {
-        return done(null, false, { message: 'No employee found with that ID.' });
+        console.log(`LOCAL LOGIN FAILED: No user for ID ${empId}`);
+        return done(null, false, { message: 'Incorrect Employee ID.' });
       }
+
       const user = result.rows[0];
-      const stored = user.password_hash.trim();
-      if (password_hash === stored) {
+      const storedHash = user.password_hash.trim();
+
+      if (password === storedHash) { 
         console.log(`LOCAL LOGIN SUCCESS: ${user.employee_id}`);
-        return done(null, user); 
+        return done(null, user);
       } else {
-        console.log("LOCAL LOGIN FAILED: wrong password");
+        console.log(`LOCAL LOGIN FAILED: Wrong password for ${user.employee_id}`);
         return done(null, false, { message: 'Incorrect password.' });
       }
     } catch (err) {
-      console.error("Login DB error:", err);
+      console.error("Local Strategy DB Error:", err);
       return done(err);
     }
   }
 ));
 
+// --- 2. GOOGLE (OAuth2) STRATEGY ---
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: "/auth/google/callback"
   },
   async (accessToken, refreshToken, profile, done) => {
-    const googleId = profile.id;
+    const google_id = profile.id;
     const email = profile.emails[0].value;
-    const displayName = profile.displayName;
+    const display_name = profile.displayName;
 
     try {
-      // 1. Find user by their Google ID
-      let result = await pool.query('SELECT * FROM employee WHERE google_id = $1', [googleId]);
-      if (result.rowCount > 0) {
-        console.log(`GOOGLE LOGIN: Found user by google_id ${result.rows[0].employee_id}`);
-        return done(null, result.rows[0]);
-      }
+      let result = await pool.query(
+        'SELECT * FROM employee WHERE google_id = $1', [google_id]
+      );
 
-      // 2. Not found? Try to link by email
-      result = await pool.query('SELECT * FROM employee WHERE email = $1', [email]);
       if (result.rowCount > 0) {
-        // --- User found by email, link their Google ID ---
         const user = result.rows[0];
-        console.log(`GOOGLE LOGIN: Linking google_id to user ${user.employee_id}`);
-        await pool.query(
-          'UPDATE employee SET google_id = $1, display_name = $2 WHERE employee_id = $3',
-          [googleId, displayName, user.employee_id]
-        );
-        // Return the updated user
-        user.google_id = googleId;
-        user.display_name = displayName;
+        console.log(`GOOGLE LOGIN: Found user by google_id ${user.employee_id}`);
         return done(null, user);
       }
 
-      // 3. Not found at all. Deny access.
-      console.warn(`GOOGLE LOGIN DENIED: No employee found with email ${email}`);
-      return done(null, false, { message: 'This Google account is not associated with an employee.' });
+      console.log(`GOOGLE LOGIN: No user found for google_id. Checking email: ${email}`);
+      result = await pool.query(
+        'SELECT * FROM employee WHERE email = $1', [email]
+      );
+
+      if (result.rowCount === 0) {
+        console.warn(`GOOGLE LOGIN DENIED: No employee found with email ${email}`);
+        return done(null, false, { message: 'This Google account is not associated with an authorized employee.' });
+      }
+
+      const user = result.rows[0];
+      console.log(`GOOGLE LOGIN: Linking google_id to user ${user.employee_id}`);
+      
+      await pool.query(
+        'UPDATE employee SET google_id = $1, display_name = $2 WHERE employee_id = $3',
+        [google_id, user.display_name || display_name, user.employee_id]
+      );
+      
+      user.google_id = google_id; 
+      user.display_name = user.display_name || display_name;
+      return done(null, user);
 
     } catch (err) {
       console.error("Google Strategy DB Error:", err);
@@ -122,35 +164,32 @@ passport.use(new GoogleStrategy({
   }
 ));
 
+// --- 3. PASSPORT SESSION MANAGEMENT ---
 passport.serializeUser((user, done) => {
-  done(null, user.employee_id); // Use the database primary key
+  done(null, user.employee_id);
 });
 
-// Uses the employee_id from the session to fetch the user on each request
 passport.deserializeUser(async (id, done) => {
   try {
-    const result = await pool.query('SELECT * FROM employee WHERE employee_id = $1', [id]);
-    if (result.rowCount === 0) {
-      return done(new Error('User not found in session.'));
+    const result = await pool.query(
+      'SELECT * FROM employee WHERE employee_id = $1', [id]
+    );
+    if (result.rowCount > 0) {
+      done(null, result.rows[0]); 
+    } else {
+      done(null, false); 
     }
-    done(null, result.rows[0]); // Attaches user object to req.user
   } catch (err) {
     done(err);
   }
 });
-
-// ---------- View engine & static ----------
-app.set("view engine", "ejs");
-app.use(express.static("public"));
-app.use(express.urlencoded({ extended: true })); // for POST body
 
 // ---------------------------------------------------------------------
 //  AUTH MIDDLEWARE
 // ---------------------------------------------------------------------
 function ensureAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
-    // User is logged in, proceed to the route
-    return next();
+    return next(); 
   }
   console.log("ensureAuthenticated: User not logged in. Redirecting to /");
   req.flash('error', 'You must be logged in to view that page.');
@@ -158,27 +197,31 @@ function ensureAuthenticated(req, res, next) {
 }
 
 // ---------------------------------------------------------------------
-//  LOGIN PAGE
+//  PUBLIC & AUTH ROUTES
 // ---------------------------------------------------------------------
+
+app.get("/", (req, res) => {
+  res.render("navigation", { 
+    user: req.user,
+    error: req.flash('error'),
+    success: req.flash('success')
+  });
+});
+
 app.get("/login", (req, res) => {
-  const next = req.query.next || "/kiosk";
-  const errorMsg = req.flash('error') || req.flash('message');
-  res.render("login", { next, error: errorMsg });
+  if (req.isAuthenticated()) {
+    return res.redirect('/kiosk'); 
+  }
+  res.render("login", { 
+    error: req.flash('error') 
+  });
 });
 
-app.post("/login", (req, res, next) => {
-  const nextRedirect = req.body.next || '/kiosk';
-  
-  passport.authenticate('local', {
-    successRedirect: nextRedirect,       // On success, go where 'next' points
-    failureRedirect: '/login?next=' + encodeURIComponent(nextRedirect), // On fail, reload login page
-    failureFlash: true                   // Use flash messages for errors
-  })(req, res, next);
-});
-
-// ---------------------------------------------------------------------
-//  Auth Routes
-// ---------------------------------------------------------------------
+app.post("/login", passport.authenticate('local', {
+  successRedirect: '/kiosk',      
+  failureRedirect: '/login',      
+  failureFlash: true              
+}));
 
 app.get('/auth/google',
   passport.authenticate('google', { scope: ['profile', 'email'] })
@@ -186,20 +229,18 @@ app.get('/auth/google',
 
 app.get('/auth/google/callback', 
   passport.authenticate('google', { 
-    failureRedirect: '/', 
-    failureFlash: true 
+    failureRedirect: '/',
+    failureFlash: true
   }),
   (req, res) => {
-    if (req.user.role === 'manager') {
+    if (req.user && req.user.role === 'manager') {
       res.redirect('/manager');
     } else {
       res.redirect('/kiosk');
     }
-});
+  }
+);
 
-// ---------------------------------------------------------------------
-//  LOGOUT
-// ---------------------------------------------------------------------
 app.get('/logout', (req, res, next) => {
   req.logout((err) => {
     if (err) { return next(err); }
@@ -209,17 +250,20 @@ app.get('/logout', (req, res, next) => {
 });
 
 // ---------------------------------------------------------------------
-//  NAVIGATION
+//  PROTECTED EMPLOYEE ROUTES
 // ---------------------------------------------------------------------
-app.get("/", (req, res) => { 
-  res.render("navigation", { user: req.user, error: req.flash('error') }); 
+app.get("/manager", ensureAuthenticated, (req, res) => {
+  res.render("manager", { user: req.user });
 });
-app.get("/manager", ensureAuthenticated, (req, res) => {res.render("manager", { user: req.user });});
-app.get("/cashier", ensureAuthenticated, (req, res) => {res.render("cashier", { user: req.user });});
-app.get("/kitchen", ensureAuthenticated, (req, res) => {res.render("kitchen", { user: req.user });});
+app.get("/cashier", ensureAuthenticated, (req, res) => {
+  res.render("cashier", { user: req.user });
+});
+app.get("/kitchen", ensureAuthenticated, (req, res) => {
+  res.render("kitchen", { user: req.user });
+});
 
 // ---------------------------------------------------------------------
-//  MENU BOARD
+//  PUBLIC KIOSK ROUTES (Example: Menu-Board)
 // ---------------------------------------------------------------------
 app.get("/menu-board", async (req, res) => {
   try {
@@ -229,25 +273,25 @@ app.get("/menu-board", async (req, res) => {
       WHERE is_active = true
       ORDER BY name
     `);
-
+    
     const grouped = { entrees: [], a_la_carte: [], sides: [], appetizers: [] };
-    result.rows.forEach(row => {
+    result.rows.forEach((row) => {
       const price = parseFloat(row.price);
       if (row.category_id === 1) grouped.entrees.push({ name: row.name, price });
       else if (row.category_id === 3) grouped.a_la_carte.push({ name: row.name, price });
       else if (row.category_id === 4) grouped.sides.push({ name: row.name, price });
       else if (row.category_id === 2) grouped.appetizers.push({ name: row.name, price });
     });
-
-    res.render("menu-board", { menu: grouped });
+    
+    res.render("menu-board", { menu: grouped }); 
   } catch (err) {
     console.error("Menu Board query error:", err);
     res.status(500).send("Unable to load menu board");
   }
-}); 
+});
 
 // ---------------------------------------------------------------------
-//  1. KIOSK MENU – PROTECTED
+//  PROTECTED KIOSK ROUTES (Actual Ordering)
 // ---------------------------------------------------------------------
 let menuCache = { entrees: [], a_la_carte: [], sides: [], appetizers: [] };
 
@@ -270,19 +314,15 @@ app.get("/kiosk", ensureAuthenticated, async (req, res) => {
     });
 
     menuCache = grouped;
-    res.render("menu", { menu: grouped });
+    res.render("menu", { menu: grouped }); 
   } catch (err) {
     console.error("Menu query error:", err);
     res.status(500).send("Unable to load menu");
   }
 });
 
-// ---------------------------------------------------------------------
-//  2. ORDER PAGE – PROTECTED
-// ---------------------------------------------------------------------
 app.get("/order", ensureAuthenticated, async (req, res) => {
   let menu = { entrees: [], sides: [] };
-
   try {
     const result = await pool.query(`
       SELECT name, price, category_id
@@ -296,17 +336,14 @@ app.get("/order", ensureAuthenticated, async (req, res) => {
       if (row.category_id === 1) menu.entrees.push({ name: row.name, price });
       else if (row.category_id === 4) menu.sides.push({ name: row.name, price });
     });
-  } catch (err) {
+  } catch (err)
+  {
     console.error("DB error in /order:", err);
     return res.status(500).send("Database error");
   }
-
   res.render("order", { menu });
 });
 
-// ---------------------------------------------------------------------
-//  3. SUMMARY PAGE – PROTECTED
-// ---------------------------------------------------------------------
 app.get("/summary", ensureAuthenticated, (req, res) => {
   const { entree, side } = req.query;
 
@@ -331,12 +368,15 @@ app.get("/summary", ensureAuthenticated, (req, res) => {
 });
 
 // ---------------------------------------------------------------------
-//  4. TEST DB CONNECTION
+//  TEST DB CONNECTION
 // ---------------------------------------------------------------------
 app.get("/test-db", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ success: false, error: "Unauthorized" });
+  }
   try {
     const result = await pool.query("SELECT NOW()");
-    res.json({ success: true, time: result.rows[0].now });
+    res.json({ success: true, time: result.rows[0].now, user: req.user.display_name });
   } catch (err) {
     console.error("Database error:", err.message);
     res.status(500).json({ success: false, error: "Database connection failed" });
@@ -344,9 +384,12 @@ app.get("/test-db", async (req, res) => {
 });
 
 // ---------------------------------------------------------------------
-//  START SERVER
+// START SERVER
 // ---------------------------------------------------------------------
 app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
-  console.log("Kiosk login: employee_id = 9999 + password from DB");
+  console.log(`Server running on port ${port}`);
+  if (!isProduction) {
+    console.log(`Local dev server: http://localhost:${port}`);
+    console.log("Local Kiosk Login: employee_id = 9999 + password from DB");
+  }
 });
