@@ -241,7 +241,13 @@ app.get('/logout', (req, res, next) => {
 });
 
 // ---------- Navigation (unchanged) ----------
-app.get("/", (req, res) => res.render("navigation"));
+app.get("/", (req, res) => {
+  res.render("navigation", { 
+    user: req.user,
+    error: req.flash('error'),
+    success: req.flash('success')
+  });
+});
 app.get("/manager", requireAuth, (req, res) => res.render("manager"));
 app.get("/cashier", requireAuth, (req, res) => res.render("cashier"));
 app.get("/kitchen", requireAuth, (req, res) => res.render("kitchen"));
