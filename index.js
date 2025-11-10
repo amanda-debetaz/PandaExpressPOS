@@ -212,16 +212,29 @@ app.get("/login", (req, res) => {
   if (req.isAuthenticated()) {
     return res.redirect('/kiosk'); 
   }
+  const next = req.query.next || '/kiosk';
   res.render("login", { 
-    error: req.flash('error') 
+    error: req.flash('error'),
+    next: next
   });
 });
 
-app.post("/login", passport.authenticate('local', {
-  successRedirect: '/kiosk',      
-  failureRedirect: '/login',      
-  failureFlash: true              
-}));
+app.post("/login", (req, res, next) => {
+  const nextRedirect = req.body.next || '/kiosk';
+
+  passport.authenticate('local', (err, user, info) => {
+    if (err) { return next(err); }
+    if (!user) {
+      req.flash('error', info.message);
+      return res.redirect('/login?next=' + encodeURIComponent(nextRedirect));
+    }
+    req.logIn(user, (err) => {
+      if (err) { return next(err); }
+      return res.redirect(nextRedirect);
+    });
+  })(req, res, next);
+});
+
 
 app.get('/auth/google',
   passport.authenticate('google', { scope: ['profile', 'email'] })
