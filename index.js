@@ -198,9 +198,9 @@ function requireAuth(req, res, next) {
 // ---------- Login routes ----------
 app.get("/login", (req, res) => {
   if (req.isAuthenticated()) {
-    return res.redirect('/kiosk'); 
+    return res.redirect('/'); 
   }
-  const next = req.query.next || '/kiosk';
+  const next = req.query.next || '/';
   res.render("login", { 
     error: req.flash('error'),
     next: next
@@ -208,7 +208,7 @@ app.get("/login", (req, res) => {
 });
 
 app.post("/login", (req, res, next) => {
-  const nextRedirect = req.body.next || '/kiosk';
+  const nextRedirect = req.body.next || '/';
 
   passport.authenticate('local', (err, user, info) => {
     if (err) { return next(err); }
@@ -234,7 +234,7 @@ app.get(
   "/auth/google/callback",
   passport.authenticate("google", { failureRedirect: "/login?error=oauth_failed" }),
   (req, res) => {
-    const redirectTo = req.query.state ? decodeURIComponent(req.query.state) : "/kiosk";
+    const redirectTo = req.query.state ? decodeURIComponent(req.query.state) : "/";
     console.log(`OAuth success → ${req.user.email || "unknown"}`);
     res.redirect(redirectTo);
   }
