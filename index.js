@@ -259,8 +259,32 @@ app.get("/", (req, res) => {
 });
 app.get("/manager", requireAuth, (req, res) => res.render("manager"));
 app.get("/cashier", requireAuth, (req, res) => res.render("cashier"));
-app.get("/kitchen", requireAuth, (req, res) => res.render("kitchen"));
-app.get("/menu-board", requireAuth, (req, res) => res.render("menu-board"));
+app.get("/kitchen", requireAuth, async (req, res) => {
+  try {
+    const orderResult = await pool.query(
+      'SELECT * FROM "order" WHERE status = $1 ORDER BY created_at ASC',
+      ['queued']
+    );
+
+    const orders = orderResult.rows.map(order => {
+      return {
+        orderId: order.order_id, 
+        status: order.status,
+        dineOption: order.dine_option,
+        notes: order.notes,
+        placedAt: order.created_at,
+        items: []
+      };
+    });
+
+    res.render("kitchen", { orders: orders });
+
+  } catch (err) {
+    console.error("Error fetching kitchen orders:", err);
+    res.status(500).send("Error loading kitchen queue");
+  }
+});
+//app.get("/menu-board", requireAuth, (req, res) => res.render("menu-board"));
 
 // ---------- 1. KIOSK MENU ----------
 let menuCache = { entrees: [], a_la_carte: [], sides: [], appetizers: [] };
