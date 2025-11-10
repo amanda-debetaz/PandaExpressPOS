@@ -1,0 +1,102 @@
+# Project Dependencies - requirements.txt
+# This file lists all npm packages required across all projects in this codebase
+# Install with: npm install (in each project directory) or use the package.json files
+#
+# For Node.js projects, package.json files are the standard dependency management.
+# This file serves as a comprehensive reference of all packages.
+
+# ==============================================================================
+# ROOT PROJECT (package.json)
+# ==============================================================================
+# Dependencies
+@prisma/client@^6.18.0
+@prisma/extension-accelerate@^2.0.2
+dotenv@^17.2.3
+express@^5.1.0
+pg@^8.16.3
+prisma@^6.18.0
+
+# ==============================================================================
+# POS-BACKEND PROJECT (pos-backend/package.json)
+# ==============================================================================
+# Production Dependencies
+@nestjs/common@^11.0.1
+@nestjs/core@^11.0.1
+@nestjs/platform-express@^11.0.1
+@prisma/client@^6.18.0
+class-transformer@^0.5.1
+class-validator@^0.14.2
+reflect-metadata@^0.2.2
+rxjs@^7.8.1
+
+# Development Dependencies (pos-backend)
+@eslint/eslintrc@^3.2.0
+@eslint/js@^9.18.0
+@nestjs/cli@^11.0.0
+@nestjs/schematics@^11.0.0
+@nestjs/testing@^11.0.1
+@types/express@^5.0.0
+@types/jest@^30.0.0
+@types/node@^22.10.7
+@types/supertest@^6.0.2
+eslint@^9.18.0
+eslint-config-prettier@^10.0.1
+eslint-plugin-prettier@^5.2.2
+globals@^16.0.0
+jest@^30.0.0
+prettier@^3.4.2
+prisma@^6.18.0
+source-map-support@^0.5.21
+supertest@^7.0.0
+ts-jest@^29.2.5
+ts-loader@^9.5.2
+ts-node@^10.9.2
+tsconfig-paths@^4.2.0
+typescript@^5.7.3
+typescript-eslint@^8.20.0
+
+# ==============================================================================
+# MY-APP PROJECT (Next.js Frontend) (my-app/package.json)
+# ==============================================================================
+# Production Dependencies
+react@19.2.0
+react-dom@19.2.0
+next@16.0.0
+
+# Development Dependencies (my-app)
+typescript@^5
+@types/node@^20
+@types/react@^19
+@types/react-dom@^19
+@tailwindcss/postcss@^4
+tailwindcss@^4
+eslint@^9
+eslint-config-next@16.0.0
+
+# ==============================================================================
+# INSTALLATION INSTRUCTIONS
+# ==============================================================================
+# 
+# To install all dependencies:
+# 
+# 1. Root project:
+#    cd /path/to/project
+#    npm install
+#
+# 2. Backend (NestJS):
+#    cd pos-backend
+#    npm install
+#
+# 3. Frontend (Next.js):
+#    cd my-app
+#    npm install
+#
+# ==============================================================================
+# ADDITIONAL REQUIREMENTS
+# ==============================================================================
+# - Node.js (v18 or higher recommended)
+# - PostgreSQL database (for Prisma)
+# - Environment variables configured (see .env files)
+#   - DATABASE_URL for PostgreSQL connection
+#   - Other environment variables as needed
+

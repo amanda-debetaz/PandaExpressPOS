@@ -6,6 +6,101 @@
     <title>Cashier Page</title>
   </head>
   <body>
-    <h1>Cashier Page</h1>
+    <header class="header-bar">
+      <div class="total-display">
+        <span class="total-label">Total:</span>
+        <span class="total-value">$0.00</span>
+      </div>
+
+      <div class="search-container">
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Search / scan item"
+        />
+      </div>
+
+      <button class="clock-btn">Clock In/Out</button>
+    </header>
+
+    <!-- ORDER TABLE -->
+    <section class="order-section">
+      <table class="order-table">
+        <thead class="order-header">
+          <tr>
+            <th class="col-item">Item</th>
+            <th class="col-qty">Quantity</th>
+            <th class="col-price">Price</th>
+            <th class="col-delete">Delete</th>
+          </tr>
+        </thead>
+        <tbody class="order-body">
+          <!-- dynamic order rows go here -->
+        </tbody>
+      </table>
+    </section>
+
+    <!-- MAIN BUTTON GRID -->
+    <section class="menu-selection">
+      <!-- Meal Size -->
+      <div class="meal-size-section">
+        <h3 class="section-title">Meal Size</h3>
+        <div class="button-group meal-size-buttons">
+          <button class="btn btn-meal">Bowl</button>
+          <button class="btn btn-meal">Plate</button>
+          <button class="btn btn-meal">Big Plate</button>
+        </div>
+      </div>
+
+      <!-- Base -->
+      <div class="base-section">
+        <h3 class="section-title">Base</h3>
+        <div class="button-group base-buttons">
+          <button class="btn btn-base">Rice</button>
+          <button class="btn btn-base">Chow Mein</button>
+          <button class="btn btn-base">Fried Rice</button>
+          <button class="btn btn-base">Super Greens</button>
+        </div>
+      </div>
+
+      <!-- Entree -->
+      <div class="entree-section">
+        <h3 class="section-title">Entree</h3>
+        <div class="button-grid entree-buttons">
+          <button class="btn btn-entree">Beijing Beef</button>
+          <button class="btn btn-entree">Black Pepper Chicken</button>
+          <button class="btn btn-entree">Broccoli Beef</button>
+          <button class="btn btn-entree">Honey Walnut Shrimp</button>
+          <button class="btn btn-entree">Orange Chicken</button>
+          <button class="btn btn-entree">Mushroom Chicken</button>
+        </div>
+      </div>
+
+      <!-- Appetizers -->
+      <div class="appetizer-section">
+        <h3 class="section-title">Appetizer</h3>
+        <div class="button-group appetizer-buttons">
+          <button class="btn btn-app">Veggie Roll</button>
+          <button class="btn btn-app">Chicken Roll</button>
+          <button class="btn btn-app">Rangoon</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer-bar">
+      <div class="footer-left">
+        <button class="btn btn-cancel">Cancel Order</button>
+        <button class="btn btn-manager">Manager</button>
+      </div>
+
+      <div class="footer-center">
+        <button class="btn btn-pay">Pay</button>
+      </div>
+
+      <div class="footer-right">
+        <button class="btn btn-close">Close</button>
+      </div>
+    </footer>
   </body>
 </html>

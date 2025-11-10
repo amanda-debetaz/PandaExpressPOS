@@ -1,0 +1,9 @@
+Agenda:
+  - Plan sprint goal
+  - Discuss tasks the nedd to be completed for our sprint goal
+  - Discuss our sprint test plan
+
+Minutes:
+  - Sprint Goal: Build the basic layout for each page and set up the database schema and database connection.
+  - Sprint Test Plan: Ensure each task works before committing it to GitHub. Our MVP after the sprint will be looked at by our peers to ensure the layout is intuitive and easy to navigate. 
+  - We also added the tasks needed for the sprint goal to the sprint backlog.

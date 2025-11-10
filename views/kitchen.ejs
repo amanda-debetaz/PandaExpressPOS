@@ -1,11 +1,83 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Kitchen Page</title>
-  </head>
-  <body>
-    <h1>Kitchen Page</h1>
-  </body>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Kitchen Queue</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    section { border: 1px solid #ddd; padding: 12px; margin: 10px 0; border-radius: 6px; }
+    button { margin-right: 8px; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+    button.start { background-color: #ffcc00; border: none; }
+    button.done { background-color: #28a745; color: white; border: none; }
+  </style>
+</head>
+<body>
+  <h1>Kitchen Queue</h1>
+  <div id="queue">Loading orders...</div>
+  <div id="queue">
+    <section>
+      <header>
+        <strong>Order #123</strong> — Takeout — 12:34 PM — <em>queued</em>
+      </header>
+      <ul>
+        <li>2  Orange Chicken — [Extra Sauce]</li>
+        <li>1  Fried Rice</li>
+      </ul>
+      <button class="start">Start</button>
+      <button class="done">Complete</button>
+    </section>
+  </div>
+
+  <script>
+    async function loadQueue() {
+      try {
+        const res = await fetch('/kitchen/queue'); // uses your existing controller
+        const orders = await res.json();
+
+        if (!orders.length) {
+          document.getElementById('queue').innerHTML = '<p>No queued orders.</p>';
+          return;
+        }
+
+        document.getElementById('queue').innerHTML = orders.map(o => `
+          <section>
+            <header>
+              <strong>Order #${o.orderId}</strong> — ${o.dineOption} — ${new Date(o.placedAt).toLocaleTimeString()} — <em>${o.status}</em>
+              ${o.notes ? `<br><small>Notes: ${o.notes}</small>` : ''}
+            </header>
+            <ul>
+              ${o.items.map(it => `
+                <li>
+                  ${it.qty} × ${it.name}
+                  ${it.options.length ? ` — [${it.options.join(', ')}]` : ''}
+                </li>
+              `).join('')}
+            </ul>
+            <button class="start" onclick="updateStatus(${o.orderId}, 'prepping')">Start</button>
+            <button class="done" onclick="updateStatus(${o.orderId}, 'done')">Complete</button>
+          </section>
+        `).join('');
+      } catch (err) {
+        console.error('Failed to load queue', err);
+        document.getElementById('queue').innerHTML = '<p>Error loading orders.</p>';
+      }
+    }
+
+    async function updateStatus(id, status) {
+      try {
+        await fetch(`/kitchen/${id}/status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+        loadQueue(); // refresh queue
+      } catch (err) {
+        console.error('Failed to update status', err);
+      }
+    }
+
+    loadQueue();
+    setInterval(loadQueue, 5000); // refresh every 5s
+  </script>
+</body>
 </html>
