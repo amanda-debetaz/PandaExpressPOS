@@ -3,7 +3,6 @@ const express = require("express");
 const { Pool } = require("pg");
 const dotenv = require("dotenv");
 const flash = require("connect-flash");
-const pgSession = require('connect-pg-simple')(session);
 
 // Authentication
 const session = require("express-session");
