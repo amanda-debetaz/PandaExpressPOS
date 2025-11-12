@@ -1,4 +1,8 @@
 // index.js
+require('reflect-metadata');
+
+const { NestFactory } = require('@nestjs/core');
+const { ExpressAdapter } = require('@nestjs/platform-express');
 const express = require("express");
 const { Pool } = require("pg");
 const session = require("express-session");
@@ -266,26 +270,40 @@ app.get("/manager", requireAuth, (req, res) => res.render("manager"));
 app.get("/cashier", requireAuth, (req, res) => res.render("cashier"));
 app.get("/kitchen", requireAuth, async (req, res) => {
   try {
-    const orderResult = await pool.query(
-      'SELECT * FROM "order" WHERE status = $1 ORDER BY created_at ASC',
-      ['queued']
-    );
-
-    const orders = orderResult.rows.map(order => {
-      return {
-        orderId: order.order_id, 
-        status: order.status,
-        dineOption: order.dine_option,
-        notes: order.notes,
-        placedAt: order.created_at,
-        items: []
-      };
+    const orders = await prisma.order.findMany({
+      where: { status: { not: 'done' } },
+      orderBy: { created_at: 'asc' },
+      include: {
+        order_item: {
+          include: {
+            menu_item: { select: { name: true } },
+            order_item_option: {
+              include: { option: { select: { name: true } } },
+            },
+          },
+        },
+      },
     });
 
-    res.render("kitchen", { orders: orders });
+    // Shape it for the EJS view
+    const viewOrders = orders.map((o) => ({
+      orderId: o.order_id,
+      placedAt: o.created_at,
+      status: o.status,
+      dineOption: o.dine_option,
+      notes: o.notes ?? null,
+      items: o.order_item.map((oi) => ({
+        qty: oi.qty,
+        menuItem: { name: oi.menu_item?.name ?? 'Unknown item' },
+        options: (oi.order_item_option ?? [])
+          .map((x) => x.option?.name)
+          .filter(Boolean),
+      })),
+    }));
 
+    res.render("kitchen", { orders: viewOrders });
   } catch (err) {
-    console.error("Error fetching kitchen orders:", err);
+    console.error("Error fetching kitchen orders via Prisma:", err);
     res.status(500).send("Error loading kitchen queue");
   }
 });
