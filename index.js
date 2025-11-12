@@ -7,6 +7,8 @@ const LocalStrategy = require("passport-local").Strategy;
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const flash = require("connect-flash");
 require('dotenv').config({ path: './postgres.env' });
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 const app = express();
 app.set('trust proxy', 1);
@@ -38,11 +40,13 @@ if (isProduction) {
 const pool = new Pool(poolConfig);
 
 // ---------- Graceful shutdown ----------
-process.on("SIGINT", () => {
-  pool.end();
-  console.log("Application shutdown");
+async function shutdown(signal) {
+  console.log(`Received ${signal}, shutting down...`);
+  try { await prisma.$disconnect(); } catch (e) { console.error('Prisma disconnect error', e); }
+  try { await pool.end(); } catch (e) { console.error('PG pool end error', e); }
   process.exit(0);
-});
+}
+['SIGINT', 'SIGTERM'].forEach(sig => process.on(sig, () => shutdown(sig)));
 
 // ---------- View engine & static ----------
 app.set("view engine", "ejs");
@@ -290,29 +294,29 @@ app.get("/kitchen", requireAuth, async (req, res) => {
 // ---------- 1. KIOSK MENU ----------
 let menuCache = { entrees: [], a_la_carte: [], sides: [], appetizers: [] };
 
-app.get("/kiosk", requireAuth, async (req, res) => {
+app.get("/menu-board", async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT name, price, category_id
-      FROM menu_item
+    const rows = await prisma.$queryRaw`
+      SELECT name, price::float AS price, category_id
+      FROM "menu_item"
       WHERE is_active = true
       ORDER BY name
-    `);
+    `;
 
     const grouped = { entrees: [], a_la_carte: [], sides: [], appetizers: [] };
-    result.rows.forEach((row) => {
-      const price = parseFloat(row.price);
+
+    for (const row of rows) {
+      const price = Number(row.price);
       if (row.category_id === 1) grouped.entrees.push({ name: row.name, price });
+      else if (row.category_id === 2) grouped.appetizers.push({ name: row.name, price });
       else if (row.category_id === 3) grouped.a_la_carte.push({ name: row.name, price });
       else if (row.category_id === 4) grouped.sides.push({ name: row.name, price });
-      else if (row.category_id === 2) grouped.appetizers.push({ name: row.name, price });
-    });
+    }
 
-    menuCache = grouped;
-    res.render("menu", { menu: grouped });
+    res.render("menu-board", { menu: grouped });
   } catch (err) {
-    console.error("Menu query error:", err);
-    res.status(500).send("Unable to load menu");
+    console.error("Menu Board query error:", err);
+    res.status(500).send("Unable to load menu board");
   }
 });
 
