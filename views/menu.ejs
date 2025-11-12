@@ -240,16 +240,124 @@
         });
       });
 
-      // ---------- CLICK → GO TO ORDER PAGE WITH SELECTED ITEM ----------
-      document.querySelectorAll(".cube-btn").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const name = encodeURIComponent(btn.dataset.name);
-          // For the simple “build-your-plate” flow we just pass the entree/side
-          // (you can extend this to support multiple items later)
-          const url = `/order?entree=${name}`;
-          location.href = url;
+    </script>
+    <%- include('partials/cart-modal') %>
+
+    <!-- Fixed cart widget (bottom-right) -->
+    <div id="cart-widget" style="position:fixed;bottom:20px;right:20px;background:#d32f2f;color:#fff;padding:12px 18px;border-radius:50px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.2);font-weight:bold;z-index:1000;">
+      <span id="cart-count">0</span> items – $<span id="cart-total">0.00</span>
+    </div>
+
+    <!-- Toast notification -->
+    <div id="toast" style="position:fixed;bottom:80px;right:20px;background:#333;color:#fff;padding:12px 20px;border-radius:4px;opacity:0;transition:opacity .3s;z-index:1001;pointer-events:none;">
+      <span id="toast-msg"></span>
+    </div>
+
+    <script>
+      // -------------------------------------------------
+      // CART LOGIC (client side)
+      // -------------------------------------------------
+      const cartWidget = document.getElementById('cart-widget');
+      const cartCount   = document.getElementById('cart-count');
+      const cartTotal   = document.getElementById('cart-total');
+      const toast       = document.getElementById('toast');
+      const toastMsg    = document.getElementById('toast-msg');
+
+      // Show toast for 2 s
+      function showToast(message) {
+        toastMsg.textContent = message;
+        toast.style.opacity = 1;
+        setTimeout(() => toast.style.opacity = 0, 2000);
+      }
+
+      // Update widget numbers
+      async function refreshCartWidget() {
+        const res = await fetch('/api/cart');
+        const {cart} = await res.json();
+        const count = cart.reduce((s,i)=>s+i.quantity,0);
+        const total = cart.reduce((s,i)=>s+i.price*i.quantity,0).toFixed(2);
+        cartCount.textContent = count;
+        cartTotal.textContent = total;
+      }
+
+      // Add item (called from every cube button)
+      async function addToCart(name, price) {
+        const res = await fetch('/api/cart/add', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({name, price})
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`${name} added to cart`);
+          refreshCartWidget();
+        }
+      }
+
+      // -------------------------------------------------
+      // BUTTON CLICK → add to cart (instead of redirect)
+      // -------------------------------------------------
+      document.querySelectorAll('.cube-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const name = btn.dataset.name;
+          const priceText = btn.querySelector('.cube-price').textContent; // "$12.30"
+          const price = parseFloat(priceText.replace('$',''));
+          addToCart(name, price);
         });
       });
+
+      // -------------------------------------------------
+      // CART WIDGET → open modal
+      // -------------------------------------------------
+      const modal = document.getElementById('cart-modal');
+      const closeBtn = modal.querySelector('.close');
+
+      cartWidget.addEventListener('click', async () => {
+        const res = await fetch('/api/cart');
+        const {cart} = await res.json();
+
+        const itemsDiv = document.getElementById('cart-items');
+        itemsDiv.innerHTML = '';
+
+        let subtotal = 0;
+        cart.forEach(itm => {
+          const line = document.createElement('div');
+          line.className = 'cart-item';
+          line.innerHTML = `
+            <span>${itm.name} <span class="qty">×${itm.quantity}</span></span>
+            <span>$${(itm.price*itm.quantity).toFixed(2)}</span>
+          `;
+          itemsDiv.appendChild(line);
+          subtotal += itm.price * itm.quantity;
+        });
+
+
+        document.getElementById('cart-totals').innerHTML = `
+          <strong>Total: $${subtotal.toFixed(2)}</strong>
+        `;
+
+        modal.style.display = 'flex';
+      });
+
+      closeBtn.onclick = () => modal.style.display = 'none';
+      window.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+
+      // Continue button → go to the old /order page (you can change the URL)
+      document.getElementById('cart-continue').onclick = () => {
+        location.href = '/order';
+      };
+
+      // Clear cart
+      document.getElementById('cart-clear').onclick = async () => {
+        await fetch('/api/cart/clear', {method:'DELETE'});
+        refreshCartWidget();
+        modal.style.display = 'none';
+        showToast('Cart cleared');
+      };
+
+      // Initial load
+      refreshCartWidget();
     </script>
   </body>
 </html>

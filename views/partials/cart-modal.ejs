@@ -1,0 +1,23 @@
+<!-- views/partials/cart-modal.ejs -->
+<div id="cart-modal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2>Your Cart</h2>
+    <div id="cart-items"></div>
+    <hr>
+    <div id="cart-totals" style="text-align:right;font-weight:bold;"></div>
+    <div style="margin-top:15px;">
+      <button id="cart-continue" class="back-link" style="background:#d32f2f;">Continue to Order</button>
+      <button id="cart-clear" style="background:#999;margin-left:8px;">Clear Cart</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .modal {position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;}
+  .modal-content {background:#fff;padding:20px;border-radius:8px;max-width:420px;width:90%;max-height:80vh;overflow-y:auto;position:relative;}
+  .close {position:absolute;top:8px;right:12px;font-size:1.5rem;cursor:pointer;}
+  #cart-items {margin-bottom:12px;}
+  .cart-item {display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee;}
+  .cart-item .qty {font-weight:bold;}
+</style>

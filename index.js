@@ -354,7 +354,41 @@ app.get("/summary", requireAuth, (req, res) => {
   res.render("summary", { order });
 });
 
-// ---------- 4. TEST DB ----------
+// -------------------------------------------------
+// 4. CART API (session based)
+// -------------------------------------------------
+app.use(express.json());               // <-- add once if not already present
+
+// 1. Add item to cart
+app.post("/api/cart/add", requireAuth, (req, res) => {
+  const { name, price } = req.body;
+  if (!name || price === undefined) return res.status(400).json({error: "missing data"});
+
+  // initialise cart if needed
+  if (!req.session.cart) req.session.cart = [];
+
+  const existing = req.session.cart.find(i => i.name === name);
+  if (existing) {
+    existing.quantity += 1;
+  } else {
+    req.session.cart.push({ name, price: parseFloat(price), quantity: 1 });
+  }
+
+  res.json({ success: true, cart: req.session.cart });
+});
+
+// 2. Get current cart (for the modal)
+app.get("/api/cart", requireAuth, (req, res) => {
+  res.json({ cart: req.session.cart || [] });
+});
+
+// 3. Clear cart
+app.delete("/api/cart/clear", requireAuth, (req, res) => {
+  req.session.cart = [];
+  res.json({ success: true });
+});
+
+// ---------- 5. TEST DB ----------
 app.get("/test-db", async (req, res) => {
   try {
     const result = await pool.query("SELECT NOW()");
@@ -365,7 +399,7 @@ app.get("/test-db", async (req, res) => {
   }
 });
 
-// ---------- 5. MENU BOARD ---------
+// ---------- 6. MENU BOARD ---------
 
 app.get("/menu-board", async (req, res) => {
   try {
