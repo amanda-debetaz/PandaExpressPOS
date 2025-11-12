@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Build Your Plate – Panda Express</title>
     <style>
-      * {
-        box-sizing: border-box;
-      }
+      * { box-sizing: border-box; }
       body {
         font-family: "Arial", sans-serif;
         margin: 0;
@@ -16,52 +14,83 @@
         color: #333;
       }
       .container {
-        max-width: 600px;
+        max-width: 700px;
         margin: 40px auto;
         padding: 30px;
         background: white;
         border-radius: 10px;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
       }
-      h1 {
-        text-align: center;
+      h1 { text-align: center; color: #d32f2f; margin-bottom: 30px; font-size: 2em; }
+      .section { margin-bottom: 40px; }
+      .section h2 {
         color: #d32f2f;
-        margin-bottom: 30px;
-        font-size: 2em;
+        border-bottom: 2px solid #ffebee;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+        font-size: 1.4em;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
       }
-      .form-group {
-        margin-bottom: 25px;
+      .clear-btn {
+        background: #ddd;
+        color: #555;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 0.85em;
+        cursor: pointer;
+        transition: background 0.2s;
       }
-      label {
-        display: block;
-        font-weight: bold;
-        margin-bottom: 8px;
-        color: #444;
-        font-size: 1.1em;
+      .clear-btn:hover { background: #ccc; }
+
+      .menu-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 20px;
       }
-      select {
-        width: 100%;
-        padding: 12px;
-        font-size: 1em;
-        border: 1px solid #ccc;
-        border-radius: 6px;
+      .cube-btn {
         background: #fff;
-        appearance: none;
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23666'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
-        background-repeat: no-repeat;
-        background-position: right 12px center;
-        background-size: 16px;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        transition: all 0.2s;
+        cursor: pointer;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
       }
-      select:focus {
-        outline: none;
-        border-color: #d32f2f;
-        box-shadow: 0 0 0 2px rgba(211, 47, 47, 0.2);
+      .cube-btn:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
       }
+      .cube-btn.selected {
+        outline: 3px solid #d32f2f;
+      }
+      .cube-img {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Crect width='120' height='120' fill='%23f0f0f0'/%3E%3Ctext x='60' y='70' font-family='Arial' font-size='16' text-anchor='middle' fill='%23999'%3ENo Image%3C/text%3E%3C/svg%3E") center / contain no-repeat;
+      }
+      .cube-info {
+        padding: 12px 8px;
+        flex-grow: 1;
+      }
+      .cube-name {
+        font-weight: bold;
+        font-size: 1em;
+        color: #333;
+      }
+
       .btn {
         display: block;
         width: 100%;
         padding: 14px;
-        margin-top: 20px;
+        margin: 20px 0;
         background: #d32f2f;
         color: white;
         font-weight: bold;
@@ -72,9 +101,9 @@
         cursor: pointer;
         transition: background 0.2s;
       }
-      .btn:hover {
-        background: #b71c1c;
-      }
+      .btn:hover { background: #b71c1c; }
+      .btn:disabled { background: #ccc; cursor: not-allowed; }
+
       .back-link {
         display: block;
         text-align: center;
@@ -83,22 +112,11 @@
         text-decoration: none;
         font-size: 0.95em;
       }
-      .back-link:hover {
-        color: #d32f2f;
-        text-decoration: underline;
-      }
-      .price {
-        color: #d32f2f;
-        font-weight: bold;
-      }
+      .back-link:hover { color: #d32f2f; text-decoration: underline; }
+
       @media (max-width: 480px) {
-        .container {
-          margin: 20px;
-          padding: 20px;
-        }
-        h1 {
-          font-size: 1.6em;
-        }
+        .container { margin: 20px; padding: 20px; }
+        h1 { font-size: 1.6em; }
       }
     </style>
   </head>
@@ -106,40 +124,185 @@
     <div class="container">
       <h1>Build Your Plate</h1>
 
-      <form action="/summary" method="GET">
-        <!-- ENTREE SELECTION -->
-        <div class="form-group">
-          <label for="entree">Choose an Entrée</label>
-          <select id="entree" name="entree" required>
-            <option value="" disabled selected>Select an entrée</option>
-            <% menu.entrees.forEach(item => { %>
-            <option value="<%= item.name %>">
-              <%= item.name %>
-              <span class="price">$<%= item.price.toFixed(2) %></span>
-            </option>
-            <% }); %>
-          </select>
-        </div>
+      <!-- Selected Entree Display -->
+      <div id="selected-entree" style="margin-bottom: 30px; padding: 15px; background: #fff8e1; border-radius: 8px; text-align: center; font-weight: bold; color: #d32f2f;">
+        Selected: <span id="entree-name">None</span>
+      </div>
 
-        <!-- SIDE SELECTION -->
-        <div class="form-group">
-          <label for="side">Choose a Side</label>
-          <select id="side" name="side" required>
-            <option value="" disabled selected>Select a side</option>
+      <form id="plate-form" action="/summary" method="GET">
+        <input type="hidden" name="entree" id="form-entree" />
+        <input type="hidden" name="side" id="form-side" />
+        <input type="hidden" name="ala1" id="form-ala1" />
+        <input type="hidden" name="ala2" id="form-ala2" />
+        <input type="hidden" name="ala3" id="form-ala3" />
+        <input type="hidden" name="drink" id="form-drink" value="" />
+
+        <!-- SIDES -->
+        <div class="section">
+          <h2>
+            Pick 1 side
+            <button type="button" class="clear-btn" onclick="clearSection('side')">Clear</button>
+          </h2>
+          <div class="menu-grid">
             <% menu.sides.forEach(item => { %>
-            <option value="<%= item.name %>">
-              <%= item.name %>
-              <span class="price">$<%= item.price.toFixed(2) %></span>
-            </option>
+              <button type="button" class="cube-btn" data-name="<%= item.name %>" onclick="selectSide(this)">
+                <img src="/images/<%= item.name.toLowerCase().replace(/ /g,'-') %>.jpg" alt="<%= item.name %>" class="cube-img" />
+                <div class="cube-info">
+                  <div class="cube-name"><%= item.name %></div>
+                </div>
+              </button>
             <% }); %>
-          </select>
+          </div>
         </div>
 
-        <button type="submit" class="btn">Add to Order →</button>
+        <!-- MAIN ITEMS (A LA CARTE) -->
+        <div class="section">
+          <h2 id="ala-label">
+            Pick 1 main item
+            <button type="button" class="clear-btn" onclick="clearSection('ala')">Clear</button>
+          </h2>
+          <div class="menu-grid">
+            <% menu.a_la_carte.forEach(item => { %>
+              <button type="button" class="cube-btn" data-name="<%= item.name %>" onclick="selectAlaCarte(this)">
+                <img src="/images/<%= item.name.toLowerCase().replace(/ /g,'-') %>.jpg" alt="<%= item.name %>" class="cube-img" />
+                <div class="cube-info">
+                  <div class="cube-name"><%= item.name %></div>
+                </div>
+              </button>
+            <% }); %>
+          </div>
+        </div>
+
+        <!-- DRINKS -->
+        <div class="section">
+          <h2>
+            Add a Drink (Optional)
+            <button type="button" class="clear-btn" onclick="clearSection('drink')">Clear</button>
+          </h2>
+          <div class="menu-grid">
+            <button type="button" class="cube-btn" data-name="Medium Fountain Drink" onclick="selectDrink(this)">
+              <div class="cube-img" style="background: url('/images/drink.jpg') center/cover no-repeat;"></div>
+              <div class="cube-info">
+                <div class="cube-name">Medium Fountain Drink</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn" id="submit-btn" disabled>Add to Order</button>
       </form>
 
-      <a href="/kiosk" class="back-link">← Back to Menu</a>
-      <!-- linked back to kiosk view bc I added the navigation page (Amanda) -->
+      <a href="/kiosk" class="back-link">Back to Menu</a>
     </div>
+
+    <script>
+      let selected = {
+        entree: null,
+        side: null,
+        ala: [],    // array of names
+        drink: null
+      };
+
+      // Load saved entree
+      window.addEventListener('load', () => {
+        const saved = sessionStorage.getItem('selectedEntree');
+        if (saved) {
+          const entree = JSON.parse(saved);
+          selected.entree = entree;
+          document.getElementById('entree-name').textContent = entree.name;
+          document.getElementById('form-entree').value = entree.name;
+          updateAlaLabel(entree.mealType);
+          checkReady();
+        }
+      });
+
+      function updateAlaLabel(mealType) {
+        const label = document.getElementById('ala-label');
+        if (mealType === 'bowl') {
+          label.innerHTML = 'Pick 1 main item <button type="button" class="clear-btn" onclick="clearSection(\'ala\')">Clear</button>';
+        } else if (mealType === 'plate') {
+          label.innerHTML = 'Pick 2 main items <button type="button" class="clear-btn" onclick="clearSection(\'ala\')">Clear</button>';
+        } else if (mealType === 'bigger-plate') {
+          label.innerHTML = 'Pick 3 main items <button type="button" class="clear-btn" onclick="clearSection(\'ala\')">Clear</button>';
+        }
+      }
+
+      function selectSide(btn) {
+        document.querySelectorAll('[onclick="selectSide(this)"]').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selected.side = btn.dataset.name;
+        document.getElementById('form-side').value = selected.side;
+        checkReady();
+      }
+
+      function selectAlaCarte(btn) {
+        const name = btn.dataset.name;
+        const max = selected.entree?.mealType === 'bowl' ? 1 :
+                    selected.entree?.mealType === 'plate' ? 2 : 3;
+
+        const index = selected.ala.indexOf(name);
+
+        if (index !== -1) {
+          // Deselect
+          selected.ala.splice(index, 1);
+          btn.classList.remove('selected');
+        } else {
+          // Add new
+          if (selected.ala.length >= max) {
+            // Replace *latest* selected
+            const latestName = selected.ala.pop();
+            const latestBtn = document.querySelector(`[data-name="${latestName}"]`);
+            if (latestBtn) latestBtn.classList.remove('selected');
+          }
+          selected.ala.push(name);
+          btn.classList.add('selected');
+        }
+
+        // Update hidden inputs
+        for (let i = 0; i < 3; i++) {
+          document.getElementById(`form-ala${i+1}`).value = selected.ala[i] || '';
+        }
+        checkReady();
+      }
+
+      function selectDrink(btn) {
+        const isSelected = btn.classList.contains('selected');
+        document.querySelectorAll('[onclick="selectDrink(this)"]').forEach(b => b.classList.remove('selected'));
+        if (!isSelected) {
+          btn.classList.add('selected');
+          selected.drink = btn.dataset.name;
+          document.getElementById('form-drink').value = selected.drink;
+        } else {
+          selected.drink = null;
+          document.getElementById('form-drink').value = '';
+        }
+      }
+
+      function clearSection(type) {
+        if (type === 'side') {
+          document.querySelectorAll('[onclick="selectSide(this)"]').forEach(b => b.classList.remove('selected'));
+          selected.side = null;
+          document.getElementById('form-side').value = '';
+        } else if (type === 'ala') {
+          document.querySelectorAll('[onclick="selectAlaCarte(this)"]').forEach(b => b.classList.remove('selected'));
+          selected.ala = [];
+          for (let i = 1; i <= 3; i++) {
+            document.getElementById(`form-ala${i}`).value = '';
+          }
+        } else if (type === 'drink') {
+          document.querySelectorAll('[onclick="selectDrink(this)"]').forEach(b => b.classList.remove('selected'));
+          selected.drink = null;
+          document.getElementById('form-drink').value = '';
+        }
+        checkReady();
+      }
+
+      function checkReady() {
+        const maxAla = selected.entree?.mealType === 'bowl' ? 1 :
+                       selected.entree?.mealType === 'plate' ? 2 : 3;
+        const ready = selected.entree && selected.side && selected.ala.length === maxAla;
+        document.getElementById('submit-btn').disabled = !ready;
+      }
+    </script>
   </body>
 </html>

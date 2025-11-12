@@ -57,7 +57,7 @@
         display: block;
       }
 
-      /* ---------- NEW GRID & CUBE BUTTONS ---------- */
+      /* ---------- GRID & CUBE BUTTONS ---------- */
       .menu-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -75,7 +75,7 @@
         text-align: center;
         display: flex;
         flex-direction: column;
-        height: 100%; /* fill grid cell */
+        height: 100%;
       }
       .cube-btn:hover {
         transform: translateY(-4px);
@@ -87,7 +87,7 @@
         object-fit: cover;
         display: block;
         background:
-                /* fallback SVG – shows instantly, no file needed */ url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' fill='%23f0f0f0'/%3E%3Ctext x='60' y='70' font-family='Arial' font-size='16' text-anchor='middle' fill='%23999'%3ENo Image%3C/text%3E%3C/svg%3E")
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' fill='%23f0f0f0'/%3E%3Ctext x='60' y='70' font-family='Arial' font-size='16' text-anchor='middle' fill='%23999'%3ENo Image%3C/text%3E%3C/svg%3E")
           center / contain no-repeat;
       }
       .cube-info {
@@ -122,7 +122,7 @@
     </style>
   </head>
   <body>
-    <!-- Sidebar (unchanged) -->
+    <!-- Sidebar -->
     <div class="sidebar">
       <h2>Panda Express</h2>
       <ul>
@@ -141,7 +141,11 @@
       <div id="entrees" class="category-section active">
         <div class="menu-grid">
           <% menu.entrees.forEach(item => { %>
-          <button class="cube-btn" data-name="<%= item.name %>">
+          <button 
+            class="cube-btn" 
+            data-name="<%= item.name %>" 
+            data-price="<%= item.price.toFixed(2) %>"
+            onclick="selectEntree('<%= item.name %>', <%= item.price.toFixed(2) %>)">
             <img
               src="/images/<%= item.name.toLowerCase().replace(/ /g,'-') %>.jpg"
               alt="<%= item.name %>"
@@ -213,11 +217,26 @@
         </div>
       </div>
 
-      <a href="/order" class="back-link">Next</a>
+      <a href="/kiosk" class="back-link">Back to Kiosk</a>
+    </div>
+
+    <!-- CART MODAL -->
+    <%- include('partials/cart-modal') %>
+
+    <!-- Fixed cart widget -->
+    <div id="cart-widget" style="position:fixed;bottom:20px;right:20px;background:#d32f2f;color:#fff;padding:12px 18px;border-radius:50px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.2);font-weight:bold;z-index:1000;">
+      <span id="cart-count">0</span> items – $<span id="cart-total">0.00</span>
+    </div>
+
+    <!-- Toast notification -->
+    <div id="toast" style="position:fixed;bottom:80px;right:20px;background:#333;color:#fff;padding:12px 20px;border-radius:4px;opacity:0;transition:opacity .3s;z-index:1001;pointer-events:none;">
+      <span id="toast-msg"></span>
     </div>
 
     <script>
-      // ---------- TAB SWITCHING (unchanged) ----------
+      // -------------------------------------------------
+      // TAB SWITCHING
+      // -------------------------------------------------
       document.querySelectorAll(".sidebar a").forEach((link) => {
         link.addEventListener("click", function (e) {
           e.preventDefault();
@@ -240,22 +259,24 @@
         });
       });
 
-    </script>
-    <%- include('partials/cart-modal') %>
-
-    <!-- Fixed cart widget (bottom-right) -->
-    <div id="cart-widget" style="position:fixed;bottom:20px;right:20px;background:#d32f2f;color:#fff;padding:12px 18px;border-radius:50px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.2);font-weight:bold;z-index:1000;">
-      <span id="cart-count">0</span> items – $<span id="cart-total">0.00</span>
-    </div>
-
-    <!-- Toast notification -->
-    <div id="toast" style="position:fixed;bottom:80px;right:20px;background:#333;color:#fff;padding:12px 20px;border-radius:4px;opacity:0;transition:opacity .3s;z-index:1001;pointer-events:none;">
-      <span id="toast-msg"></span>
-    </div>
-
-    <script>
       // -------------------------------------------------
-      // CART LOGIC (client side)
+      // ENTREE SELECTION → GO TO /order
+      // -------------------------------------------------
+      function selectEntree(name, price) {
+        let mealType = "plate";
+        if (name.includes("Bowl") && !name.includes("Bigger")) mealType = "bowl";
+        else if (name.includes("Bigger Plate")) mealType = "bigger-plate";
+        else if (name.includes("Plate")) mealType = "plate";
+
+        sessionStorage.setItem('selectedEntree', JSON.stringify({
+          name, price, mealType
+        }));
+
+        window.location.href = '/order';
+      }
+
+      // -------------------------------------------------
+      // CART LOGIC (for non-entree items)
       // -------------------------------------------------
       const cartWidget = document.getElementById('cart-widget');
       const cartCount   = document.getElementById('cart-count');
@@ -263,14 +284,12 @@
       const toast       = document.getElementById('toast');
       const toastMsg    = document.getElementById('toast-msg');
 
-      // Show toast for 2 s
       function showToast(message) {
         toastMsg.textContent = message;
         toast.style.opacity = 1;
         setTimeout(() => toast.style.opacity = 0, 2000);
       }
 
-      // Update widget numbers
       async function refreshCartWidget() {
         const res = await fetch('/api/cart');
         const {cart} = await res.json();
@@ -280,7 +299,6 @@
         cartTotal.textContent = total;
       }
 
-      // Add item (called from every cube button)
       async function addToCart(name, price) {
         const res = await fetch('/api/cart/add', {
           method:'POST',
@@ -294,21 +312,20 @@
         }
       }
 
-      // -------------------------------------------------
-      // BUTTON CLICK → add to cart (instead of redirect)
-      // -------------------------------------------------
+      // Attach addToCart to all NON-entree buttons
       document.querySelectorAll('.cube-btn').forEach(btn => {
+        if (btn.closest('#entrees')) return; // Skip entrees
         btn.addEventListener('click', (e) => {
           e.preventDefault();
           const name = btn.dataset.name;
-          const priceText = btn.querySelector('.cube-price').textContent; // "$12.30"
+          const priceText = btn.querySelector('.cube-price').textContent;
           const price = parseFloat(priceText.replace('$',''));
           addToCart(name, price);
         });
       });
 
       // -------------------------------------------------
-      // CART WIDGET → open modal
+      // CART MODAL
       // -------------------------------------------------
       const modal = document.getElementById('cart-modal');
       const closeBtn = modal.querySelector('.close');
@@ -332,7 +349,6 @@
           subtotal += itm.price * itm.quantity;
         });
 
-
         document.getElementById('cart-totals').innerHTML = `
           <strong>Total: $${subtotal.toFixed(2)}</strong>
         `;
@@ -343,12 +359,10 @@
       closeBtn.onclick = () => modal.style.display = 'none';
       window.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
 
-      // Continue button → go to the old /order page (you can change the URL)
       document.getElementById('cart-continue').onclick = () => {
         location.href = '/order';
       };
 
-      // Clear cart
       document.getElementById('cart-clear').onclick = async () => {
         await fetch('/api/cart/clear', {method:'DELETE'});
         refreshCartWidget();

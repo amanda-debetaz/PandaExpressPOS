@@ -318,7 +318,7 @@ app.get("/kiosk", requireAuth, async (req, res) => {
 
 // ---------- 2. ORDER ----------
 app.get("/order", requireAuth, async (req, res) => {
-  let menu = { entrees: [], sides: [] };
+  let menu = { entrees: [], sides: [], a_la_carte: [] };
   try {
     const result = await pool.query(`
       SELECT name, price, category_id
@@ -330,6 +330,7 @@ app.get("/order", requireAuth, async (req, res) => {
       const price = parseFloat(row.price);
       if (row.category_id === 1) menu.entrees.push({ name: row.name, price });
       else if (row.category_id === 4) menu.sides.push({ name: row.name, price });
+      else if (row.category_id === 3) menu.a_la_carte.push({ name: row.name, price });
     });
   } catch (err) {
     console.error("DB error in /order:", err);
@@ -340,15 +341,24 @@ app.get("/order", requireAuth, async (req, res) => {
 
 // ---------- 3. SUMMARY ----------
 app.get("/summary", requireAuth, (req, res) => {
-  const { entree, side } = req.query;
-  const find = (arr, name) => arr.find((i) => i.name === name) || null;
+  const { entree, side, ala1, ala2, ala3, drink } = req.query;
+
+  const find = (arr, name) => arr.find(i => i.name === name) || null;
   const selEntree = entree ? find(menuCache.entrees, entree) : null;
   const selSide = side ? find(menuCache.sides, side) : null;
+  const alaItems = [ala1, ala2, ala3]
+    .filter(Boolean)
+    .map(name => find(menuCache.a_la_carte, name))
+    .filter(Boolean);
+
+  const drinkItem = drink === "Medium Fountain Drink" ? { name: "Medium Fountain Drink", price: 1.75 } : null;
 
   const items = [];
   let total = 0;
   if (selEntree) { items.push(selEntree); total += selEntree.price; }
   if (selSide)   { items.push(selSide);   total += selSide.price;   }
+  alaItems.forEach(item => items.push(item), total += item.price);
+  if (drinkItem) { items.push(drinkItem); total += drinkItem.price; }
 
   const order = { items, total: total.toFixed(2) };
   res.render("summary", { order });
