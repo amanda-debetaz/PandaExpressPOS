@@ -268,10 +268,19 @@ app.get("/", (req, res) => {
 });
 app.get("/manager", requireAuth, (req, res) => res.render("manager"));
 app.get("/cashier", requireAuth, (req, res) => res.render("cashier"));
+
+let doneViewCutoff = new Date("2025-11-08T00:00:00Z");
 app.get("/kitchen", requireAuth, async (req, res) => {
   try {
+    const cutoff = doneViewCutoff;
+
     const orders = await prisma.order.findMany({
-      where: { status: { not: 'done' } },
+      where: {
+        OR: [
+          { status: { not: 'done' } },
+          { status: 'done', completed_at: { gte: cutoff } }
+        ]
+      },
       orderBy: { created_at: 'asc' },
       include: {
         order_item: {
@@ -285,7 +294,6 @@ app.get("/kitchen", requireAuth, async (req, res) => {
       },
     });
 
-    // Shape it for the EJS view
     const viewOrders = orders.map((o) => ({
       orderId: o.order_id,
       placedAt: o.created_at,
@@ -301,12 +309,56 @@ app.get("/kitchen", requireAuth, async (req, res) => {
       })),
     }));
 
-    res.render("kitchen", { orders: viewOrders });
+    const queued = [];
+    const cooking = [];
+    const done = [];
+
+    for (const o of viewOrders) {
+      if (o.status === 'queued') queued.push(o);
+      else if (o.status === 'prepping') cooking.push(o);
+      else if (o.status === 'done') done.push(o);
+    }
+
+    res.render("kitchen", { queued, cooking, done });
   } catch (err) {
     console.error("Error fetching kitchen orders via Prisma:", err);
     res.status(500).send("Error loading kitchen queue");
   }
 });
+
+
+
+app.post("/kitchen/:orderId/status", requireAuth, async (req, res) => {
+  const orderId = parseInt(req.params.orderId, 10);
+  const { status } = req.body;
+
+  const allowed = ['queued', 'prepping', 'done'];
+  if (!allowed.includes(status)) {
+    return res.status(400).send("Invalid status");
+  }
+
+  try {
+    await prisma.order.update({
+      where: { order_id: orderId },
+      data: {
+        status,
+        completed_at: status === 'done' ? new Date() : null,
+      },
+    });
+
+    res.redirect("/kitchen");
+  } catch (err) {
+    console.error("Error updating kitchen order status:", err);
+    res.status(500).send("Error updating order status");
+  }
+});
+
+
+app.post("/kitchen/clear-done", requireAuth, (req, res) => {
+  doneViewCutoff = new Date();
+  res.redirect("/kitchen");
+});
+
 //app.get("/menu-board", requireAuth, (req, res) => res.render("menu-board"));
 
 // ---------- 1. KIOSK MENU ----------

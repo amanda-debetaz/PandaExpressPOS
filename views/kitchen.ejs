@@ -4,43 +4,217 @@
   <title>Kitchen Queue</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; }
-    h1 { text-align: center; }
-    .order { border: 1px solid #ccc; padding: 10px; margin-bottom: 15px; border-radius: 8px; }
+    h1 { text-align: center; margin-bottom: 20px; }
+
+    .columns {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+
+    .column {
+      flex: 1;
+      min-width: 260px;
+    }
+
+    .column-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .column h2 {
+      margin: 0;
+    }
+
+    .order {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      background: #fafafa;
+    }
+
     .order-header { font-weight: bold; margin-bottom: 5px; }
     .line-item { margin-left: 20px; }
     .options { font-style: italic; color: #555; }
+
+    .meta { font-size: 0.9em; color: #666; margin-bottom: 5px; }
+
+    .status-buttons {
+      margin-top: 8px;
+    }
+
+    .status-buttons form {
+      display: inline;
+      margin-right: 5px;
+    }
+
+    .status-buttons button {
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
   <h1>Kitchen Queue</h1>
 
-  <% if (orders.length === 0) { %>
-    <p>No queued orders.</p>
-  <% } else { %>
-    <% orders.forEach(order => { %>
-      <div class="order">
-        <div class="order-header">
-          Order #<%= order.orderId %> - Status: <%= order.status %> - <%= order.dineOption %>
-        </div>
-        <% if (order.notes) { %>
-          <div>Notes: <%= order.notes %></div>
-        <% } %>
-        <div>Placed At: <%= new Date(order.placedAt).toLocaleString() %></div>
+  <div class="columns">
 
-        <ul>
-          <% order.items.forEach(item => { %>
-            <li class="line-item">
-              <%= item.qty %> x <%= item.menuItem.name %>
-              <% if (item.options && item.options.length > 0) { %>
-                <span class="options">
-                  (Options: <%= item.options.join(", ") %>)
-                </span>
-              <% } %>
-            </li>
-          <% }) %>
-        </ul>
+    <!-- QUEUED COLUMN -->
+    <div class="column">
+      <div class="column-header">
+        <h2>Queued</h2>
       </div>
-    <% }) %>
-  <% } %>
+
+      <% if (!queued || queued.length === 0) { %>
+        <p>No queued orders.</p>
+      <% } else { %>
+        <% queued.forEach(order => { %>
+          <div class="order">
+            <div class="order-header">
+              Order #<%= order.orderId %> - <%= order.dineOption %>
+            </div>
+            <div class="meta">
+              Placed At: <%= new Date(order.placedAt).toLocaleString() %>
+            </div>
+            <% if (order.notes) { %>
+              <div class="meta">Notes: <%= order.notes %></div>
+            <% } %>
+
+            <ul>
+              <% order.items.forEach(item => { %>
+                <li class="line-item">
+                  <%= item.qty %> x <%= item.menuItem.name %>
+                  <% if (item.options && item.options.length > 0) { %>
+                    <span class="options">
+                      (Options: <%= item.options.join(", ") %>)
+                    </span>
+                  <% } %>
+                </li>
+              <% }) %>
+            </ul>
+
+            <div class="status-buttons">
+              <!-- move to COOKING (prepping) -->
+              <form method="post" action="/kitchen/<%= order.orderId %>/status">
+                <input type="hidden" name="status" value="prepping">
+                <button type="submit">Start Cooking</button>
+              </form>
+
+              <!-- mark DONE directly from queue if needed -->
+              <form method="post" action="/kitchen/<%= order.orderId %>/status">
+                <input type="hidden" name="status" value="done">
+                <button type="submit">Mark Done</button>
+              </form>
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
+    </div>
+
+    <!-- COOKING COLUMN -->
+    <div class="column">
+      <div class="column-header">
+        <h2>Cooking</h2>
+      </div>
+
+      <% if (!cooking || cooking.length === 0) { %>
+        <p>No orders currently cooking.</p>
+      <% } else { %>
+        <% cooking.forEach(order => { %>
+          <div class="order">
+            <div class="order-header">
+              Order #<%= order.orderId %> - <%= order.dineOption %>
+            </div>
+            <div class="meta">
+              Placed At: <%= new Date(order.placedAt).toLocaleString() %>
+            </div>
+            <% if (order.notes) { %>
+              <div class="meta">Notes: <%= order.notes %></div>
+            <% } %>
+
+            <ul>
+              <% order.items.forEach(item => { %>
+                <li class="line-item">
+                  <%= item.qty %> x <%= item.menuItem.name %>
+                  <% if (item.options && item.options.length > 0) { %>
+                    <span class="options">
+                      (Options: <%= item.options.join(", ") %>)
+                    </span>
+                  <% } %>
+                </li>
+              <% }) %>
+            </ul>
+
+            <div class="status-buttons">
+              <!-- send back to QUEUED -->
+              <form method="post" action="/kitchen/<%= order.orderId %>/status">
+                <input type="hidden" name="status" value="queued">
+                <button type="submit">Send Back to Queue</button>
+              </form>
+
+              <!-- mark DONE -->
+              <form method="post" action="/kitchen/<%= order.orderId %>/status">
+                <input type="hidden" name="status" value="done">
+                <button type="submit">Mark Done</button>
+              </form>
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
+    </div>
+
+    <!-- DONE COLUMN -->
+    <div class="column">
+      <div class="column-header">
+        <h2>Done</h2>
+        <!-- CLEAR DONE BUTTON -->
+        <form method="post" action="/kitchen/clear-done">
+          <button type="submit">Clear Done</button>
+        </form>
+      </div>
+
+      <% if (!done || done.length === 0) { %>
+        <p>No recent completed orders.</p>
+      <% } else { %>
+        <% done.forEach(order => { %>
+          <div class="order">
+            <div class="order-header">
+              Order #<%= order.orderId %> - <%= order.dineOption %>
+            </div>
+            <div class="meta">
+              Placed At: <%= new Date(order.placedAt).toLocaleString() %>
+            </div>
+            <% if (order.notes) { %>
+              <div class="meta">Notes: <%= order.notes %></div>
+            <% } %>
+
+            <ul>
+              <% order.items.forEach(item => { %>
+                <li class="line-item">
+                  <%= item.qty %> x <%= item.menuItem.name %>
+                  <% if (item.options && item.options.length > 0) { %>
+                    <span class="options">
+                      (Options: <%= item.options.join(", ") %>)
+                    </span>
+                  <% } %>
+                </li>
+              <% }) %>
+            </ul>
+
+            <div class="status-buttons">
+              <!-- optional: move back to cooking if needed -->
+              <form method="post" action="/kitchen/<%= order.orderId %>/status">
+                <input type="hidden" name="status" value="prepping">
+                <button type="submit">Move Back to Cooking</button>
+              </form>
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
+    </div>
+
+  </div>
 </body>
 </html>
