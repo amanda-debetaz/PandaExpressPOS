@@ -382,8 +382,8 @@ app.get("/kiosk", async (req, res) => {
       else if (row.category_id === 3) grouped.a_la_carte.push({ name: row.name, price });
       else if (row.category_id === 4) grouped.sides.push({ name: row.name, price });
     }
-
-    res.render("kiosk", { menu: grouped });
+    const page = req.query.page || "entrees";
+    res.render("menu-board", { menu: grouped, page });
   } catch (err) {
     console.error("Kiosk query error:", err);
     res.status(500).send("Unable to load kiosk");
@@ -484,33 +484,6 @@ app.get("/test-db", async (req, res) => {
     res.status(500).json({ success: false, error: "Database connection failed" });
   }
 });
-
-// ---------- 6. MENU BOARD ---------
-
-app.get("/menu-board", async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT name, price, category_id
-      FROM menu_item
-      WHERE is_active = true
-      ORDER BY name
-    `);
-
-    const grouped = { entrees: [], a_la_carte: [], sides: [], appetizers: [] };
-    result.rows.forEach(row => {
-      const price = parseFloat(row.price);
-      if (row.category_id === 1) grouped.entrees.push({ name: row.name, price });
-      else if (row.category_id === 3) grouped.a_la_carte.push({ name: row.name, price });
-      else if (row.category_id === 4) grouped.sides.push({ name: row.name, price });
-      else if (row.category_id === 2) grouped.appetizers.push({ name: row.name, price });
-    });
-
-    res.render("menu-board", { menu: grouped }); // <-- pass menu here
-  } catch (err) {
-    console.error("Menu Board query error:", err);
-    res.status(500).send("Unable to load menu board");
-  }
-}); 
 
 // ---------- START ----------
 app.listen(port, () => {

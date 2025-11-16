@@ -5,25 +5,71 @@
   <title>Menu Board</title>
   <link rel="stylesheet" href="/public/css/globals.css">
 </head>
+<style>
+  html, body{
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  body{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+  }
+</style>
 <body>
-  <h1>Menu Board</h1>
+  <div class="fullscreen-button-container">
+      <button id="fullscreen-btn">Go Fullscreen</button>
+    </div>
+  <div class="menu-page-container" style="width: 100%; height:100%;">
+    <h1>Menu Board</h1>
 
-  <% if (menu) { %>
-    <% Object.keys(menu).forEach(category => { %>
-      <h2><%= category.replace(/_/g, ' ').toUpperCase() %></h2>
-      <% if (menu[category].length > 0) { %>
-        <ul>
-          <% menu[category].forEach(item => { %>
-            <li><%= item.name %> - $<%= item.price.toFixed(2) %></li>
-          <% }) %>
-        </ul>
-      <% } else { %>
-        <p>No items in this category.</p>
-      <% } %>
-    <% }) %>
-  <% } else { %>
-    <p>No menu available.</p>
-  <% } %>
+    <!-- Navigation -->
+    <nav class="nav-buttons">
+      <a href="/menu-board?page=featured">Featured</a>
+      <a href="/menu-board?page=entrees">Entrees</a>
+      <a href="/menu-board?page=appetizers">Appetizers</a>
+      <a href="/menu-board?page=a_la_carte">A La Carte</a>
+      <a href="/menu-board?page=sides">Sides</a>
+    </nav>
 
+    <hr>
+
+    <!-- Page Content -->
+    <h2><%= page.replace(/_/g, " ").toUpperCase() %></h2>
+
+    <% const items = menu[page] || []; %>
+
+    <% if (items.length > 0) { %>
+      <ul>
+        <% items.forEach(item => { %>
+          <li><%= item.name %> — $<%= item.price.toFixed(2) %></li>
+        <% }) %>
+      </ul>
+    <% } else { %>
+      <p>No items in this category.</p>
+    <% } %>
+  </div>
 </body>
+<script>
+  const fsBtn = document.getElementById('fullscreen-btn');
+  fsBtn.addEventListener('click', () => {
+    const docEl = document.documentElement;
+
+    // Request fullscreen
+    if (docEl.requestFullscreen) docEl.requestFullscreen();
+    else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
+    else if (docEl.msRequestFullscreen) docEl.msRequestFullscreen();
+
+    // Hide everything except menu items
+    document.getElementById('fullscreen-btn').style.display = 'none'; // hide fullscreen button
+    document.querySelector('.nav-buttons').style.display = 'none';    // hide navigation
+    document.querySelector('h1').style.display = 'none';             // hide header
+  });
+</script>
+
+
 </html>
