@@ -55,9 +55,11 @@
   </div>
 </body>
 <script>
+  const header = document.querySelector('h1');
+  const nav = document.querySelector('.nav-buttons');
   const fsBtn = document.getElementById('fullscreen-btn');
+  const docEl = document.documentElement;
   fsBtn.addEventListener('click', () => {
-    const docEl = document.documentElement;
 
     // Request fullscreen
     if (docEl.requestFullscreen) docEl.requestFullscreen();
@@ -65,9 +67,18 @@
     else if (docEl.msRequestFullscreen) docEl.msRequestFullscreen();
 
     // Hide everything except menu items
-    document.getElementById('fullscreen-btn').style.display = 'none'; // hide fullscreen button
-    document.querySelector('.nav-buttons').style.display = 'none';    // hide navigation
-    document.querySelector('h1').style.display = 'none';             // hide header
+    header.style.display = 'none'; // hide fullscreen button
+    nav.style.display = 'none';    // hide navigation
+    fsBtn.style.display = 'none';  // hide header
+  });
+
+    document.addEventListener('fullscreenchange', () => {
+    const inFs = !!document.fullscreenElement;
+
+    // Show/hide elements based on fullscreen state
+    header.style.display = inFs ? 'none' : 'block';
+    nav.style.display = inFs ? 'none' : 'flex';
+    fsBtn.style.display = inFs ? 'none' : 'inline-block';
   });
 </script>
 
