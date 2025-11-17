@@ -312,7 +312,7 @@ app.get("/kitchen", requireAuth, async (req, res) => {
 // ---------- 1. KIOSK MENU ----------
 let menuCache = { entrees: [], a_la_carte: [], sides: [], appetizers: [] };
 
-app.get("/menu-board", async (req, res) => {
+app.get("/kiosk", async (req, res) => {
   try {
     const rows = await prisma.$queryRaw`
       SELECT name, price::float AS price, category_id
@@ -331,10 +331,10 @@ app.get("/menu-board", async (req, res) => {
       else if (row.category_id === 4) grouped.sides.push({ name: row.name, price });
     }
 
-    res.render("menu-board", { menu: grouped });
+    res.render("kiosk", { menu: grouped });
   } catch (err) {
-    console.error("Menu Board query error:", err);
-    res.status(500).send("Unable to load menu board");
+    console.error("Kiosk query error:", err);
+    res.status(500).send("Unable to load kiosk");
   }
 });
 
@@ -361,28 +361,30 @@ app.get("/order", requireAuth, async (req, res) => {
   res.render("order", { menu });
 });
 
-// ---------- 3. SUMMARY ----------
-app.get("/summary", requireAuth, (req, res) => {
-  const { entree, side, ala1, ala2, ala3, drink } = req.query;
+// ---------- 3. SUMMARY (Now supports full cart) ----------
+app.post("/summary", requireAuth, async (req, res) => {
+  const { cart: rawCart } = req.body;
 
-  const find = (arr, name) => arr.find(i => i.name === name) || null;
-  const selEntree = entree ? find(menuCache.entrees, entree) : null;
-  const selSide = side ? find(menuCache.sides, side) : null;
-  const alaItems = [ala1, ala2, ala3]
-    .filter(Boolean)
-    .map(name => find(menuCache.a_la_carte, name))
-    .filter(Boolean);
+  if (!rawCart || !Array.isArray(rawCart) || rawCart.length === 0) {
+    return res.render("summary", {
+      order: { items: [], total: "0.00" }
+    });
+  }
 
-  const drinkItem = drink === "Medium Fountain Drink" ? { name: "Medium Fountain Drink", price: 1.75 } : null;
+  // Parse cart if it's a string (from form submit)
+  let cart = typeof rawCart === 'string' ? JSON.parse(rawCart) : rawCart;
 
-  const items = [];
-  let total = 0;
-  if (selEntree) { items.push(selEntree); total += selEntree.price; }
-  if (selSide)   { items.push(selSide);   total += selSide.price;   }
-  alaItems.forEach(item => items.push(item), total += item.price);
-  if (drinkItem) { items.push(drinkItem); total += drinkItem.price; }
+  // Calculate total
+  const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2);
 
-  const order = { items, total: total.toFixed(2) };
+  // Format items for summary.ejs
+  const items = cart.map(item => ({
+    name: `${item.name} × ${item.quantity}`,
+    price: (item.price * item.quantity).toFixed(2)
+  }));
+
+  const order = { items, total };
+
   res.render("summary", { order });
 });
 

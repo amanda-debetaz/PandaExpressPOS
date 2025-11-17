@@ -217,7 +217,7 @@
         </div>
       </div>
 
-      <a href="/kiosk" class="back-link">Back to Kiosk</a>
+      <a href="/" class="back-link">Back to Home</a>
     </div>
 
     <!-- CART MODAL -->
@@ -359,9 +359,24 @@
       closeBtn.onclick = () => modal.style.display = 'none';
       window.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
 
-      document.getElementById('cart-continue').onclick = () => {
-        location.href = '/order';
-      };
+      document.getElementById('cart-continue').onclick = async () => {
+      const res = await fetch('/api/cart');
+      const { cart } = await res.json();
+
+      // Send cart to /summary via POST
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '/summary';
+
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'cart';
+      input.value = JSON.stringify(cart);
+      form.appendChild(input);
+
+      document.body.appendChild(form);
+      form.submit();
+    };
 
       document.getElementById('cart-clear').onclick = async () => {
         await fetch('/api/cart/clear', {method:'DELETE'});

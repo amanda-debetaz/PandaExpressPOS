@@ -1,0 +1,1 @@
+Our main testing plan is for each member to run "node index" and locally confirm their changes before pushing to Github.
