@@ -107,6 +107,11 @@
                 <input type="hidden" name="status" value="done">
                 <button type="submit">Mark Done</button>
               </form>
+
+              <!-- Cancel order -->
+              <form method="post" action="/kitchen/<%= order.orderId %>/cancel" onsubmit="return confirm('Are you sure you want to cancel this order?');">
+                <button type="submit" style="background-color: #dc2626; border-color: #dc2626;">Cancel Order</button>
+              </form>
             </div>
           </div>
         <% }) %>
@@ -148,16 +153,21 @@
             </ul>
 
             <div class="status-buttons">
-              <!-- send back to QUEUED -->
+              <!-- move back to queue -->
               <form method="post" action="/kitchen/<%= order.orderId %>/status">
                 <input type="hidden" name="status" value="queued">
                 <button type="submit">Send Back to Queue</button>
               </form>
 
-              <!-- mark DONE -->
+              <!-- mark done -->
               <form method="post" action="/kitchen/<%= order.orderId %>/status">
                 <input type="hidden" name="status" value="done">
                 <button type="submit">Mark Done</button>
+              </form>
+
+              <!-- Cancel order -->
+              <form method="post" action="/kitchen/<%= order.orderId %>/cancel" onsubmit="return confirm('Are you sure you want to cancel this order?');">
+                <button type="submit" style="background-color: #dc2626; border-color: #dc2626;">Cancel Order</button>
               </form>
             </div>
           </div>
@@ -204,10 +214,15 @@
             </ul>
 
             <div class="status-buttons">
-              <!-- optional: move back to cooking if needed -->
+              <!-- move back to cooking -->
               <form method="post" action="/kitchen/<%= order.orderId %>/status">
                 <input type="hidden" name="status" value="prepping">
                 <button type="submit">Move Back to Cooking</button>
+              </form>
+
+              <!-- Cancel order -->
+              <form method="post" action="/kitchen/<%= order.orderId %>/cancel" onsubmit="return confirm('Are you sure you want to cancel this order?');">
+                <button type="submit" style="background-color: #dc2626; border-color: #dc2626;">Cancel Order</button>
               </form>
             </div>
           </div>

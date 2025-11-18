@@ -356,6 +356,22 @@ app.post("/kitchen/:orderId/status", requireAuth, async (req, res) => {
   }
 });
 
+// Cancel order endpoint
+app.post("/kitchen/:orderId/cancel", requireAuth, async (req, res) => {
+  const orderId = parseInt(req.params.orderId, 10);
+
+  try {
+    // Delete the order (cascade will delete related order_items and payment)
+    await prisma.order.delete({
+      where: { order_id: orderId }
+    });
+
+    res.redirect("/kitchen");
+  } catch (err) {
+    console.error("Error cancelling order:", err);
+    res.status(500).send("Error cancelling order");
+  }
+});
 
 app.post("/kitchen/clear-done", requireAuth, (req, res) => {
   doneViewCutoff = new Date();
@@ -369,27 +385,275 @@ let menuCache = { entrees: [], a_la_carte: [], sides: [], appetizers: [] };
 
 app.get("/kiosk", async (req, res) => {
   try {
-    const rows = await prisma.$queryRaw`
-      SELECT name, price::float AS price, category_id
-      FROM "menu_item"
-      WHERE is_active = true
-      ORDER BY name
-    `;
+    // Fetch all active menu items with their categories and ingredient allergens
+    const menuItems = await prisma.menu_item.findMany({
+      where: { is_active: true },
+      include: {
+        category: true,
+        recipe: {
+          include: {
+            inventory: { select: { name: true, allergen_info: true } }
+          }
+        }
+      },
+      orderBy: { name: 'asc' }
+    });
 
-    const grouped = { entrees: [], a_la_carte: [], sides: [], appetizers: [] };
+    // Group items by category
+    const menu = {
+      entrees: [],
+      appetizers: [],
+      a_la_carte: [],
+      sides: []
+    };
 
-    for (const row of rows) {
-      const price = Number(row.price);
-      if (row.category_id === 1) grouped.entrees.push({ name: row.name, price });
-      else if (row.category_id === 2) grouped.appetizers.push({ name: row.name, price });
-      else if (row.category_id === 3) grouped.a_la_carte.push({ name: row.name, price });
-      else if (row.category_id === 4) grouped.sides.push({ name: row.name, price });
+    // Normalization helpers for allergen strings from inventory
+    const stopWords = new Set(['none', 'no', 'n/a', 'na', 'null', '-', '']);
+    const stripPhrases = [/^contains\s*:?/i, /^may\s*contain\s*:?/i, /^traces\s*of\s*:?/i];
+    const splitRegex = /[,/;&]|\band\b/i;
+
+    function normalizeTokens(text) {
+      if (!text) return [];
+      let t = String(text).trim();
+      // Remove leading phrases like "contains", "may contain"
+      for (const rx of stripPhrases) t = t.replace(rx, '').trim();
+      return t
+        .split(splitRegex)
+        .map(s => s.trim().toLowerCase())
+        .filter(s => s && !stopWords.has(s));
     }
-    const page = req.query.page || "entrees";
-    res.render("menu-board", { menu: grouped, page });
+
+    function titleCase(s) {
+      return s.replace(/\w+/g, w => w.charAt(0).toUpperCase() + w.slice(1));
+    }
+
+    menuItems.forEach(item => {
+      // Collect normalized allergens from each ingredient's allergen_info
+      const allergenSet = new Set();
+      (item.recipe || []).forEach(r => {
+        const s = (r.inventory?.allergen_info || '').trim();
+        if (!s) return;
+        const toks = normalizeTokens(s);
+        toks.forEach(a => allergenSet.add(a));
+      });
+
+      const itemData = {
+        name: item.name,
+        price: parseFloat(item.price),
+        allergens: Array.from(allergenSet).map(titleCase)
+      };
+
+      // Category IDs from your schema:
+      // 1 = Entrees
+      // 2 = Appetizers  
+      // 3 = A La Carte
+      // 4 = Sides
+      switch (item.category_id) {
+        case 1:
+          menu.entrees.push(itemData);
+          break;
+        case 2:
+          menu.appetizers.push(itemData);
+          break;
+        case 3:
+          menu.a_la_carte.push(itemData);
+          break;
+        case 4:
+          menu.sides.push(itemData);
+          break;
+      }
+    });
+
+    res.render("kiosk", { menu });
   } catch (err) {
     console.error("Kiosk query error:", err);
     res.status(500).send("Unable to load kiosk");
+  }
+});
+
+// ---------- Builder Pages (new) ----------
+function findMealPrice(allEntrees, type) {
+  const map = { bowl: 'Bowl', plate: 'Plate', 'bigger-plate': 'Bigger Plate' };
+  const name = map[type] || 'Plate';
+  const found = allEntrees.find(e => e.name === name);
+  return found ? found.price : 0;
+}
+
+app.get('/builder/:type', async (req, res) => {
+  try {
+    const type = (req.params.type || 'plate').toLowerCase();
+    const items = await prisma.menu_item.findMany({
+      where: { is_active: true },
+      include: {
+        category: true,
+        recipe: {
+          include: {
+            inventory: { select: { name: true, allergen_info: true } }
+          }
+        }
+      },
+      orderBy: { name: 'asc' }
+    });
+
+    // Allergen helpers
+    const stopWords = new Set(['none', 'no', 'n/a', 'na', 'null', '-', '']);
+    const stripPhrases = [/^contains\s*:?/i, /^may\s*contain\s*:?/i, /^traces\s*of\s*:?/i];
+    const splitRegex = /[,/;&]|\band\b/i;
+    function normalizeTokens(text) {
+      if (!text) return [];
+      let t = String(text).trim();
+      for (const rx of stripPhrases) t = t.replace(rx, '').trim();
+      return t.split(splitRegex).map(s => s.trim().toLowerCase()).filter(s => s && !stopWords.has(s));
+    }
+    function titleCase(s) { return s.replace(/\w+/g, w => w.charAt(0).toUpperCase() + w.slice(1)); }
+
+    const menu = { entrees: [], sides: [] };
+    const premiumEntrees = new Set(['Honey Walnut Shrimp', 'Black Pepper Sirloin Steak']); // Define premium items
+
+    for (const item of items) {
+      const allergenSet = new Set();
+      (item.recipe || []).forEach(r => {
+        const s = (r.inventory?.allergen_info || '').trim();
+        if (!s) return;
+        normalizeTokens(s).forEach(a => allergenSet.add(a));
+      });
+      const itemData = {
+        name: item.name,
+        price: Number(item.price),
+        allergens: Array.from(allergenSet).map(titleCase),
+        isPremium: premiumEntrees.has(item.name)
+      };
+      // Category 3 = A La Carte (actual protein dishes)
+      // Category 4 = Sides
+      if (item.category_id === 3) menu.entrees.push(itemData);
+      else if (item.category_id === 4) menu.sides.push(itemData);
+    }
+
+    // Find base price from category 1 (Bowl/Plate/Bigger Plate)
+    const mealItems = items.filter(i => i.category_id === 1);
+    const basePrice = (() => {
+      const map = { bowl: 'Bowl', plate: 'Plate', 'bigger-plate': 'Bigger Plate' };
+      const name = map[type] || 'Plate';
+      const found = mealItems.find(e => e.name === name);
+      return found ? Number(found.price) : 0;
+    })();
+    // Premium surcharge: $1.50 per premium entree
+    const premiumSurcharge = 1.50;
+    res.render('builder', { menu, type, price: basePrice, premiumSurcharge });
+  } catch (err) {
+    console.error('Builder route error:', err);
+    res.status(500).send('Unable to load builder');
+  }
+});
+
+app.get('/builder/edit', async (req, res) => {
+  try {
+    const type = (req.query.type || 'plate').toLowerCase();
+    const items = await prisma.menu_item.findMany({
+      where: { is_active: true },
+      include: {
+        category: true,
+        recipe: {
+          include: {
+            inventory: { select: { name: true, allergen_info: true } }
+          }
+        }
+      },
+      orderBy: { name: 'asc' }
+    });
+
+    // Allergen helpers
+    const stopWords = new Set(['none', 'no', 'n/a', 'na', 'null', '-', '']);
+    const stripPhrases = [/^contains\s*:?/i, /^may\s*contain\s*:?/i, /^traces\s*of\s*:?/i];
+    const splitRegex = /[,/;&]|\band\b/i;
+    function normalizeTokens(text) {
+      if (!text) return [];
+      let t = String(text).trim();
+      for (const rx of stripPhrases) t = t.replace(rx, '').trim();
+      return t.split(splitRegex).map(s => s.trim().toLowerCase()).filter(s => s && !stopWords.has(s));
+    }
+    function titleCase(s) { return s.replace(/\w+/g, w => w.charAt(0).toUpperCase() + w.slice(1)); }
+
+    const menu = { entrees: [], sides: [] };
+    const premiumEntrees = new Set(['Honey Walnut Shrimp', 'Black Pepper Sirloin Steak']); // Define premium items
+
+    for (const item of items) {
+      const allergenSet = new Set();
+      (item.recipe || []).forEach(r => {
+        const s = (r.inventory?.allergen_info || '').trim();
+        if (!s) return;
+        normalizeTokens(s).forEach(a => allergenSet.add(a));
+      });
+      const itemData = {
+        name: item.name,
+        price: Number(item.price),
+        allergens: Array.from(allergenSet).map(titleCase),
+        isPremium: premiumEntrees.has(item.name)
+      };
+      // Category 3 = A La Carte (actual protein dishes)
+      // Category 4 = Sides
+      if (item.category_id === 3) menu.entrees.push(itemData);
+      else if (item.category_id === 4) menu.sides.push(itemData);
+    }
+
+    // Find base price from category 1 (Bowl/Plate/Bigger Plate)
+    const mealItems = items.filter(i => i.category_id === 1);
+    const basePrice = (() => {
+      const map = { bowl: 'Bowl', plate: 'Plate', 'bigger-plate': 'Bigger Plate' };
+      const name = map[type] || 'Plate';
+      const found = mealItems.find(e => e.name === name);
+      return found ? Number(found.price) : 0;
+    })();
+    const premiumSurcharge = 1.50;
+    res.render('builder', { menu, type, price: basePrice, premiumSurcharge });
+  } catch (err) {
+    console.error('Builder edit error:', err);
+    res.status(500).send('Unable to load builder edit');
+  }
+});
+
+// Debug route to inspect allergens for a specific item by name
+app.get("/debug/allergens/:name", async (req, res) => {
+  try {
+    const name = req.params.name;
+    const item = await prisma.menu_item.findFirst({
+      where: { name },
+      include: {
+        recipe: { include: { inventory: { select: { name: true, allergen_info: true } } } }
+      }
+    });
+    if (!item) return res.status(404).json({ error: "menu_item not found" });
+
+    const stopWords = new Set(['none', 'no', 'n/a', 'na', 'null', '-', '']);
+    const stripPhrases = [/^contains\s*:?/i, /^may\s*contain\s*:?/i, /^traces\s*of\s*:?/i];
+    const splitRegex = /[,/;&]|\band\b/i;
+    function normalizeTokens(text) {
+      if (!text) return [];
+      let t = String(text).trim();
+      for (const rx of stripPhrases) t = t.replace(rx, '').trim();
+      return t
+        .split(splitRegex)
+        .map(s => s.trim().toLowerCase())
+        .filter(s => s && !stopWords.has(s));
+    }
+    function titleCase(s) { return s.replace(/\w+/g, w => w.charAt(0).toUpperCase() + w.slice(1)); }
+
+    const ingredients = (item.recipe || []).map(r => ({
+      ingredient: r.inventory?.name || 'Unknown',
+      allergen_info: r.inventory?.allergen_info || ''
+    }));
+
+    const allergensSet = new Set();
+    ingredients.forEach(i => normalizeTokens(i.allergen_info).forEach(a => allergensSet.add(a)));
+
+    res.json({
+      item: item.name,
+      allergens: Array.from(allergensSet).map(titleCase),
+      ingredients
+    });
+  } catch (err) {
+    console.error("Debug allergens error:", err);
+    res.status(500).json({ error: "failed to fetch" });
   }
 });
 
@@ -474,6 +738,60 @@ app.get("/api/cart", requireAuth, (req, res) => {
 app.delete("/api/cart/clear", requireAuth, (req, res) => {
   req.session.cart = [];
   res.json({ success: true });
+});
+
+// 4. Checkout - place order to database
+app.post("/api/checkout", async (req, res) => {
+  try {
+    const { cart, paymentMethod } = req.body;
+    
+    if (!cart || !Array.isArray(cart) || cart.length === 0) {
+      return res.status(400).json({ error: "Cart is empty" });
+    }
+
+    if (!paymentMethod) {
+      return res.status(400).json({ error: "Payment method is required" });
+    }
+
+    // Calculate total
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+    // Create order in database
+    const order = await prisma.order.create({
+      data: {
+        employee_id: 9999, // Kiosk employee ID
+        dine_option: 'takeout',
+        status: 'queued',
+        order_item: {
+          create: cart.map(item => ({
+            qty: item.quantity,
+            unit_price: item.price,
+            menu_item: {
+              connect: {
+                // TODO: Need to find menu_item by name - for now this is a skeleton
+                menu_item_id: 1 // placeholder
+              }
+            }
+          }))
+        },
+        payment: {
+          create: {
+            method: paymentMethod,
+            amount: total
+          }
+        }
+      },
+      include: {
+        order_item: true,
+        payment: true
+      }
+    });
+
+    res.json({ success: true, order_id: order.order_id, message: "Order placed successfully" });
+  } catch (err) {
+    console.error('Checkout error:', err);
+    res.status(500).json({ error: "Failed to place order" });
+  }
 });
 
 // ---------- 5. TEST DB ----------
