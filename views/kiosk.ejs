@@ -218,6 +218,33 @@
           </div>
         </div>
 
+    <!-- Dine Option Selection Modal -->
+    <div id="dine-option-modal" class="fixed inset-0 hidden items-center justify-center bg-black/70 z-50">
+      <div class="bg-white text-black w-full max-w-md border border-neutral-200 rounded-lg overflow-hidden shadow-xl">
+        <div class="px-6 py-4 border-b border-neutral-200 bg-red-700 text-white">
+          <div class="text-lg font-semibold">Dine In or Takeout?</div>
+          <div class="text-sm mt-1">Please select your dining preference</div>
+        </div>
+        <div class="px-6 py-6 grid grid-cols-2 gap-4">
+          <button data-dine-option="dine_in" class="dine-option-btn flex flex-col items-center justify-center p-8 border-2 border-neutral-300 rounded-lg hover:border-red-600 hover:bg-red-50 transition-all">
+            <svg class="w-16 h-16 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+            </svg>
+            <span class="font-semibold text-lg">Dine In</span>
+          </button>
+          <button data-dine-option="takeout" class="dine-option-btn flex flex-col items-center justify-center p-8 border-2 border-neutral-300 rounded-lg hover:border-red-600 hover:bg-red-50 transition-all">
+            <svg class="w-16 h-16 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+            </svg>
+            <span class="font-semibold text-lg">Takeout</span>
+          </button>
+        </div>
+        <div class="px-6 py-4 border-t border-neutral-200 flex justify-end">
+          <button id="dine-option-cancel" class="px-4 py-2 text-sm border border-neutral-300 bg-white hover:bg-neutral-100 rounded">Cancel</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Payment Method Selection Modal -->
     <div id="payment-modal" class="fixed inset-0 hidden items-center justify-center bg-black/70 z-50">
       <div class="bg-white text-black w-full max-w-md border border-neutral-200 rounded-lg overflow-hidden shadow-xl">
@@ -487,6 +514,42 @@
       function loadCart() { try { return JSON.parse(localStorage.getItem(CART_KEY)) || []; } catch { return []; } }
       function saveCart(c) { localStorage.setItem(CART_KEY, JSON.stringify(c)); }
       let cart = loadCart();
+
+      // Convert meal details (sides + entrees) into a flat list of options
+      function extractOptionsForItem(item) {
+        const opts = [];
+        if (!item || !item.details) return opts;
+        const { sides, entrees } = item.details;
+
+        // Sides
+        if (sides) {
+          if (sides.type === 'full' && sides.name) {
+            // one full side
+            opts.push({ name: sides.name, qty: 1, kind: 'side' });
+          } else if (Array.isArray(sides.items)) {
+            // halves / doubles: count occurrences
+            const counts = {};
+            sides.items.forEach((n) => {
+              if (!n) return;
+              counts[n] = (counts[n] || 0) + 1;
+            });
+            Object.entries(counts).forEach(([name, qty]) => {
+              opts.push({ name, qty, kind: 'side' });
+            });
+          }
+        }
+
+        // Entrees
+        if (Array.isArray(entrees)) {
+          entrees.forEach((e) => {
+            if (!e || !e.name) return;
+            const qty = e.count || 1;
+            opts.push({ name: e.name, qty, kind: 'entree' });
+          });
+        }
+
+        return opts;
+      }
 
       function renderCartDrawer() {
         const count = cart.reduce((s, i) => s + i.quantity, 0);
@@ -887,17 +950,41 @@
       });
 
       // Optional: go to checkout from drawer
+      let selectedDineOption = null; // Store the user's dine option choice
+      
       document.getElementById('cart-go-checkout').addEventListener('click', () => {
         if (cart.length === 0) {
           alert("Please add items to your cart first");
           return;
         }
-        // Show payment modal
-        const total = cart.reduce((s, i) => s + (i.price * i.quantity), 0).toFixed(2);
-        document.getElementById('payment-total').textContent = total;
-        document.getElementById('payment-modal').classList.remove('hidden');
-        document.getElementById('payment-modal').classList.add('flex');
+        // Show dine option modal first
+        document.getElementById('dine-option-modal').classList.remove('hidden');
+        document.getElementById('dine-option-modal').classList.add('flex');
         closeCartDrawer();
+      });
+
+      // Dine option modal handlers
+      const dineOptionModal = document.getElementById('dine-option-modal');
+      
+      document.getElementById('dine-option-cancel').addEventListener('click', () => {
+        dineOptionModal.classList.add('hidden');
+        dineOptionModal.classList.remove('flex');
+        openCartDrawer();
+      });
+
+      document.querySelectorAll('.dine-option-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          selectedDineOption = btn.getAttribute('data-dine-option');
+          
+          // Hide dine option modal and show payment modal
+          dineOptionModal.classList.add('hidden');
+          dineOptionModal.classList.remove('flex');
+          
+          const total = cart.reduce((s, i) => s + (i.price * i.quantity), 0).toFixed(2);
+          document.getElementById('payment-total').textContent = total;
+          document.getElementById('payment-modal').classList.remove('hidden');
+          document.getElementById('payment-modal').classList.add('flex');
+        });
       });
 
       // Payment modal handlers
@@ -906,40 +993,62 @@
       document.getElementById('payment-cancel').addEventListener('click', () => {
         paymentModal.classList.add('hidden');
         paymentModal.classList.remove('flex');
-        openCartDrawer();
+        // Go back to dine option modal
+        selectedDineOption = null;
+        dineOptionModal.classList.remove('hidden');
+        dineOptionModal.classList.add('flex');
       });
 
-      document.querySelectorAll('.payment-method-btn').forEach(btn => {
+      document.querySelectorAll('.payment-method-btn').forEach((btn) => {
         btn.addEventListener('click', async () => {
           const method = btn.getAttribute('data-method');
-          
+
+          // Build the cart we send to the server:
+          //  - keep normal items as-is
+          //  - for meals, attach a flat options[] array
+          const checkoutCart = cart.map((item) => {
+            if (item.type === 'meal' && item.details) {
+              const options = extractOptionsForItem(item);
+              return { ...item, options };
+            }
+            return item;
+          });
+
+          if (!checkoutCart.length) {
+            alert('Cart is empty.');
+            return;
+          }
+
           try {
             const response = await fetch('/api/checkout', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ cart, paymentMethod: method })
+              body: JSON.stringify({ cart: checkoutCart, paymentMethod: method, dineOption: selectedDineOption }),
             });
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
-              const total = cart.reduce((s, i) => s + (i.price * i.quantity), 0).toFixed(2);
-              alert(`Order placed successfully! Order #${data.order_id}\\nTotal: $${total}\\nPayment: ${method}`);
-              // Clear cart after successful order
+              const total = checkoutCart
+                .reduce((s, i) => s + i.price * i.quantity, 0)
+                .toFixed(2);
+              alert(
+                `Order placed successfully! Order #${data.order_id}\nTotal: $${total}\nPayment: ${method}`
+              );
               cart = [];
               renderCartDrawer();
               saveCart(cart);
               paymentModal.classList.add('hidden');
               paymentModal.classList.remove('flex');
             } else {
-              alert("Failed to place order: " + (data.error || "Unknown error"));
+              alert('Failed to place order: ' + (data.error || 'Unknown error'));
               paymentModal.classList.add('hidden');
               paymentModal.classList.remove('flex');
               openCartDrawer();
             }
           } catch (err) {
             console.error('Checkout error:', err);
-            alert("Failed to place order. Please try again.");
+            alert('Failed to place order. Please try again.');
             paymentModal.classList.add('hidden');
             paymentModal.classList.remove('flex');
             openCartDrawer();

@@ -59,6 +59,41 @@
 <body>
   <h1>Kitchen Queue</h1>
 
+  <!-- Line Stock Controls -->
+  <div class="order" style="background:#fff; margin-bottom:20px;">
+    <div class="order-header">Line Stock</div>
+    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <label for="prep-item-select">Item:</label>
+      <select id="prep-item-select">
+        <% if (typeof prepItems !== 'undefined' && prepItems && prepItems.length) { %>
+          <% prepItems.forEach(it => { %>
+            <option value="<%= it.menu_item_id %>"><%= it.name %></option>
+          <% }) %>
+        <% } %>
+      </select>
+
+      <label for="prep-servings">Servings to cook:</label>
+      <input id="prep-servings" type="number" min="1" step="1" value="12" style="width:100px;" />
+
+      <button id="cook-batch-btn">Cook Batch</button>
+      <button id="view-stock-btn">View Line Stock</button>
+      <button id="discard-stock-btn" style="background-color:#dc2626; color:#fff; border-color:#dc2626;">End of Day Discard</button>
+    </div>
+    <div id="stock-panel" class="order" style="display:none; margin-top:12px;">
+      <div class="order-header">Current Stock</div>
+      <table style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="text-align:left; border-bottom:1px solid #ccc; padding:6px;">Item</th>
+            <th style="text-align:left; border-bottom:1px solid #ccc; padding:6px;">Category</th>
+            <th style="text-align:left; border-bottom:1px solid #ccc; padding:6px;">Servings</th>
+          </tr>
+        </thead>
+        <tbody id="stock-body"></tbody>
+      </table>
+    </div>
+  </div>
+
   <div class="columns">
 
     <!-- QUEUED COLUMN -->
@@ -232,4 +267,135 @@
 
   </div>
 </body>
+<!-- Status error modal -->
+<div id="status-error-modal" style="position:fixed; inset:0; display:none; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:9999;">
+  <div style="background:#fff; padding:16px; border-radius:8px; max-width:520px; width:90%; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+    <div class="order-header">Cannot Update Status</div>
+    <div id="status-error-text" style="margin:8px 0 16px; color:#b91c1c;"></div>
+    <div style="text-align:right;">
+      <button id="status-error-close" style="padding:6px 12px;">Close</button>
+    </div>
+  </div>
+  
+</div>
+<script>
+  (function(){
+    const CATEGORY_NAMES = { 3: 'Entree', 4: 'Side' };
+    const selectEl = document.getElementById('prep-item-select');
+    const servingsEl = document.getElementById('prep-servings');
+    const cookBtn = document.getElementById('cook-batch-btn');
+    const viewBtn = document.getElementById('view-stock-btn');
+    const discardBtn = document.getElementById('discard-stock-btn');
+    const stockPanel = document.getElementById('stock-panel');
+    const stockBody = document.getElementById('stock-body');
+
+    async function loadStock() {
+      try {
+        const res = await fetch('/kitchen/stock');
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Failed to load');
+        stockBody.innerHTML = '';
+        (data.stock || []).forEach(row => {
+          const tr = document.createElement('tr');
+          const name = row.menu_item?.name || ('#' + row.menu_item_id);
+          const cat = CATEGORY_NAMES[row.menu_item?.category_id] || (row.menu_item?.category_id || '');
+          tr.innerHTML = `
+            <td style="padding:6px; border-bottom:1px solid #eee;">${name}</td>
+            <td style="padding:6px; border-bottom:1px solid #eee;">${cat}</td>
+            <td style="padding:6px; border-bottom:1px solid #eee;">${row.servings_available}</td>
+          `;
+          stockBody.appendChild(tr);
+        });
+      } catch (e) {
+        console.error('loadStock error', e);
+        alert('Failed to load stock');
+      }
+    }
+
+    cookBtn?.addEventListener('click', async () => {
+      const id = parseInt(selectEl.value, 10);
+      const servings = parseInt(servingsEl.value, 10);
+      if (!Number.isFinite(id) || !Number.isFinite(servings) || servings <= 0) {
+        alert('Please choose an item and a valid servings count');
+        return;
+      }
+      try {
+        const res = await fetch(`/kitchen/stock/${id}/cook`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ servings })
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Cook failed');
+        alert('Batch cooked successfully');
+        if (stockPanel.style.display !== 'none') {
+          await loadStock();
+        }
+      } catch (e) {
+        console.error('cook error', e);
+        alert('Failed to cook batch: ' + (e.message || 'Unknown error'));
+      }
+    });
+
+    viewBtn?.addEventListener('click', async () => {
+      const showing = stockPanel.style.display !== 'none';
+      if (showing) {
+        stockPanel.style.display = 'none';
+        return;
+      }
+      await loadStock();
+      stockPanel.style.display = 'block';
+    });
+
+    discardBtn?.addEventListener('click', async () => {
+      if (!confirm('Discard all remaining prepared stock?')) return;
+      try {
+        const res = await fetch('/kitchen/stock/discard', { method: 'POST' });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Discard failed');
+        alert('Stock discarded');
+        if (stockPanel.style.display !== 'none') {
+          await loadStock();
+        }
+      } catch (e) {
+        console.error('discard error', e);
+        alert('Failed to discard stock: ' + (e.message || 'Unknown error'));
+      }
+    });
+
+    // Intercept status change forms to show popup errors instead of full-page
+    const errModal = document.getElementById('status-error-modal');
+    const errText = document.getElementById('status-error-text');
+    const errClose = document.getElementById('status-error-close');
+    errClose.addEventListener('click', () => {
+      errModal.style.display = 'none';
+    });
+
+    document.querySelectorAll('.status-buttons form[action*="/status"]').forEach((form) => {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(form);
+        const body = new URLSearchParams([...fd.entries()]);
+        try {
+          const res = await fetch(form.action, {
+            method: 'POST',
+            headers: { 'Accept': 'text/plain' },
+            body
+          });
+          if (res.ok) {
+            window.location.reload();
+            return;
+          }
+          const msg = await res.text();
+          errText.textContent = msg || 'Failed to update status.';
+          errModal.style.display = 'flex';
+        } catch (err) {
+          console.error('status update error', err);
+          errText.textContent = 'Network error. Please try again.';
+          errModal.style.display = 'flex';
+        }
+      });
+    });
+  })();
+</script>
 </html>
