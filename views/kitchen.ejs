@@ -131,10 +131,10 @@
             </ul>
 
             <div class="status-buttons">
-              <!-- move to COOKING (prepping) -->
+              <!-- move to MAKING (prepping) -->
               <form method="post" action="/kitchen/<%= order.orderId %>/status">
                 <input type="hidden" name="status" value="prepping">
-                <button type="submit">Start Cooking</button>
+                <button type="submit">Start Making</button>
               </form>
 
               <!-- mark DONE directly from queue if needed -->
@@ -153,14 +153,14 @@
       <% } %>
     </div>
 
-    <!-- COOKING COLUMN -->
+    <!-- MAKING COLUMN -->
     <div class="column">
       <div class="column-header">
-        <h2>Cooking</h2>
+        <h2>Making</h2>
       </div>
 
       <% if (!cooking || cooking.length === 0) { %>
-        <p>No orders currently cooking.</p>
+        <p>No orders currently making.</p>
       <% } else { %>
         <% cooking.forEach(order => { %>
           <div class="order">
@@ -249,10 +249,10 @@
             </ul>
 
             <div class="status-buttons">
-              <!-- move back to cooking -->
+              <!-- move back to making -->
               <form method="post" action="/kitchen/<%= order.orderId %>/status">
                 <input type="hidden" name="status" value="prepping">
-                <button type="submit">Move Back to Cooking</button>
+                <button type="submit">Move Back to Making</button>
               </form>
 
               <!-- Cancel order -->
