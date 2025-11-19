@@ -5,4 +5,4 @@ Agenda:
 
 Minutes:
   - Sprint Goal: Complete the functionality of the app and create consistent styling for all pages.
-  - Sprint Test Plan: Have users from the user study check out our layout to see the ease with which users can navigate.
+  - Sprint Test Plan: Test locally with edge cases, pull request to have the new code looked over, then push to the main-2 branch to test changes with the rest of the system, and finally merge with the main branch that is deployed.
