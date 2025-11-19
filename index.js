@@ -20,6 +20,9 @@ const port = process.env.PORT || 3000;
 
 const isProduction = process.env.NODE_ENV === 'production';
 
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());               // <-- add once if not already present
+
 // ---------- PostgreSQL ----------
 let poolConfig;
 
@@ -55,7 +58,7 @@ async function shutdown(signal) {
 // ---------- View engine & static ----------
 app.set("view engine", "ejs");
 app.use(express.static("public"));
-app.use(express.urlencoded({ extended: true }));
+
 
 // ---------- Session ----------
 app.use(
@@ -443,7 +446,6 @@ app.post("/summary", requireAuth, async (req, res) => {
 // -------------------------------------------------
 // 4. CART API (session based)
 // -------------------------------------------------
-app.use(express.json());               // <-- add once if not already present
 
 // 1. Add item to cart
 app.post("/api/cart/add", requireAuth, (req, res) => {
