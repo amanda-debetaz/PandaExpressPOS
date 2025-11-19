@@ -417,7 +417,41 @@ app.post("/kitchen/clear-done", requireAuth, (req, res) => {
   res.redirect("/kitchen");
 });
 
-//app.get("/menu-board", requireAuth, (req, res) => res.render("menu-board"));
+app.get("/menu-board", async (req, res) => {
+  try {
+    const items = await prisma.menu_item.findMany({
+      where: { is_active: true },
+      select: { name: true, price: true, category_id: true },
+      orderBy: { name: 'asc' },
+    });
+
+    const grouped = { entrees: [], a_la_carte: [], sides: [], appetizers: [], featured: [] };
+
+    items.forEach(row => {
+      const price = Number(row.price);
+      if (row.category_id === 1) grouped.entrees.push({ name: row.name, price });
+      else if (row.category_id === 3) grouped.a_la_carte.push({ name: row.name, price });
+      else if (row.category_id === 4) grouped.sides.push({ name: row.name, price });
+      else if (row.category_id === 2) grouped.appetizers.push({ name: row.name, price });
+    });
+
+    // Simple featured list: first 5 entrees (fallback to any items if fewer)
+    grouped.featured = grouped.entrees.slice(0, 5);
+    if (grouped.featured.length === 0) {
+      // fallback: take first 5 of any category concatenated
+      const all = [...grouped.entrees, ...grouped.a_la_carte, ...grouped.sides, ...grouped.appetizers];
+      grouped.featured = all.slice(0, 5);
+    }
+
+    let page = (req.query.page || 'entrees').toLowerCase();
+    if (!grouped[page]) page = 'entrees';
+
+    res.render("menu-board", { menu: grouped, page });
+  } catch (err) {
+    console.error("Menu Board query error:", err);
+    res.status(500).send("Unable to load menu board");
+  }
+});
 
 // ---------- 1. KIOSK MENU ----------
 let menuCache = { entrees: [], a_la_carte: [], sides: [], appetizers: [] };
