@@ -3,95 +3,789 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cashier Page</title>
+    <title>Cashier POS - Panda Express</title>
+    <link rel="stylesheet" href="/css/cashier.css" />
   </head>
-  <body>
-    <header class="header-bar">
-      <div class="total-display">
-        <span class="total-label">Total:</span>
-        <span class="total-value">$0.00</span>
+  <style>
+    /* ============ THEME ============ */
+    :root {
+      /* Light grey restaurant POS + Panda accents */
+      --bg-page: #f5f6f7;
+      --bg-panel: #ffffff;
+      --bg-surface: #eceeef;
+      --bg-surface-alt: #e2e4e7;
+
+      --line-soft: #d1d3d6;
+      --line-strong: #babdc2;
+
+      --accent-red: #b91c1c;
+      --accent-red-bright: #ef4444;
+      --accent-green: #16a34a;
+
+      --text-main: #1b1b1d;
+      --text-muted: #4b5563;
+      --text-soft: #6b7280;
+
+      --shadow-soft: 0 3px 10px rgba(0, 0, 0, 0.12);
+
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+
+      --transition-fast: 0.15s ease-out;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    /* ============ BASE ============ */
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+    }
+
+    .cashier-body {
+      min-height: 100vh;
+      background: var(--bg-page);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ============ HEADER ============ */
+
+    .cashier-header {
+      display: grid;
+      grid-template-columns: minmax(0, 280px) minmax(0, 1fr) minmax(0, 320px);
+      gap: 1.5rem;
+      align-items: center;
+      padding: 0.9rem 1.75rem;
+      background: #ffffff;
+      border-bottom: 1px solid var(--line-soft);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .brand-lockup {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .brand-name {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--accent-red);
+      font-weight: 700;
+    }
+
+    .brand-sub {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--text-soft);
+    }
+
+    .station-meta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid var(--line-soft);
+      background: var(--bg-surface);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--text-soft);
+    }
+
+    .station-label {
+      opacity: 0.8;
+    }
+
+    .station-value {
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .header-center {
+      display: flex;
+      align-items: center;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      border-radius: 999px;
+      border: 1px solid var(--line-soft);
+      background: var(--bg-surface);
+      font-size: 0.85rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-main);
+      outline: none;
+      transition: border-color var(--transition-fast),
+        box-shadow var(--transition-fast), background var(--transition-fast);
+    }
+
+    .search-input::placeholder {
+      color: var(--text-soft);
+    }
+
+    .search-input:focus {
+      border-color: var(--accent-red-bright);
+      background: #ffffff;
+      box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.9rem;
+    }
+
+    .total-display {
+      padding: 0.5rem 0.9rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--accent-red);
+      background: linear-gradient(to bottom, #ffffff, #fef2f2);
+      box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.3);
+      min-width: 170px;
+    }
+
+    .total-label {
+      display: block;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--text-soft);
+    }
+
+    .total-value {
+      margin-top: 0.15rem;
+      font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+        Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 1.6rem;
+    }
+
+    .clock-btn {
+      padding: 0.55rem 1.1rem;
+      border-radius: 999px;
+      border: 1px solid var(--line-strong);
+      background: var(--bg-surface);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background var(--transition-fast),
+        border-color var(--transition-fast), box-shadow var(--transition-fast),
+        transform var(--transition-fast);
+    }
+
+    .clock-btn::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent-green);
+      box-shadow: 0 0 8px rgba(22, 163, 74, 0.6);
+    }
+
+    .clock-btn:hover {
+      background: #ffffff;
+      border-color: var(--accent-red-bright);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      transform: translateY(-1px);
+    }
+
+    /* ============ MAIN LAYOUT ============ */
+
+    .cashier-main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: minmax(340px, 0.9fr) minmax(520px, 1.1fr);
+      gap: 1.75rem;
+      padding: 1.25rem 1.75rem 1rem;
+      height: calc(100vh - 14rem);
+      overflow: hidden;
+    }
+
+    @media (max-width: 1024px) {
+      .cashier-main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* LEFT: ORDER COLUMN */
+
+    .order-column {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .order-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-panel);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--line-soft);
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+    }
+
+    .order-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--line-soft);
+      background: var(--bg-surface);
+    }
+
+    .order-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .order-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--text-soft);
+    }
+
+    .order-number {
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    .order-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      background: #ecfdf5;
+      border: 1px solid #bbf7d0;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: #166534;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--accent-green);
+    }
+
+    .order-table-wrapper {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .order-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .order-header {
+      background: var(--bg-surface-alt);
+    }
+
+    .order-header th {
+      padding: 0.6rem 0.75rem;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--text-soft);
+      text-align: left;
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    .order-body tr {
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    .order-body td {
+      padding: 0.7rem 0.75rem;
+      font-size: 0.9rem;
+    }
+
+    /* More space in rows for touch interaction */
+    .order-body tr {
+      height: 52px;
+    }
+
+    /* Column widths */
+    .col-item {
+      width: 55%;
+    }
+    .col-qty {
+      width: 12%;
+    }
+    .col-price {
+      width: 18%;
+    }
+    .col-delete {
+      width: 15%;
+    }
+
+    .order-summary-row {
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.8rem 1rem;
+      border-top: 1px solid var(--line-soft);
+      background: var(--bg-surface);
+    }
+
+    .summary-left {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .summary-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .summary-value {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .summary-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* ============ RIGHT: MENU COLUMN ============ */
+
+    .menu-column {
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding-right: 8px;
+    }
+
+    .menu-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.1rem;
+    }
+
+    .menu-block {
+      background: var(--bg-panel);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--line-soft);
+      box-shadow: var(--shadow-soft);
+      padding: 0.9rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    /* Entree block spans wide */
+    .menu-block-wide {
+      grid-column: 1 / -1;
+    }
+
+    @media (max-width: 1024px) {
+      .menu-grid {
+        grid-template-columns: 1fr;
+      }
+      .menu-block-wide {
+        grid-column: auto;
+      }
+    }
+
+    .section-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--text-soft);
+    }
+
+    .menu-block-header {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .menu-block-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Button layouts: spaced for quick tapping */
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+    }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 0.8rem;
+    }
+
+    /* ============ BUTTONS ============ */
+
+    .btn {
+      border-radius: var(--radius-md);
+      border: 1px solid var(--line-strong);
+      background: var(--bg-surface);
+      color: var(--text-main);
+      padding: 0.9rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      text-align: center;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      transition: background var(--transition-fast),
+        border-color var(--transition-fast), box-shadow var(--transition-fast),
+        transform var(--transition-fast), color var(--transition-fast);
+      min-width: 130px;
+    }
+
+    /* Make press areas larger overall */
+    .btn {
+      line-height: 1.2;
+    }
+
+    /* Button variants */
+
+    .btn-meal {
+      background: #fef2f2;
+      border-color: var(--accent-red);
+    }
+
+    .btn-meal:hover {
+      background: #fee2e2;
+      box-shadow: 0 2px 8px rgba(248, 113, 113, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-base {
+      background: #f3f4f6;
+    }
+
+    .btn-base:hover {
+      background: #e5e7eb;
+      border-color: var(--accent-red-bright);
+    }
+
+    .btn-entree {
+      background: #ffffff;
+      border-color: var(--line-strong);
+    }
+
+    .btn-entree:hover {
+      border-color: var(--accent-red-bright);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .btn-app {
+      background: #fefce8;
+      border-color: #facc15;
+    }
+
+    .btn-app:hover {
+      background: #fef9c3;
+    }
+
+    .btn-drink {
+      background: #dbeafe;
+      border-color: #93c5fd;
+      color: #1e3a8a;
+    }
+
+    .btn-drink:hover {
+      background: #bfdbfe;
+      border-color: #60a5fa;
+    }
+
+    /* Secondary / utility buttons */
+
+    .btn-secondary {
+      background: #f3f4f6;
+      border-color: var(--line-soft);
+      font-size: 0.8rem;
+      padding-inline: 0.9rem;
+    }
+
+    .btn-secondary:hover {
+      background: #e5e7eb;
+      border-color: var(--accent-red);
+    }
+
+    /* Footer button styles */
+
+    .btn-outline {
+      background: transparent;
+      border-color: var(--line-strong);
+      font-size: 0.8rem;
+    }
+
+    .btn-outline:hover {
+      background: #f3f4f6;
+      border-color: var(--accent-red);
+    }
+
+    .btn-outline-danger {
+      background: transparent;
+      border-color: var(--accent-red);
+      color: var(--accent-red);
+      font-size: 0.8rem;
+    }
+
+    .btn-outline-danger:hover {
+      background: #fee2e2;
+    }
+
+    .btn-pay {
+      padding: 0.95rem 3.5rem;
+      background: var(--accent-red);
+      border-color: var(--accent-red-bright);
+      color: #ffffff;
+      font-size: 0.95rem;
+      font-weight: 600;
+      box-shadow: 0 0 20px rgba(248, 113, 113, 0.5);
+    }
+
+    .btn-pay:hover {
+      background: #991b1b;
+      border-color: var(--accent-red-bright);
+    }
+
+    /* ============ FOOTER ============ */
+
+    .cashier-footer {
+      padding: 0.75rem 1.75rem 1rem;
+      border-top: 1px solid var(--line-soft);
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .footer-left,
+    .footer-center,
+    .footer-right {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    @media (max-width: 768px) {
+      .cashier-footer {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .footer-center {
+        justify-content: center;
+      }
+    }
+  </style>
+  <body class="cashier-body">
+    <!-- Top bar -->
+    <header class="cashier-header">
+      <div class="header-left">
+        <div class="brand-lockup">
+          <div class="brand-name">Panda Express</div>
+          <div class="brand-sub">Cashier Station</div>
+        </div>
       </div>
 
-      <div class="search-container">
+      <div class="header-center">
         <input
           type="text"
           class="search-input"
-          placeholder="Search / scan item"
+          placeholder="Search or scan item"
         />
       </div>
 
-      <button class="clock-btn">Clock In/Out</button>
+      <div class="header-right">
+        <div class="total-display">
+          <span class="total-label">Order Total</span>
+          <span class="total-value">$0.00</span>
+        </div>
+        <button class="clock-btn">Clock In / Out</button>
+      </div>
     </header>
 
-    <!-- ORDER TABLE -->
-    <section class="order-section">
-      <table class="order-table">
-        <thead class="order-header">
-          <tr>
-            <th class="col-item">Item</th>
-            <th class="col-qty">Quantity</th>
-            <th class="col-price">Price</th>
-            <th class="col-delete">Delete</th>
-          </tr>
-        </thead>
-        <tbody class="order-body">
-          <!-- dynamic order rows go here -->
-        </tbody>
-      </table>
-    </section>
+    <!-- Main content -->
+    <main class="cashier-main">
+      <!-- LEFT: Order detail -->
+      <section class="order-column">
+        <div class="order-panel">
+          <div class="order-panel-header">
+            <div class="order-info">
+              <div class="order-label">Order #</div>
+              <div class="order-number">—</div>
+            </div>
+            <div class="order-status">
+              <span class="status-dot"></span>
+              <span class="status-text">In Progress</span>
+            </div>
+          </div>
 
-    <!-- MAIN BUTTON GRID -->
-    <section class="menu-selection">
-      <!-- Meal Size -->
-      <div class="meal-size-section">
-        <h3 class="section-title">Meal Size</h3>
-        <div class="button-group meal-size-buttons">
-          <button class="btn btn-meal">Bowl</button>
-          <button class="btn btn-meal">Plate</button>
-          <button class="btn btn-meal">Big Plate</button>
+          <div class="order-table-wrapper">
+            <table class="order-table">
+              <thead class="order-header">
+                <tr>
+                  <th class="col-item">Item</th>
+                  <th class="col-qty">Qty</th>
+                  <th class="col-price">Price</th>
+                  <th class="col-delete">Void</th>
+                </tr>
+              </thead>
+              <tbody class="order-body">
+                <!-- dynamic order rows go here -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="order-summary-row">
+            <div class="summary-left">
+              <div class="summary-line">
+                <span>Subtotal</span>
+                <span class="summary-value">$0.00</span>
+              </div>
+              <div class="summary-line">
+                <span>Tax</span>
+                <span class="summary-value">$0.00</span>
+              </div>
+            </div>
+            <div class="summary-right">
+              <button class="btn btn-secondary">Void Line</button>
+              <button class="btn btn-secondary">Clear Order</button>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <!-- Base -->
-      <div class="base-section">
-        <h3 class="section-title">Base</h3>
-        <div class="button-group base-buttons">
-          <button class="btn btn-base">Rice</button>
-          <button class="btn btn-base">Chow Mein</button>
-          <button class="btn btn-base">Fried Rice</button>
-          <button class="btn btn-base">Super Greens</button>
+      <!-- RIGHT: Big button entry area -->
+      <section class="menu-column">
+        <div class="menu-grid">
+          <!-- Meal Size -->
+          <section class="menu-block">
+            <h3 class="section-title">Meal Size</h3>
+            <div class="button-row">
+              <button class="btn btn-meal">Bowl</button>
+              <button class="btn btn-meal">Plate</button>
+              <button class="btn btn-meal">Bigger Plate</button>
+              <button class="btn btn-meal">A La Carte</button>
+            </div>
+          </section>
+
+          <!-- Base -->
+          <section class="menu-block">
+            <h3 class="section-title">Base</h3>
+            <div class="button-row">
+              <button class="btn btn-base">White Rice</button>
+              <button class="btn btn-base">Fried Rice</button>
+              <button class="btn btn-base">Chow Mein</button>
+              <button class="btn btn-base">Super Greens</button>
+            </div>
+          </section>
+
+          <!-- Entrees: wide block -->
+          <section class="menu-block menu-block-wide">
+            <div class="menu-block-header">
+              <h3 class="section-title">Entrees</h3>
+              <div class="menu-block-subtitle">
+                Tap to add entree to active meal
+              </div>
+            </div>
+
+            <div class="button-grid entree-buttons">
+              <button class="btn btn-entree">Orange Chicken</button>
+              <button class="btn btn-entree">Beijing Beef</button>
+              <button class="btn btn-entree">Broccoli Beef</button>
+              <button class="btn btn-entree">Mushroom Chicken</button>
+              <button class="btn btn-entree">Kung Pao Chicken</button>
+              <button class="btn btn-entree">Black Pepper Chicken</button>
+              <button class="btn btn-entree">Honey Walnut Shrimp</button>
+              <button class="btn btn-entree">String Bean Chicken</button>
+            </div>
+          </section>
+
+          <!-- Appetizers / Sides -->
+          <section class="menu-block">
+            <h3 class="section-title">Appetizers</h3>
+            <div class="button-row appetizer-buttons">
+              <button class="btn btn-app">Cream Cheese Rangoon</button>
+              <button class="btn btn-app">Chicken Egg Roll</button>
+              <button class="btn btn-app">Veggie Spring Roll</button>
+            </div>
+          </section>
+
+          <!-- Drinks -->
+          <section class="menu-block">
+            <h3 class="section-title">Drinks</h3>
+            <div class="button-row drink-buttons">
+              <button class="btn btn-drink">Fountain Drink</button>
+              <button class="btn btn-drink">Sweet Tea</button>
+              <button class="btn btn-drink">Unsweet Tea</button>
+              <button class="btn btn-drink">Water</button>
+            </div>
+          </section>
+
+          <section class="menu-block">
+            <h3 class="section-title">Quick Actions</h3>
+            <div class="button-row">
+              <button class="btn btn-secondary">Extra Sauce</button>
+              <button class="btn btn-secondary">No Veg</button>
+              <button class="btn btn-secondary">To-Go</button>
+              <button class="btn btn-secondary">Dine In</button>
+            </div>
+          </section>
         </div>
-      </div>
+      </section>
+    </main>
 
-      <!-- Entree -->
-      <div class="entree-section">
-        <h3 class="section-title">Entree</h3>
-        <div class="button-grid entree-buttons">
-          <button class="btn btn-entree">Beijing Beef</button>
-          <button class="btn btn-entree">Black Pepper Chicken</button>
-          <button class="btn btn-entree">Broccoli Beef</button>
-          <button class="btn btn-entree">Honey Walnut Shrimp</button>
-          <button class="btn btn-entree">Orange Chicken</button>
-          <button class="btn btn-entree">Mushroom Chicken</button>
-        </div>
-      </div>
-
-      <!-- Appetizers -->
-      <div class="appetizer-section">
-        <h3 class="section-title">Appetizer</h3>
-        <div class="button-group appetizer-buttons">
-          <button class="btn btn-app">Veggie Roll</button>
-          <button class="btn btn-app">Chicken Roll</button>
-          <button class="btn btn-app">Rangoon</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- FOOTER -->
-    <footer class="footer-bar">
+    <!-- Footer -->
+    <footer class="cashier-footer">
       <div class="footer-left">
-        <button class="btn btn-cancel">Cancel Order</button>
-        <button class="btn btn-manager">Manager</button>
+        <button class="btn btn-outline">Cancel Order</button>
+        <button class="btn btn-outline">Manager</button>
       </div>
 
       <div class="footer-center">
@@ -99,7 +793,7 @@
       </div>
 
       <div class="footer-right">
-        <button class="btn btn-close">Close</button>
+        <button class="btn btn-outline-danger">Close</button>
       </div>
     </footer>
   </body>
