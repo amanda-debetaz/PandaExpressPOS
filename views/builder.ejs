@@ -6,6 +6,99 @@
   <title>Build Your Meal</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
+
+<!--LARGER TEXT---->
+<style>
+  html {
+    font-size: 19px !important; /* ~+20% larger base */
+  }
+
+  /* Buttons & key numbers */
+  button {
+    font-size: 1.6rem !important;
+    padding: 1rem 1.5rem !important;   /* ← fixed line */
+  }
+
+  #cart-total,
+  #cart-drawer-total,
+  #success-total {
+    font-size: 3.8rem !important;
+    font-weight: 900 !important;
+  }
+
+  #success-order-number {
+    font-size: 5rem !important;
+    font-weight: 900 !important;
+  }
+
+  /* Text classes – all bumped up */
+  .text-xs   { font-size: 1.1rem !important; }
+  .text-sm   { font-size: 1.4rem !important; }
+  .text-base { font-size: 1.6rem !important; }
+  .text-lg   { font-size: 2rem   !important; }
+  .text-xl   { font-size: 2.6rem !important; }
+  .text-2xl  { font-size: 3.2rem !important; }
+  .text-3xl  { font-size: 4rem   !important; }
+
+  /* Cart drawer items & modal buttons */
+  #cart-drawer-items > div,
+  .payment-method-btn,
+  .dine-option-btn,
+  #success-done-btn {
+    padding: 1.8rem 1.2rem !important;
+    font-weight: 700 !important;
+    font-size: 1.8rem !important;
+  }
+
+  /* Success modal title */
+  #order-success-modal h2 {
+    font-size: 4.5rem !important;
+  }
+
+  /* Bottom bar total – huge and clear */
+  #cart-total {
+    font-size: 4.2rem !important;
+    font-weight: 900 !important;
+  }
+  /* ——— BUILDER: BIGGER, AIRIER HEADINGS ——— */
+  header h1 {
+    font-size: 4rem !important;
+    line-height: 1.2 !important;
+    margin-bottom: 1rem !important;
+  }
+
+  header .text-sm {
+    font-size: 2rem !important;
+    opacity: 0.95;
+  }
+
+  /* Section titles (Side, Entrees) */
+  section > div:first-child {
+    font-size: 2.4rem !important;
+    margin-bottom: 1.8rem !important;
+    letter-spacing: 0.05em !important;
+  }
+
+  /* Hints and counters */
+  #side-hint,
+  .text-xs.text-neutral-600 {
+    font-size: 1.6rem !important;
+    margin-bottom: 2rem !important;
+  }
+
+  #side-total,
+  #entree-count {
+    font-size: 2.6rem !important;
+  }
+
+  /* Footer buttons */
+  footer button {
+    padding: 1.6rem 3rem !important;
+    font-size: 1.9rem !important;
+  }
+</style>
+
+
 <body class="min-h-screen bg-neutral-50 text-black">
   <header class="w-full bg-red-700 text-white border-b border-red-800">
     <div class="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">

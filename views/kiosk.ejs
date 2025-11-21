@@ -7,6 +7,58 @@
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
 
+  <!--LARGER TEXT---->
+  <style>
+    html {
+      font-size: 19px !important; /* ~+20% larger base */
+    }
+
+    /* Buttons & key numbers */
+    button {
+      font-size: 1.6rem !important;
+      padding: 1rem 1.5rem !important;   /* ← fixed line */
+    }
+
+    #cart-total,
+    #cart-drawer-total,
+    #success-total {
+      font-size: 3.8rem !important;
+      font-weight: 900 !important;
+    }
+
+    #success-order-number {
+      font-size: 5rem !important;
+      font-weight: 900 !important;
+    }
+
+    /* Text classes – all bumped up */
+    .text-xs   { font-size: 1.1rem !important; }
+    .text-sm   { font-size: 1.4rem !important; }
+    .text-base { font-size: 1.6rem !important; }
+
+    /* Cart drawer items & modal buttons */
+    #cart-drawer-items > div,
+    .payment-method-btn,
+    .dine-option-btn,
+    #success-done-btn {
+      padding: 1.8rem 1.2rem !important;
+      font-weight: 700 !important;
+      font-size: 1.8rem !important;
+    }
+
+    /* Success modal title */
+    #order-success-modal h2 {
+      font-size: 4.5rem !important;
+    }
+
+    /* Bottom bar total – huge and clear */
+    #cart-total {
+      font-size: 4.2rem !important;
+      font-weight: 900 !important;
+    }
+    
+  </style>
+
   <body class="h-screen flex bg-black text-white overflow-hidden">
     <script>
       // Pass server-side menu data to JavaScript
@@ -137,10 +189,15 @@
 
     <!-- Right-side cart drawer + backdrop -->
     <div id="cart-drawer-backdrop" class="fixed inset-0 bg-black/30 z-30 hidden"></div>
-    <aside id="cart-drawer" class="fixed top-0 right-0 h-screen w-[380px] max-w-full bg-white text-black shadow-2xl border-l border-neutral-200 z-40 transform translate-x-full transition-transform duration-300 ease-out flex flex-col">
-      <div class="flex items-center justify-between px-5 py-4 border-b border-neutral-200">
-        <div class="text-sm uppercase tracking-[0.18em] text-neutral-700 font-semibold">Your Cart</div>
-        <button id="cart-drawer-close" class="text-xs uppercase tracking-[0.15em] text-neutral-500 hover:text-black">Close</button>
+    <aside id="cart-drawer" 
+      class="fixed top-0 right-0 h-screen w-[570px] max-w-full bg-white text-black shadow-2xl border-l border-neutral-200 z-40 
+            transform translate-x-full transition-transform duration-400 ease-out 
+            flex flex-col">
+      
+      <!-- Rest of your drawer content stays exactly the same -->
+      <div class="flex items-center justify-between px-6 py-5 border-b border-neutral-200">
+        <div class="text-lg font-bold tracking-wider uppercase text-neutral-800">Your Cart</div>
+        <button id="cart-drawer-close" class="text-sm uppercase tracking-wider text-neutral-500 hover:text-black font-medium">Close</button>
       </div>
       <div id="cart-drawer-items" class="flex-1 overflow-y-auto p-5 space-y-3 text-sm">
         <div class="text-neutral-500 italic">No items yet</div>
