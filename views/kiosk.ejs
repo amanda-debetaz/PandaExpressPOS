@@ -290,6 +290,48 @@
       </div>
     </div>
 
+    <!-- ORDER SUCCESS MODAL -->
+    <div id="order-success-modal" class="fixed inset-0 hidden items-center justify-center bg-black/70 z-50">
+      <div class="bg-white text-black w-full max-w-lg border border-neutral-200 rounded-lg overflow-hidden shadow-2xl">
+        <div class="px-8 py-10 text-center">
+          <div class="mx-auto w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-6">
+            <svg class="w-16 h-16 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+
+          <h2 class="text-3xl font-bold text-neutral-900 mb-3">Order Placed!</h2>
+          <p class="text-lg text-neutral-600 mb-6">
+            Your order has been sent to the kitchen.
+          </p>
+
+          <div class="bg-neutral-50 rounded-lg px-6 py-5 mb-8 text-left">
+            <div class="flex justify-between text-sm mb-2">
+              <span class="text-neutral-600">Order Number</span>
+              <span class="font-bold text-xl" id="success-order-number">#0000</span>
+            </div>
+            <div class="flex justify-between text-sm mb-2">
+              <span class="text-neutral-600">Total Paid</span>
+              <span class="font-bold text-xl" id="success-total">$0.00</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-neutral-600">Dine Option</span>
+              <span class="font-medium capitalize" id="success-dine-option">—</span>
+            </div>
+          </div>
+
+          <p class="text-sm text-neutral-500 mb-8">
+            Please wait at the counter or take a seat.<br>
+            We'll call your number when it's ready!
+          </p>
+
+          <button id="success-done-btn" class="px-10 py-4 text-lg font-semibold uppercase tracking-wider bg-red-700 text-white rounded-lg hover:bg-red-800 transition-all">
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+
     <style>
       .nav-link {
         display: block;
@@ -1003,9 +1045,6 @@
         btn.addEventListener('click', async () => {
           const method = btn.getAttribute('data-method');
 
-          // Build the cart we send to the server:
-          //  - keep normal items as-is
-          //  - for meals, attach a flat options[] array
           const checkoutCart = cart.map((item) => {
             if (item.type === 'meal' && item.details) {
               const options = extractOptionsForItem(item);
@@ -1029,17 +1068,26 @@
             const data = await response.json();
 
             if (data.success) {
-              const total = checkoutCart
-                .reduce((s, i) => s + i.price * i.quantity, 0)
-                .toFixed(2);
-              alert(
-                `Order placed successfully! Order #${data.order_id}\nTotal: $${total}\nPayment: ${method}`
-              );
+              const total = checkoutCart.reduce((s, i) => s + i.price * i.quantity, 0).toFixed(2);
+
+              // Fill success modal
+              document.getElementById('success-order-number').textContent = `#${data.order_id}`;
+              document.getElementById('success-total').textContent = `$${total}`;
+              document.getElementById('success-dine-option').textContent = 
+                selectedDineOption === 'dine_in' ? 'Dine In' : 'Takeout';
+
+              // Clear cart
               cart = [];
               renderCartDrawer();
               saveCart(cart);
+
+              // Hide payment modal
               paymentModal.classList.add('hidden');
               paymentModal.classList.remove('flex');
+
+              // Show success modal
+              document.getElementById('order-success-modal').classList.remove('hidden');
+              document.getElementById('order-success-modal').classList.add('flex');
             } else {
               alert('Failed to place order: ' + (data.error || 'Unknown error'));
               paymentModal.classList.add('hidden');
@@ -1055,6 +1103,14 @@
           }
         });
       });
+
+      // Close success modal and restart
+      document.getElementById('success-done-btn').addEventListener('click', () => {
+        document.getElementById('order-success-modal').classList.add('hidden');
+        document.getElementById('order-success-modal').classList.remove('flex');
+        setTimeout(() => window.location.reload(), 800);
+      });
+      
 
       document.getElementById("cart-clear").addEventListener("click", () => {
         if (cart.length === 0) return;
