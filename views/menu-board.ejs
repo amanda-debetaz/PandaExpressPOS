@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Menu Board</title>
   <link rel="stylesheet" href="/public/css/globals.css">
+  <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
 
 <!--Styles Based on Page-->
@@ -56,9 +57,10 @@
     }
 
     .meal-image {
-      width: 200px;
+      width: 150px;   /* adjust size */
       height: auto;
       border-radius: 8px;
+      transform: scale(1.3);
     }
 
     .meal-name {
@@ -89,10 +91,46 @@
 
   </style>
   <% } %>
-  <!-- Appetizers Page Style -->
+  <!-- Appetizers and Drinks Page Style -->
   <% if (page === "appetizers") { %>
   <style>
-    .menu-page-container { background: #fff5e6; }
+    .appetizers-drinks-container{
+      margin: 20px;
+      background-color: #ffffff;
+      padding: 20px;
+    }
+    .meal-name {
+      color: #000000;
+      font-size: 30px;
+      margin-top: 10px;
+    }
+    .meal-calories {
+      color: #555;
+      font-size: 25px;
+    }
+    .meal-price {
+      font-size: 25px;
+      font-weight: bold;
+      color: #555;
+    }
+    .meal-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr); /* 3 columns */
+      gap: 20px; /* space between items */
+    }
+    .meal-option {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .meal-image {
+      width: 150px;   /* adjust size */
+      height: auto;
+      border-radius: 8px;
+      transform: scale(1.6);
+    }
+
   </style>
   <% } %>
   <!-- A La Carte Page Style -->
@@ -106,13 +144,13 @@
     .entree-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr); /* 2 columns */
-      gap: 15px; /* space between grid items */
+      gap: 5px; /* space between grid items */
     }
     .meal-image {
       width: 150px;   /* adjust as needed */
       height: auto;   /* keeps aspect ratio */
       border-radius: 8px;
-      transform: scale(1.1);
+      transform: scale(1.5);
       object-fit: cover;
       margin-right: 10px;
     }
@@ -120,7 +158,7 @@
       display: flex;
       align-items: center;
       gap: 15px;
-      padding: 10px;
+      padding: 5px;
       border-radius: 8px;
     }
     .meal-text {
@@ -147,6 +185,46 @@
   <!-- Sides Page Style -->
   <% if (page === "sides") { %> 
   <style>
+    .sides-container{
+      margin: 20px;
+      background-color: #ffffff;
+      padding: 15px;
+    }
+    .meal-name {
+      color: #000000;
+      font-size: 30px;
+      margin-top: 10px;
+    }
+    .meal-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr); /* 3 columns */
+      gap: 20px; /* space between items */
+    }
+    .meal-option {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .meal-image {
+      width: 150px;   /* adjust size */
+      height: auto;
+      border-radius: 8px;
+      transform: scale(1.6);
+    }
+    .meal-name {
+      color: black;
+      font-size: 30px;
+    }
+    .meal-calories {
+      color: #555;
+      font-size: 25px;
+    }
+    .meal-price {
+      font-size: 25px;
+      font-weight: bold;
+      color: #555;
+    }
   </style>
   <% } %>
 
@@ -190,6 +268,8 @@
   .title{
     color: #D61927;
     font-size: 50px;
+    margin: 0;
+    font-weight: bold;
   }
 </style>
 </head>
@@ -205,7 +285,7 @@
     <nav class="nav-buttons">
       <a href="/menu-board?page=featured" class="<%= page==='featured'?'active':'' %>">FEATURED</a>
       <a href="/menu-board?page=entrees" class="<%= page==='entrees'?'active':'' %>">PICK A MEAL</a>
-      <a href="/menu-board?page=appetizers" class="<%= page==='appetizers'?'active':'' %>">APPETIZERS</a>
+      <a href="/menu-board?page=appetizers" class="<%= page==='appetizers'?'active':'' %>">APPETIZERS AND DRINKS</a>
       <a href="/menu-board?page=a_la_carte" class="<%= page==='a_la_carte'?'active':'' %>">ENTREE CHOICES</a>
       <a href="/menu-board?page=sides" class="<%= page==='sides'?'active':'' %>">SIDE CHOICES</a>
     </nav>
@@ -325,21 +405,62 @@
       <% } %>
     </div>
 
-    <!-- Appetizers content -->
-    <% if (page === "appetizers") { %>
-      <h1 class="title">APPETIZERS</h1>
-      <% const items = menu[page] || []; %>
+    <!-- Appetizers and Drinks content -->
+    <div class="appetizers-drinks-container">
+      <% if (page === "appetizers") { %>
+        <h1 class="title">APPETIZERS</h1>
+
+        <% const items = menu[page] || []; %>
+        <%
+         const appetizerCalories = {
+          "Chicken Egg Roll": "200 cal",
+          "Veggie Spring Roll": "240 cal",
+          "Cream Cheese Rangoon": "190 cal"
+          };
+        %>
 
         <% if (items.length > 0) { %>
-          <ul>
+          <div class="meal-grid">
             <% items.forEach(item => { %>
-              <p><%= item.name %> — $<%= item.price.toFixed(2) %></p>
+              <div class="meal-option">
+                <img src="/images/<%= item.name.toLowerCase().replace(/ /g, '-')%>.jpg" alt="<%= item.name %>" class="meal-image"/>
+                <div class="meal-name"><strong><%= item.name %></strong></div>
+                <div class="meal-calories"><%= appetizerCalories[item.name] %></div>
+                <div class="meal-price">$<%= item.price.toFixed(2) %></div>
+              </div>
             <% }) %>
-          </ul>
-        <% } else { %>
-          <p>No items in this category.</p>
+          </div>
         <% } %>
-    <% } %>
+
+        <!-- Drinks Section -->
+          <div class="drinks-container">
+            <h1 class="title">DRINKS</h1>
+
+            <!-- Fountain Drink Images Row -->
+            <div class="fountain-drinks-row flex gap-4 mb-4">
+              <!-- Placeholder images -->
+              <img src="/images/placeholder-drink.jpg" alt="Drink 1" class="drink-img w-24 h-24 object-cover rounded">
+              <img src="/images/placeholder-drink.jpg" alt="Drink 2" class="drink-img w-24 h-24 object-cover rounded">
+              <img src="/images/placeholder-drink.jpg" alt="Drink 3" class="drink-img w-24 h-24 object-cover rounded">
+              <img src="/images/placeholder-drink.jpg" alt="Drink 4" class="drink-img w-24 h-24 object-cover rounded">
+            </div>
+
+            <!-- Drink Labels & Prices -->
+            <div class="fountain-drinks-info flex gap-8 text-[30px] text-gray-700">
+              <div class="drink-name">Fountain Drinks</div>
+              <div class="drink-prices flex gap-4">
+                <span>$2.20</span>
+                <span>|</span>
+                <span>$2.40</span>
+                <span>|</span>
+                <span>$2.60</span>
+              </div>
+            </div>
+          </div>
+
+
+      <% } %>
+    </div>
 
 <!-- A La Carte content -->
 <div class="a-la-carte-container">
@@ -392,31 +513,79 @@
   <% } %>
 </div>
 
-
-
-
-
-    <!-- Sides content -->
+    <!-- Sides and A La Carte Boxes content -->
     <div class="sides-container">
       <% if (page === "sides") { %>
         <h1 class="title">SIDE CHOICES</h1>
+        <p class= "italic text-[20px] pb-4" >Choose One or get Half & Half</p>
         
-        <% const items = menu[page] || []; %>
+       <% const items = menu[page] || []; %>
+       <%
+        const calories = {
+          "Fried Rice": "520 cal",
+          "Chow Mein": "510 cal",
+          "Super Greens": "180 cal",
+          "White Steamed Rice": "380 cal"
+        };
+       %>
 
-        <!--const chow-mein = items.find(i => i.name === "Chow Mein");
-          const fried-rice = items.find(i => i.name === "Fried Rice");
-          const super-green = items.find(i => i.name === "Super Greens");
-          const white-steamed-rice = items.find(i => i.name === "White Steamed Rice");-->
+        <% if (items.length > 0) { %>
+          <div class="meal-grid">
+            <% items.forEach(item => { %>
+              <div class="meal-option">
+                <img src="/images/<%= item.name.toLowerCase().replace(/ /g, '-')%>.jpg" alt="<%= item.name %>" class="meal-image"/>
+                <div class="meal-name"><strong><%= item.name %></strong></div>
+                <div class="meal-calories"><%= calories[item.name] %></div>
+                <div class="meal-price">$<%= item.price.toFixed(2) %></div>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+          <h1 class="title">A LA CARTE BOXES</h1>
+          <!-- Sides Page: A La Carte Placeholder -->
+<div class="a-la-carte-sides-container flex mt-4">
 
-          <% if (items.length > 0) { %>
-            <ul>
-              <% items.forEach(item => { %>
-                <p><%= item.name %> — $<%= item.price.toFixed(2) %></p>
-              <% }) %>
-            </ul>
-          <% } else { %>
-            <p>No items in this category.</p>
-          <% } %>
+  <!-- Left Column: Entrees -->
+  <div class="entrees-column flex-1">
+    <h2 class="text-[30px] font-bold mb-2">Entrees</h2>
+    <div class="flex justify-start text-[20px] gap-8">
+      <div>
+        <div class="font-semibold">Small</div>
+        <div>Reg: $5.00</div>
+        <div>Premium: $6.00</div>
+      </div>
+      <div>
+        <div class="font-semibold">Medium</div>
+        <div>Reg: $7.00</div>
+        <div>Premium: $8.00</div>
+      </div>
+      <div>
+        <div class="font-semibold">Large</div>
+        <div>Reg: $9.00</div>
+        <div>Premium: $10.00</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Sides -->
+  <div class="sides-column flex-1">
+    <h2 class="text-[30px] font-bold mb-2">Sides</h2>
+    <div class="flex justify-start text-[20px] gap-8">
+      <div>
+        <div class="font-semibold">Medium</div>
+        <div>Reg: $3.50</div>
+        <div>Premium: $4.50</div>
+      </div>
+      <div>
+        <div class="font-semibold">Large</div>
+        <div>Reg: $5.50</div>
+        <div>Premium: $6.50</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
       <% } %>
      </div>
 
