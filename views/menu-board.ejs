@@ -10,16 +10,18 @@
 <!-- Featured Page Styles -->
  <% if (page === "featured") { %>
   <style>
-    h2 { color: gold; }
     body { background: #FFEDCE; }
   </style>
   <% } %>
 <!-- Entrees Page Styles -->
   <% if (page === "entrees") { %> 
   <style>
-    body{
-      background-color: #FFEDCE;
-    } 
+    .pick-a-meal-container{
+      margin: 20px;
+      background-color: #ffffff;
+      padding: 20px;
+    }
+
     .meal-row {
       display: flex;
       justify-content: space-between; /* separate left and right */
@@ -66,7 +68,7 @@
 
     .calories {
       color: #555;
-      font-size: 40px;
+      font-size: 35px;
     }
 
     .meal-desc {
@@ -90,20 +92,61 @@
   <!-- Appetizers Page Style -->
   <% if (page === "appetizers") { %>
   <style>
-    li { color: orange; }
     .menu-page-container { background: #fff5e6; }
   </style>
   <% } %>
   <!-- A La Carte Page Style -->
   <% if (page === "a_la_carte") { %> 
   <style>
-    h2 { color: blue; }
+    .a-la-carte-container{
+      margin: 20px;
+      background-color: #ffffff;
+      padding: 20px;
+    }
+    .entree-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr); /* 2 columns */
+      gap: 15px; /* space between grid items */
+    }
+    .meal-image {
+      width: 150px;   /* adjust as needed */
+      height: auto;   /* keeps aspect ratio */
+      border-radius: 8px;
+      transform: scale(1.1);
+      object-fit: cover;
+      margin-right: 10px;
+    }
+    .meal-option {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 10px;
+      border-radius: 8px;
+    }
+    .meal-text {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .meal-name {
+      color: black;
+      font-size: 30px;
+    }
+    .meal-calories {
+      color: #555;
+      font-size: 25px;
+    }
+    .meal-price {
+      font-size: 25px;
+      font-weight: bold;
+      color: #555;
+    }
+
   </style>
   <% } %>
   <!-- Sides Page Style -->
   <% if (page === "sides") { %> 
   <style>
-    h2 { color: green; }
   </style>
   <% } %>
 
@@ -117,6 +160,7 @@
     height: 100%;
   }
   body{
+    background-color: #FFEDCE;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -147,12 +191,6 @@
     color: #D61927;
     font-size: 50px;
   }
-  .pick-a-meal-container{
-    margin: 20px;
-    background-color: #fcf3e1;
-    padding: 20px;
-  }
-
 </style>
 </head>
 
@@ -172,8 +210,6 @@
       <a href="/menu-board?page=sides" class="<%= page==='sides'?'active':'' %>">SIDE CHOICES</a>
     </nav>
 
-
-    <hr>
     <!-- Page Content -->
     <!-- Featured content -->
     <% if (page === "featured") { %>
@@ -305,37 +341,85 @@
         <% } %>
     <% } %>
 
-    <!-- A La Carte content -->
-    <% if (page === "a_la_carte") { %>
-      <h1 class="title">ENTREE CHOICES</h1>
-      <% const items = menu[page] || []; %>
+<!-- A La Carte content -->
+<div class="a-la-carte-container">
+  <% if (page === "a_la_carte") { %>
+    <h1 class="title">ENTREE CHOICES</h1>
+    <% 
+      const displayOrder = [
+        "The Original Orange Chicken",
+        "Honey Walnut Shrimp",
+        "Black Pepper Sirloin Steak",
+        "Broccoli Beef",
+        "Kung Pao Chicken",
+        "Honey Sesame Chicken Breast",
+        "Beijing Beef",
+        "String Bean Chicken Breast",
+        "Mushroom Chicken",
+        "Grilled Teriyaki Chicken",
+        "Black Pepper Chicken"
+      ];
+      const calories = {
+        "Orange Chicken": "510 cal",
+        "Honey Sesame Chicken Breast": "340 cal",
+        "Beijing Beef": "480 cal",
+        "Grilled Teriyaki Chicken": "275 cal",
+        "Black Pepper Sirloin Steak": "180 cal",
+        "Broccoli Beef": "150 cal",
+        "Kung Pao Chicken": "320 cal",
+        "Mushroom Chicken": "220 cal",
+        "String Bean Chicken Breast": "210 cal",
+        "Honey Walnut Shrimp": "430 cal",
+        "Black Pepper Chicken": "280 cal",
+        "The Original Orange Chicken": "510 cal",
+      };
+      const entreesFromDB = menu['a_la_carte'] || [];
+      const filteredEntrees = entreesFromDB.filter(item => displayOrder.includes(item.name));
+      const entrees = displayOrder.map(name => filteredEntrees.find(item => item.name === name)).filter(item => item);
+    %>
+    <div class ="entree-grid">
+      <% entrees.forEach(item => { %>
+        <div class="meal-option">
+          <img src="/images/<%= item.name.toLowerCase().replace(/ /g, '-')%>.jpg" alt="<%= item.name %>" class="meal-image"/>
+          <div class="meal-text">
+            <div class="meal-name"><strong><%= item.name %></strong></div>
+            <div class="meal-calories"><%= calories[item.name] %></div>
+            <div class="meal-price">$<%= item.price.toFixed(2) %></div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+</div>
 
-        <% if (items.length > 0) { %>
-          <ul>
-            <% items.forEach(item => { %>
-              <p><%= item.name %> — $<%= item.price.toFixed(2) %></p>
-            <% }) %>
-          </ul>
-        <% } else { %>
-          <p>No items in this category.</p>
-        <% } %>
-    <% } %>
+
+
+
 
     <!-- Sides content -->
-    <% if (page === "sides") { %>
-      <h1 class="title">SIDE CHOICES</h1>
-      <% const items = menu[page] || []; %>
+    <div class="sides-container">
+      <% if (page === "sides") { %>
+        <h1 class="title">SIDE CHOICES</h1>
+        
+        <% const items = menu[page] || []; %>
 
-        <% if (items.length > 0) { %>
-          <ul>
-            <% items.forEach(item => { %>
-              <p><%= item.name %> — $<%= item.price.toFixed(2) %></p>
-            <% }) %>
-          </ul>
-        <% } else { %>
-          <p>No items in this category.</p>
-        <% } %>
-    <% } %>
+        <!--const chow-mein = items.find(i => i.name === "Chow Mein");
+          const fried-rice = items.find(i => i.name === "Fried Rice");
+          const super-green = items.find(i => i.name === "Super Greens");
+          const white-steamed-rice = items.find(i => i.name === "White Steamed Rice");-->
+
+          <% if (items.length > 0) { %>
+            <ul>
+              <% items.forEach(item => { %>
+                <p><%= item.name %> — $<%= item.price.toFixed(2) %></p>
+              <% }) %>
+            </ul>
+          <% } else { %>
+            <p>No items in this category.</p>
+          <% } %>
+      <% } %>
+     </div>
+
   </div>
 </body>
 
