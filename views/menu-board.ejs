@@ -4,22 +4,158 @@
   <meta charset="UTF-8">
   <title>Menu Board</title>
   <link rel="stylesheet" href="/public/css/globals.css">
-</head>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+
+<!--Styles Based on Page-->
+<!-- Featured Page Styles -->
+ <% if (page === "featured") { %>
+  <style>
+    h2 { color: gold; }
+    body { background: #FFEDCE; }
+  </style>
+  <% } %>
+<!-- Entrees Page Styles -->
+  <% if (page === "entrees") { %> 
+  <style>
+    body{
+      background-color: #FFEDCE;
+    } 
+    .meal-row {
+      display: flex;
+      justify-content: space-between; /* separate left and right */
+      align-items: flex-start;        /* top-align everything to the img */
+      width: 100%;
+      margin-bottom: 20px;
+    }
+
+    .meal-left {
+      display: flex;
+      gap: 15px; /* space between image and text stack */
+      align-items: flex-start;
+    }
+
+    .meal-text {
+      display: flex;
+      flex-direction: column; /* stack top-text + bottom-text */
+      gap: 5px;
+    }
+
+    .top-text {
+      display: flex;
+      gap: 10px; /* space between bowl and calories */
+      align-items: baseline;
+    }
+
+    .meal-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 5px;
+    }
+
+    .meal-image {
+      width: 200px;
+      height: auto;
+      border-radius: 8px;
+    }
+
+    .meal-name {
+      color: #D61927;
+      font-size: 40px;
+    }
+
+    .calories {
+      color: #555;
+      font-size: 40px;
+    }
+
+    .meal-desc {
+      font-size: 30px;
+      color: #333;
+    }
+
+    .meal-starts-at {
+      color: #777;
+      font-size: 30px;
+    }
+
+    .meal-price {
+      font-size: 30px;
+      font-weight: bold;
+      color: #555;
+    }
+
+  </style>
+  <% } %>
+  <!-- Appetizers Page Style -->
+  <% if (page === "appetizers") { %>
+  <style>
+    li { color: orange; }
+    .menu-page-container { background: #fff5e6; }
+  </style>
+  <% } %>
+  <!-- A La Carte Page Style -->
+  <% if (page === "a_la_carte") { %> 
+  <style>
+    h2 { color: blue; }
+  </style>
+  <% } %>
+  <!-- Sides Page Style -->
+  <% if (page === "sides") { %> 
+  <style>
+    h2 { color: green; }
+  </style>
+  <% } %>
+
+<!-- Common Style -->
 <style>
   html, body{
+    font-family: 'Montserrat', sans-serif;
     margin: 0;
     padding: 0;
     width: 100%;
     height: 100%;
   }
-
   body{
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
     align-items: center;
   }
+  .nav-buttons {
+    display: flex;
+    gap: 10px; /* space between buttons */
+    margin: 20px 0;
+    font-weight: bold;
+  }
+
+  .nav-buttons a {
+    text-decoration: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: #fff;           /* white background for inactive */
+    color: black;             /* red text for inactive */
+    text-transform: uppercase;
+  }
+
+  .nav-buttons a.active {
+    background: #d61927;        /* red background for active page */
+    color: #fff;                /* white text for active page */
+  }
+
+  .title{
+    color: #D61927;
+    font-size: 50px;
+  }
+  .pick-a-meal-container{
+    margin: 20px;
+    background-color: #fcf3e1;
+    padding: 20px;
+  }
+
 </style>
+</head>
+
 <body>
   <div class="fullscreen-button-container">
       <button id="fullscreen-btn">Go Fullscreen</button>
@@ -29,31 +165,180 @@
 
     <!-- Navigation -->
     <nav class="nav-buttons">
-      <a href="/menu-board?page=featured">Featured</a>
-      <a href="/menu-board?page=entrees">Entrees</a>
-      <a href="/menu-board?page=appetizers">Appetizers</a>
-      <a href="/menu-board?page=a_la_carte">A La Carte</a>
-      <a href="/menu-board?page=sides">Sides</a>
+      <a href="/menu-board?page=featured" class="<%= page==='featured'?'active':'' %>">FEATURED</a>
+      <a href="/menu-board?page=entrees" class="<%= page==='entrees'?'active':'' %>">PICK A MEAL</a>
+      <a href="/menu-board?page=appetizers" class="<%= page==='appetizers'?'active':'' %>">APPETIZERS</a>
+      <a href="/menu-board?page=a_la_carte" class="<%= page==='a_la_carte'?'active':'' %>">ENTREE CHOICES</a>
+      <a href="/menu-board?page=sides" class="<%= page==='sides'?'active':'' %>">SIDE CHOICES</a>
     </nav>
 
+
     <hr>
-
     <!-- Page Content -->
-    <h2><%= page.replace(/_/g, " ").toUpperCase() %></h2>
+    <!-- Featured content -->
+    <% if (page === "featured") { %>
+      <h1 class="title">FEATURED</h1>
+    <% } %>
 
-    <% const items = menu[page] || []; %>
+    <!-- Entrees content -->
+    <div class="pick-a-meal-container">
+      <% if (page === "entrees") { %>
+        <h1 class="title">PICK A MEAL</h1>
 
-    <% if (items.length > 0) { %>
-      <ul>
-        <% items.forEach(item => { %>
-          <li><%= item.name %> — $<%= item.price.toFixed(2) %></li>
-        <% }) %>
-      </ul>
-    <% } else { %>
-      <p>No items in this category.</p>
+        <% const items = menu[page] || []; %>
+
+        <% 
+          const bowl = items.find(i => i.name === "Bowl");
+          const plate = items.find(i => i.name === "Plate");
+          const biggerPlate = items.find(i => i.name === "Bigger Plate");
+        %>
+
+        <!-- BOWL -->
+        <% if (bowl) { %>
+          <div>
+          <div class="meal-option">
+            <div class="meal-row">
+              <!-- LEFT COLUMN -->
+              <div class="meal-left">
+                <!-- Image separately -->
+                <img src="/images/bowl.jpg" alt="Bowl" class="meal-image"/>
+                
+                <!-- Text stack next to image -->
+                <div class="meal-text">
+                  <div class="top-text">
+                    <span class="meal-name"><strong>Bowl</strong></span>
+                    <span class="calories">280-1130 cal</span>
+                  </div>
+                  <div class="bottom-text">
+                    <span class="meal-desc">1 entree & 1 side</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- RIGHT COLUMN -->
+              <div class="meal-right">
+                <span class="meal-starts-at">starts at</span>
+                <span class="meal-price">$<%= bowl.price.toFixed(2) %></span>
+              </div>
+            </div>
+          </div>
+        <% } %>
+
+        <!-- PLATE -->
+        <% if (plate) { %>
+          <div class="meal-option">
+            <div class="meal-row">
+              <!-- LEFT COLUMN -->
+              <div class="meal-left">
+                <!-- Image separately -->
+                <img src="/images/plate.jpg" alt="Plate" class="meal-image"/>
+                
+                <!-- Text stack next to image -->
+                <div class="meal-text">
+                  <div class="top-text">
+                    <span class="meal-name"><strong>Plate</strong></span>
+                    <span class="calories">430-1640 cal</span>
+                  </div>
+                  <div class="bottom-text">
+                    <span class="meal-desc">2 entrees & 1 side</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- RIGHT COLUMN -->
+              <div class="meal-right">
+                <span class="meal-starts-at">starts at</span>
+                <span class="meal-price">$<%= bowl.price.toFixed(2) %></span>
+              </div>
+            </div>
+          </div>
+        <% } %>
+
+        <!-- BIGGER PLATE -->
+        <% if (biggerPlate) { %>
+          <div class="meal-option">
+            <div class="meal-row">
+              <!-- LEFT COLUMN -->
+              <div class="meal-left">
+                <!-- Image separately -->
+                <img src="/images/bigger-plate.jpg" alt="Bigger Plate" class="meal-image"/>
+                
+                <!-- Text stack next to image -->
+                <div class="meal-text">
+                  <div class="top-text">
+                    <span class="meal-name"><strong>Bigger Plate</strong></span>
+                    <span class="calories">540-1990 cal</span>
+                  </div>
+                  <div class="bottom-text">
+                    <span class="meal-desc">3 entrees & 1 side</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- RIGHT COLUMN -->
+              <div class="meal-right">
+                <span class="meal-starts-at">starts at</span>
+                <span class="meal-price">$<%= bowl.price.toFixed(2) %></span>
+              </div>
+            </div>
+          </div>
+        <% } %>
+
+        <h1 class="title">PANDA BUNDLES</h1>
+        <p>Coming Soon!</p>
+      <% } %>
+    </div>
+
+    <!-- Appetizers content -->
+    <% if (page === "appetizers") { %>
+      <h1 class="title">APPETIZERS</h1>
+      <% const items = menu[page] || []; %>
+
+        <% if (items.length > 0) { %>
+          <ul>
+            <% items.forEach(item => { %>
+              <p><%= item.name %> — $<%= item.price.toFixed(2) %></p>
+            <% }) %>
+          </ul>
+        <% } else { %>
+          <p>No items in this category.</p>
+        <% } %>
+    <% } %>
+
+    <!-- A La Carte content -->
+    <% if (page === "a_la_carte") { %>
+      <h1 class="title">ENTREE CHOICES</h1>
+      <% const items = menu[page] || []; %>
+
+        <% if (items.length > 0) { %>
+          <ul>
+            <% items.forEach(item => { %>
+              <p><%= item.name %> — $<%= item.price.toFixed(2) %></p>
+            <% }) %>
+          </ul>
+        <% } else { %>
+          <p>No items in this category.</p>
+        <% } %>
+    <% } %>
+
+    <!-- Sides content -->
+    <% if (page === "sides") { %>
+      <h1 class="title">SIDE CHOICES</h1>
+      <% const items = menu[page] || []; %>
+
+        <% if (items.length > 0) { %>
+          <ul>
+            <% items.forEach(item => { %>
+              <p><%= item.name %> — $<%= item.price.toFixed(2) %></p>
+            <% }) %>
+          </ul>
+        <% } else { %>
+          <p>No items in this category.</p>
+        <% } %>
     <% } %>
   </div>
 </body>
+
 <script>
   const header = document.querySelector('h1');
   const nav = document.querySelector('.nav-buttons');
