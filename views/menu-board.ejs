@@ -11,7 +11,25 @@
 <!-- Featured Page Styles -->
  <% if (page === "featured") { %>
   <style>
-    body { background: #FFEDCE; }
+    .featured-images {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 30px;
+    }
+    .featured-img {
+      cursor: pointer;
+      border-radius: 8px;
+      transition: transform 0.2s;
+      width: 15%;
+      height: auto;
+    }
+
+    .featured-img:hover {
+      transform: scale(1.03);
+    }
+
+
   </style>
   <% } %>
 <!-- Entrees Page Styles -->
@@ -22,6 +40,8 @@
       background-color: #ffffff;
       padding-left: 20px;
       padding-right: 20px;
+      height: auto;
+      width: auto;
     }
 
     .meal-row {
@@ -235,15 +255,12 @@
     font-family: 'Montserrat', sans-serif;
     margin: 0;
     padding: 0;
-    width: 100%;
     height: 100%;
   }
   body{
-    background-color: #FFEDCE;
+    background-color: #000000;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
   }
   .nav-buttons {
     display: flex;
@@ -251,6 +268,13 @@
     margin: 20px 0;
     font-weight: bold;
     padding-left: 20px;
+  }
+
+  .pick-a-meal-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
   }
 
   .nav-buttons a {
@@ -267,6 +291,30 @@
     color: #fff;                /* white text for active page */
   }
 
+  .nav-buttons a:hover:not(.active) {
+    background: #e5e5e5;
+  }
+
+  #fullscreen-btn {
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: #fff;   /* same as inactive nav buttons */
+  color: black;
+  text-transform: uppercase;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  }
+
+  #fullscreen-btn:hover {
+    background: #e5e5e5;
+  }
+
+  body.fullscreen #fullscreen-btn {
+    background: #d61927;
+    color: #fff;
+  }
   .title{
     color: #D61927;
     font-size: 50px;
@@ -277,26 +325,46 @@
 </head>
 
 <body>
-  <div class="fullscreen-button-container">
-      <button id="fullscreen-btn">Go Fullscreen</button>
+
+  <!--<button id="fullscreen-btn">Go Fullscreen</button>-->
+  <div class="top-container" id="top-container">
+    <div style="text-align: right; padding-inline: 20px; padding-top: 10px;">
+      <button id="fullscreen-btn">
+        Go Fullscreen
+      </button>
     </div>
+
+  <h1 class="text-xl tracking-[0.25em] pl-5 uppercase text-red-500 font-bold">
+    PANDA EXPRESS
+  </h1>
+  <p class="mt-1 text-[15px] tracking-[0.3em] pl-5 uppercase text-neutral-400">
+          MENU BOARD
+  </p>
+
+  <nav class="nav-buttons">
+    <a href="/menu-board?page=featured" class="<%= page==='featured'?'active':'' %>">FEATURED</a>
+    <a href="/menu-board?page=entrees" class="<%= page==='entrees'?'active':'' %>">PICK A MEAL</a>
+    <a href="/menu-board?page=appetizers" class="<%= page==='appetizers'?'active':'' %>">APPETIZERS AND DRINKS</a>
+    <a href="/menu-board?page=a_la_carte" class="<%= page==='a_la_carte'?'active':'' %>">ENTREE CHOICES</a>
+    <a href="/menu-board?page=sides" class="<%= page==='sides'?'active':'' %>">SIDE CHOICES</a>
+  </nav>
+</div>
+
+
   <div class="menu-page-container" style="width: 100%; height:100%;">
-    <h1 class = "text-[30px] p-5 font-bold">Menu Board</h1>
-
-    <!-- Navigation -->
-    <nav class="nav-buttons">
-      <a href="/menu-board?page=featured" class="<%= page==='featured'?'active':'' %>">FEATURED</a>
-      <a href="/menu-board?page=entrees" class="<%= page==='entrees'?'active':'' %>">PICK A MEAL</a>
-      <a href="/menu-board?page=appetizers" class="<%= page==='appetizers'?'active':'' %>">APPETIZERS AND DRINKS</a>
-      <a href="/menu-board?page=a_la_carte" class="<%= page==='a_la_carte'?'active':'' %>">ENTREE CHOICES</a>
-      <a href="/menu-board?page=sides" class="<%= page==='sides'?'active':'' %>">SIDE CHOICES</a>
-    </nav>
-
     <!-- Page Content -->
     <!-- Featured content -->
+    
     <% if (page === "featured") { %>
-      <h1 class="title">FEATURED</h1>
+      <div class="featured-images">
+        <img src="/images/chili-crisp-shrimp.jpg" class="featured-img" />
+        <img src="/images/hot-orange-chicken.jpg" class="featured-img" />
+        <img src="/images/wok-seared-steak-and-shrimp.jpg" class="featured-img" />
+        <img src="/images/orange-chicken-featured.jpg" class="featured-img" />
+      </div>
+
     <% } %>
+
 
     <!-- Entrees content -->
     <div class="pick-a-meal-container">
@@ -638,32 +706,41 @@
 </body>
 
 <script>
-  const header = document.querySelector('h1');
-  const nav = document.querySelector('.nav-buttons');
-  const fsBtn = document.getElementById('fullscreen-btn');
+/* -------------------------------------
+   GO FULLSCREEN BUTTON (ENTIRE PAGE)
+-------------------------------------- */
+const fullscreenBtn = document.getElementById("fullscreen-btn");
+const topContainer = document.getElementById("top-container");
+
+fullscreenBtn.addEventListener("click", () => {
   const docEl = document.documentElement;
-  fsBtn.addEventListener('click', () => {
 
-    // Request fullscreen
+  if (!document.fullscreenElement) {
+    // ENTER FULLSCREEN
     if (docEl.requestFullscreen) docEl.requestFullscreen();
-    else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
-    else if (docEl.msRequestFullscreen) docEl.msRequestFullscreen();
+  } else {
+    // EXIT FULLSCREEN
+    if (document.exitFullscreen) document.exitFullscreen();
+  }
+});
 
-    // Hide everything except menu items
-    header.style.display = 'none'; // hide fullscreen button
-    nav.style.display = 'none';    // hide navigation
-    fsBtn.style.display = 'none';  // hide header
+/* Hide or show top bar when fullscreen */
+document.addEventListener("fullscreenchange", () => {
+  const isFullscreen = document.fullscreenElement !== null;
+  topContainer.style.display = isFullscreen ? "none" : "block";
+});
+
+
+/* -------------------------------------
+   FEATURED PAGE → CLICK IMAGE TO FULLSCREEN
+-------------------------------------- */
+document.querySelectorAll(".featured-img").forEach(img => {
+  img.addEventListener("click", () => {
+    // Fullscreen the clicked image
+    if (img.requestFullscreen) img.requestFullscreen();
+    else if (img.webkitRequestFullscreen) img.webkitRequestFullscreen();
+    else if (img.msRequestFullscreen) img.msRequestFullscreen();
   });
-
-    document.addEventListener('fullscreenchange', () => {
-    const inFs = !!document.fullscreenElement;
-
-    // Show/hide elements based on fullscreen state
-    header.style.display = inFs ? 'none' : 'block';
-    nav.style.display = inFs ? 'none' : 'flex';
-    fsBtn.style.display = inFs ? 'none' : 'inline-block';
-  });
+});
 </script>
-
-
 </html>
