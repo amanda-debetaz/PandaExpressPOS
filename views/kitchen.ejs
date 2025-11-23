@@ -111,7 +111,7 @@
               Order #<%= order.orderId %> - <%= order.dineOption %>
             </div>
             <div class="meta">
-              Placed At: <%= new Date(order.placedAt).toLocaleString() %>
+              Placed At (CT): <%= order.placedAtCT %>
             </div>
             <% if (order.notes) { %>
               <div class="meta">Notes: <%= order.notes %></div>
@@ -168,7 +168,7 @@
               Order #<%= order.orderId %> - <%= order.dineOption %>
             </div>
             <div class="meta">
-              Placed At: <%= new Date(order.placedAt).toLocaleString() %>
+              Placed At (CT): <%= order.placedAtCT %>
             </div>
             <% if (order.notes) { %>
               <div class="meta">Notes: <%= order.notes %></div>
@@ -229,7 +229,7 @@
               Order #<%= order.orderId %> - <%= order.dineOption %>
             </div>
             <div class="meta">
-              Placed At: <%= new Date(order.placedAt).toLocaleString() %>
+              Placed At (CT): <%= order.placedAtCT %>
             </div>
             <% if (order.notes) { %>
               <div class="meta">Notes: <%= order.notes %></div>

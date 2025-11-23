@@ -284,9 +284,18 @@ app.get("/kitchen", requireAuth, async (req, res) => {
       orderBy: { name: 'asc' },
     });
 
+    const ctFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      hour: '2-digit',
+      minute: '2-digit',
+      month: '2-digit',
+      day: '2-digit'
+    });
+
     const viewOrders = orders.map((o) => ({
       orderId: o.order_id,
       placedAt: o.created_at,
+      placedAtCT: ctFormatter.format(o.created_at),
       status: o.status,
       dineOption: o.dine_option,
       notes: o.notes ?? null,
