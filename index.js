@@ -249,7 +249,7 @@ app.get("/", (req, res) => {
     success: req.flash('success')
   });
 });
-app.get("/manager", async (req, res) => {
+app.get("/manager", requireAuth, async (req, res) => {
   const employees = await prisma.employee.findMany({
     where: { is_active: true }
   });
