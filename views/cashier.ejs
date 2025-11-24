@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cashier POS - Panda Express</title>
-    <link rel="stylesheet" href="/css/cashier.css" />
   </head>
   <style>
     /* ============ THEME ============ */
@@ -48,8 +47,7 @@
       margin: 0;
       padding: 0;
       height: 100%;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-        sans-serif;
+      font-family: Arial, sans-serif;
     }
 
     .cashier-body {
@@ -279,6 +277,33 @@
     .order-number {
       font-weight: 600;
       font-size: 1rem;
+    }
+
+    .meal-status-pill {
+      min-width: 260px;
+      padding: 0.55rem 0.9rem;
+      border-radius: 999px;
+      border: 2px solid #ef4444;
+      background: #fef2f2;
+      color: #991b1b;
+
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.25);
+    }
+
+    .meal-status-pill:empty {
+      opacity: 0;
+      border-color: transparent;
+      background: transparent;
+      box-shadow: none;
     }
 
     .order-status {
@@ -553,6 +578,30 @@
       border-color: var(--accent-red);
     }
 
+    .btn-void {
+      background: #f3f4f6;
+      border: 0.1rem solid var(--line-soft);
+      padding: 0.35rem 0.6rem;
+      font-size: 0.7rem;
+      line-height: 1;
+      border-radius: 0.6rem;
+      cursor: pointer;
+
+      min-width: 0;
+      width: auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .btn-void:hover {
+      border-color: var(--accent-red-bright);
+      background: #fee2e2;
+    }
+
     /* Footer button styles */
 
     .btn-outline {
@@ -623,6 +672,7 @@
       }
     }
   </style>
+
   <body class="cashier-body">
     <!-- Top bar -->
     <header class="cashier-header">
@@ -658,8 +708,9 @@
           <div class="order-panel-header">
             <div class="order-info">
               <div class="order-label">Order #</div>
-              <div class="order-number">—</div>
+              <div class="order-number" id="order-number">1</div>
             </div>
+            <div class="meal-status-pill" id="meal-status"></div>
             <div class="order-status">
               <span class="status-dot"></span>
               <span class="status-text">In Progress</span>
@@ -676,7 +727,7 @@
                   <th class="col-delete">Void</th>
                 </tr>
               </thead>
-              <tbody class="order-body">
+              <tbody class="order-body" id="order-body">
                 <!-- dynamic order rows go here -->
               </tbody>
             </table>
@@ -686,16 +737,20 @@
             <div class="summary-left">
               <div class="summary-line">
                 <span>Subtotal</span>
-                <span class="summary-value">$0.00</span>
+                <span class="summary-value" id="subtotal-value">$0.00</span>
               </div>
               <div class="summary-line">
                 <span>Tax</span>
-                <span class="summary-value">$0.00</span>
+                <span class="summary-value" id="tax-value">$0.00</span>
               </div>
             </div>
             <div class="summary-right">
-              <button class="btn btn-secondary">Void Line</button>
-              <button class="btn btn-secondary">Clear Order</button>
+              <button class="btn btn-secondary" id="void-last-btn">
+                Void Line
+              </button>
+              <button class="btn btn-secondary" id="clear-order-btn">
+                Clear Order
+              </button>
             </div>
           </div>
         </div>
@@ -706,54 +761,214 @@
         <div class="menu-grid">
           <!-- Meal Size -->
           <section class="menu-block">
-            <h3 class="section-title">Meal Size</h3>
+            <h3 class="section-title">Meals</h3>
             <div class="button-row">
-              <button class="btn btn-meal">Bowl</button>
-              <button class="btn btn-meal">Plate</button>
-              <button class="btn btn-meal">Bigger Plate</button>
-              <button class="btn btn-meal">A La Carte</button>
+              <button
+                class="btn btn-meal order-btn"
+                data-kind="meal"
+                data-name="Bowl"
+                data-price="8.50"
+              >
+                Bowl
+              </button>
+              <button
+                class="btn btn-meal order-btn"
+                data-kind="meal"
+                data-name="Plate"
+                data-price="10.10"
+              >
+                Plate
+              </button>
+              <button
+                class="btn btn-meal order-btn"
+                data-kind="meal"
+                data-name="Bigger Plate"
+                data-price="11.70"
+              >
+                Bigger Plate
+              </button>
+              <button
+                class="btn btn-meal order-btn"
+                data-name="A La Carte"
+                data-price=""
+              >
+                A La Carte
+              </button>
             </div>
           </section>
 
           <!-- Base -->
           <section class="menu-block">
-            <h3 class="section-title">Base</h3>
+            <h3 class="section-title">Bases</h3>
             <div class="button-row">
-              <button class="btn btn-base">White Rice</button>
-              <button class="btn btn-base">Fried Rice</button>
-              <button class="btn btn-base">Chow Mein</button>
-              <button class="btn btn-base">Super Greens</button>
+              <button
+                class="btn btn-base order-btn"
+                data-kind="base"
+                data-name="White Steamed Rice"
+                data-price="5.55"
+              >
+                White Steamed Rice
+              </button>
+              <button
+                class="btn btn-base order-btn"
+                data-kind="base"
+                data-name="Fried Rice"
+                data-price="5.55"
+              >
+                Fried Rice
+              </button>
+              <button
+                class="btn btn-base order-btn"
+                data-kind="base"
+                data-name="Chow Mein"
+                data-price="5.55"
+              >
+                Chow Mein
+              </button>
+              <button
+                class="btn btn-base order-btn"
+                data-kind="base"
+                data-name="Super Greens"
+                data-price="5.55"
+              >
+                Super Greens
+              </button>
             </div>
           </section>
 
           <!-- Entrees: wide block -->
           <section class="menu-block menu-block-wide">
-            <div class="menu-block-header">
-              <h3 class="section-title">Entrees</h3>
-              <div class="menu-block-subtitle">
-                Tap to add entree to active meal
-              </div>
-            </div>
-
+            <h3 class="section-title">Entrees</h3>
             <div class="button-grid entree-buttons">
-              <button class="btn btn-entree">Orange Chicken</button>
-              <button class="btn btn-entree">Beijing Beef</button>
-              <button class="btn btn-entree">Broccoli Beef</button>
-              <button class="btn btn-entree">Mushroom Chicken</button>
-              <button class="btn btn-entree">Kung Pao Chicken</button>
-              <button class="btn btn-entree">Black Pepper Chicken</button>
-              <button class="btn btn-entree">Honey Walnut Shrimp</button>
-              <button class="btn btn-entree">String Bean Chicken</button>
+              <button
+                class="btn btn-entree order-btn"
+                data-kind="entree"
+                data-name="Honey Walnut Shrimp"
+                data-price="7.95"
+              >
+                Honey Walnut Shrimp
+              </button>
+              <button
+                class="btn btn-entree order-btn"
+                data-kind="entree"
+                data-name="Black Pepper Sirloin Steak"
+                data-price="7.95"
+              >
+                Black Pepper Sirloin Steak
+              </button>
+
+              <button
+                class="btn btn-entree order-btn"
+                data-kind="entree"
+                data-name="Mushroom Chicken"
+                data-price="6.50"
+              >
+                Mushroom Chicken
+              </button>
+              <button
+                class="btn btn-entree order-btn"
+                data-kind="entree"
+                data-name="Kung Pao Chicken"
+                data-price="6.50"
+              >
+                Kung Pao Chicken
+              </button>
+              <button
+                class="btn btn-entree order-btn"
+                data-kind="entree"
+                data-name="String Bean Chicken Breast"
+                data-price="6.50"
+              >
+                String Bean Chicken Breast
+              </button>
+              <button
+                class="btn btn-entree order-btn"
+                data-kind="entree"
+                data-name="The Original Orange Chicken"
+                data-price="6.50"
+              >
+                The Original Orange Chicken
+              </button>
+              <button
+                class="btn btn-entree order-btn"
+                data-kind="entree"
+                data-name="Honey Sesame Chicken Breast"
+                data-price="6.50"
+              >
+                Honey Sesame Chicken Breast
+              </button>
+              <button
+                class="btn btn-entree order-btn"
+                data-kind="entree"
+                data-name="Grilled Teriyaki Chicken"
+                data-price="6.50"
+              >
+                Grilled Teriyaki Chicken
+              </button>
+              <button
+                class="btn btn-entree order-btn"
+                data-kind="entree"
+                data-name="Broccoli Beef"
+                data-price="6.50"
+              >
+                Broccoli Beef
+              </button>
+              <button
+                class="btn btn-entree order-btn"
+                data-kind="entree"
+                data-name="Beijing Beef"
+                data-price="6.50"
+              >
+                Beijing Beef
+              </button>
+              <button
+                class="btn btn-entree order-btn"
+                data-kind="entree"
+                data-name="Black Pepper Chicken"
+                data-price="6.50"
+              >
+                Black Pepper Chicken
+              </button>
+
+              <button
+                class="btn btn-entree order-btn"
+                data-kind="entree"
+                data-name="Super Greens (Entree)"
+                data-price="6.50"
+              >
+                Super Greens (Entree)
+              </button>
             </div>
           </section>
 
           <!-- Appetizers / Sides -->
           <section class="menu-block">
             <h3 class="section-title">Appetizers</h3>
-            <div class="button-row appetizer-buttons">
-              <button class="btn btn-app">Cream Cheese Rangoon</button>
-              <button class="btn btn-app">Chicken Egg Roll</button>
-              <button class="btn btn-app">Veggie Spring Roll</button>
+            <div class="button-row">
+              <button
+                class="btn btn-app order-btn"
+                data-kind="item"
+                data-name="Chicken Egg Roll"
+                data-price="2.95"
+              >
+                Chicken Egg Roll
+              </button>
+              <button
+                class="btn btn-app order-btn"
+                data-kind="item"
+                data-name="Veggie Spring Roll"
+                data-price="2.65"
+              >
+                Veggie Spring Roll
+              </button>
+              <button
+                class="btn btn-app order-btn"
+                data-kind="item"
+                data-name="Cream Cheese Rangoon"
+                data-price="2.65"
+              >
+                Cream Cheese Rangoon
+              </button>
             </div>
           </section>
 
@@ -765,16 +980,6 @@
               <button class="btn btn-drink">Sweet Tea</button>
               <button class="btn btn-drink">Unsweet Tea</button>
               <button class="btn btn-drink">Water</button>
-            </div>
-          </section>
-
-          <section class="menu-block">
-            <h3 class="section-title">Quick Actions</h3>
-            <div class="button-row">
-              <button class="btn btn-secondary">Extra Sauce</button>
-              <button class="btn btn-secondary">No Veg</button>
-              <button class="btn btn-secondary">To-Go</button>
-              <button class="btn btn-secondary">Dine In</button>
             </div>
           </section>
         </div>
@@ -797,4 +1002,275 @@
       </div>
     </footer>
   </body>
+
+  <script>
+    (function () {
+      // ===== CONFIG =====
+      const TAX_RATE = 0.0825;
+
+      // Meal rules
+      const MEAL_CONFIGS = {
+        Bowl: { bases: 1, entrees: 1 },
+        Plate: { bases: 1, entrees: 2 },
+        "Bigger Plate": { bases: 1, entrees: 3 },
+      };
+
+      // ===== STATE =====
+      let orderItems = [];
+      let nextId = 1;
+      let currentOrderNumber = 1;
+
+      // meal-building state
+      let activeMeal = null;
+
+      // ===== DOM =====
+      const orderBody = document.getElementById("order-body");
+      const subtotalEl = document.getElementById("subtotal-value");
+      const taxEl = document.getElementById("tax-value");
+      const headerTotalEl = document.querySelector(".total-value");
+
+      const voidLastBtn = document.getElementById("void-last-btn");
+      const clearOrderBtn = document.getElementById("clear-order-btn");
+      const orderButtons = document.querySelectorAll(".order-btn");
+
+      const mealStatusEl = document.getElementById("meal-status");
+      const orderNumberEl = document.getElementById("order-number");
+
+      // ===== HELPERS =====
+      function formatMoney(amount) {
+        return "$" + amount.toFixed(2);
+      }
+
+      function setMealStatus(text) {
+        if (!mealStatusEl) return;
+        mealStatusEl.textContent = text;
+      }
+
+      // ===== ORDER LOGIC =====
+
+      function addOrderLine(name, price) {
+        const existing = orderItems.find(
+          (item) => item.name === name && item.price === price
+        );
+        if (existing) existing.quantity += 1;
+        else {
+          orderItems.push({
+            id: nextId++,
+            name,
+            price,
+            quantity: 1,
+          });
+        }
+        renderOrder();
+      }
+
+      function removeItem(id) {
+        orderItems = orderItems.filter((item) => item.id !== id);
+        renderOrder();
+      }
+
+      function removeLastItem() {
+        if (orderItems.length === 0) return;
+        orderItems.pop();
+        renderOrder();
+      }
+
+      function clearOrder() {
+        orderItems = [];
+        activeMeal = null;
+        setMealStatus("");
+
+        currentOrderNumber += 1;
+        updateOrderNumber();
+
+        renderOrder();
+      }
+
+      function updateOrderNumber() {
+        if (orderNumberEl) {
+          orderNumberEl.textContent = currentOrderNumber;
+        }
+      }
+
+      function renderOrder() {
+        if (!orderBody || !subtotalEl || !taxEl || !headerTotalEl) return;
+
+        orderBody.innerHTML = "";
+        let subtotal = 0;
+
+        orderItems.forEach((item) => {
+          const row = document.createElement("tr");
+
+          const lineTotal = item.price * item.quantity;
+          subtotal += lineTotal;
+
+          const itemCell = document.createElement("td");
+          itemCell.textContent = item.name;
+
+          const qtyCell = document.createElement("td");
+          qtyCell.textContent = String(item.quantity);
+
+          const priceCell = document.createElement("td");
+          priceCell.textContent = formatMoney(lineTotal);
+
+          const deleteCell = document.createElement("td");
+          deleteCell.style.textAlign = "left";
+
+          const deleteBtn = document.createElement("button");
+          deleteBtn.textContent = "Void";
+          deleteBtn.className = "btn btn-void";
+          deleteBtn.style.fontSize = "0.7rem";
+          deleteBtn.style.padding = "0.3rem 0.6rem";
+
+          deleteBtn.addEventListener("click", () => removeItem(item.id));
+          deleteCell.appendChild(deleteBtn);
+
+          row.appendChild(itemCell);
+          row.appendChild(qtyCell);
+          row.appendChild(priceCell);
+          row.appendChild(deleteCell);
+
+          orderBody.appendChild(row);
+        });
+
+        const tax = subtotal * TAX_RATE;
+        const total = subtotal + tax;
+
+        subtotalEl.textContent = formatMoney(subtotal);
+        taxEl.textContent = formatMoney(tax);
+        headerTotalEl.textContent = formatMoney(total);
+      }
+
+      // ===== MEAL BUILDING =====
+      function startMealBuild(mealName, mealPrice) {
+        const cfg = MEAL_CONFIGS[mealName];
+        if (!cfg) {
+          // if meal not recognized, just add as normal item
+          addOrderLine(mealName, mealPrice);
+          return;
+        }
+
+        activeMeal = {
+          mealName,
+          mealPrice,
+          basesNeeded: cfg.bases,
+          entreesNeeded: cfg.entrees,
+          baseChoice: null,
+          entreeChoices: [],
+        };
+
+        setMealStatus(
+          `Building ${mealName}: choose ${cfg.bases} base & ${cfg.entrees} entree(s)`
+        );
+      }
+
+      function chooseBase(baseName) {
+        if (!activeMeal) return;
+
+        activeMeal.baseChoice = baseName;
+        setMealStatus(
+          `Building ${activeMeal.mealName}: choose ${activeMeal.entreesNeeded} entree(s)`
+        );
+
+        tryCompleteMeal();
+      }
+
+      function chooseEntree(entreeName) {
+        if (!activeMeal) return;
+
+        if (activeMeal.entreeChoices.length >= activeMeal.entreesNeeded) {
+          // already full, ignore extra taps
+          return;
+        }
+
+        activeMeal.entreeChoices.push(entreeName);
+
+        const remaining =
+          activeMeal.entreesNeeded - activeMeal.entreeChoices.length;
+        if (remaining > 0) {
+          setMealStatus(
+            `Building ${activeMeal.mealName}: ${remaining} entree(s) left`
+          );
+        }
+
+        tryCompleteMeal();
+      }
+
+      function tryCompleteMeal() {
+        if (!activeMeal) return;
+
+        const baseDone = !!activeMeal.baseChoice;
+        const entreesDone =
+          activeMeal.entreeChoices.length === activeMeal.entreesNeeded;
+
+        if (baseDone && entreesDone) {
+          const baseText = activeMeal.baseChoice;
+          const entreeText = activeMeal.entreeChoices.join(", ");
+
+          const lineName = `${activeMeal.mealName} (${baseText}; ${entreeText})`;
+
+          addOrderLine(lineName, activeMeal.mealPrice);
+
+          activeMeal = null;
+          setMealStatus("");
+        }
+      }
+
+      // ===== BUTTON HANDLERS =====
+      function handleButtonClick(btn) {
+        const kind = btn.getAttribute("data-kind"); // meal | base | entree | item
+        const name = btn.getAttribute("data-name");
+        const priceAttr = btn.getAttribute("data-price");
+
+        if (!name || !priceAttr) return;
+        const price = parseFloat(priceAttr);
+        if (isNaN(price)) return;
+
+        // If currently building a meal:
+        if (activeMeal) {
+          if (kind === "meal") {
+            // starting a new meal overwrites previous incomplete meal
+            startMealBuild(name, price);
+            return;
+          }
+
+          if (kind === "base") {
+            chooseBase(name);
+            return;
+          }
+
+          if (kind === "entree") {
+            chooseEntree(name);
+            return;
+          }
+
+          // kind === "item" while building a meal:
+          // allow a-la-carte add without interrupting meal
+          addOrderLine(name, price);
+          return;
+        }
+
+        // Not building a meal:
+        if (kind === "meal") {
+          startMealBuild(name, price);
+        } else {
+          // base/entree/item all add a-la-carte if no active meal
+          addOrderLine(name, price);
+        }
+      }
+
+      function init() {
+        orderButtons.forEach((btn) => {
+          btn.addEventListener("click", () => handleButtonClick(btn));
+        });
+
+        voidLastBtn && voidLastBtn.addEventListener("click", removeLastItem);
+        clearOrderBtn && clearOrderBtn.addEventListener("click", clearOrder);
+
+        renderOrder();
+      }
+
+      document.addEventListener("DOMContentLoaded", init);
+    })();
+  </script>
 </html>
