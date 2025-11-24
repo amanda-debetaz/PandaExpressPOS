@@ -106,7 +106,7 @@
       <div>
         <div class="text-xs uppercase tracking-[0.25em] text-red-100 font-semibold" data-original="Panda Express">Panda Express</div>
         <h1 id="builder-title" class="text-2xl font-semibold mt-1">
-          <%= isEdit ? 'Edit' : 'Build' %> Your 
+          <%= (typeof isEdit !== 'undefined' && isEdit) ? 'Edit' : 'Build' %> Your 
           <%= type === 'bowl' ? 'Bowl' : (type === 'bigger-plate' ? 'Bigger Plate' : 'Plate') %>
         </h1>
         <div class="text-sm text-red-100">

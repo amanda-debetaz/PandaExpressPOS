@@ -570,6 +570,8 @@ function findMealPrice(allEntrees, type) {
 app.get('/builder/:type', async (req, res) => {
   try {
     const type = (req.params.type || 'plate').toLowerCase();
+    const isEdit = req.query.edit === '1' || req.query.edit === 'true';
+    const editIdx = req.query.idx ? Number(req.query.idx) : null;
     const items = await prisma.menu_item.findMany({
       where: { is_active: true },
       include: {
@@ -627,7 +629,7 @@ app.get('/builder/:type', async (req, res) => {
     })();
     // Premium surcharge: $1.50 per premium entree
     const premiumSurcharge = 1.50;
-    res.render('builder', { menu, type, price: basePrice, premiumSurcharge });
+    res.render('builder', { menu, type, price: basePrice, premiumSurcharge, isEdit, editIdx });
   } catch (err) {
     console.error('Builder route error:', err);
     res.status(500).send('Unable to load builder');
@@ -637,6 +639,7 @@ app.get('/builder/:type', async (req, res) => {
 app.get('/builder/edit', async (req, res) => {
   try {
     const type = (req.query.type || 'plate').toLowerCase();
+    const editIdx = req.query.idx ? Number(req.query.idx) : null;
     const items = await prisma.menu_item.findMany({
       where: { is_active: true },
       include: {
@@ -693,7 +696,7 @@ app.get('/builder/edit', async (req, res) => {
       return found ? Number(found.price) : 0;
     })();
     const premiumSurcharge = 1.50;
-    res.render('builder', { menu, type, price: basePrice, premiumSurcharge });
+    res.render('builder', { menu, type, price: basePrice, premiumSurcharge, isEdit: true, editIdx });
   } catch (err) {
     console.error('Builder edit error:', err);
     res.status(500).send('Unable to load builder edit');
