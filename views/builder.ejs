@@ -104,34 +104,61 @@
   <header class="w-full bg-red-700 text-white border-b border-red-800">
     <div class="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
       <div>
-        <div class="text-xs uppercase tracking-[0.25em] text-red-100 font-semibold">Panda Express</div>
-        <h1 class="text-2xl font-semibold mt-1">Build Your <%= type === 'bowl' ? 'Bowl' : (type === 'bigger-plate' ? 'Bigger Plate' : 'Plate') %></h1>
-        <div class="text-sm text-red-100">Price: $<span id="price"><%= Number(price).toFixed(2) %></span></div>
+        <div class="text-xs uppercase tracking-[0.25em] text-red-100 font-semibold" data-original="Panda Express">Panda Express</div>
+        <h1 id="builder-title" class="text-2xl font-semibold mt-1">
+          <%= isEdit ? 'Edit' : 'Build' %> Your 
+          <%= type === 'bowl' ? 'Bowl' : (type === 'bigger-plate' ? 'Bigger Plate' : 'Plate') %>
+        </h1>
+        <div class="text-sm text-red-100">
+          <span data-original="Price:">Price:</span> 
+          $<span id="price"><%= Number(price).toFixed(2) %></span>
+        </div>
       </div>
-      <a href="/kiosk" class="text-sm text-red-100 hover:text-white">Back to Menu</a>
+      <a href="/kiosk" class="text-sm text-red-100 hover:text-white" data-original="Back to Menu">Back to Menu</a>
     </div>
   </header>
 
   <main class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
     <section>
-      <div class="text-sm uppercase tracking-[0.2em] text-red-700 font-bold mb-3">Side (total 1)</div>
-      <div id="side-hint" class="text-xs text-neutral-600 mb-2">Select one full side.</div>
+      <div class="text-sm uppercase tracking-[0.2em] text-red-700 font-bold mb-3" 
+           data-original="Side (total 1)">Side (total 1)</div>
+      
+      <div id="side-hint" class="text-xs text-neutral-600 mb-2" 
+           data-original="Select one full side.">Select one full side.</div>
+
       <div id="sides" class="grid grid-cols-2 gap-4"></div>
-      <div class="mt-3 text-xs text-neutral-600">Selected: <span id="side-total" class="font-bold text-red-700">0</span>/1</div>
+      
+      <div class="mt-3 text-xs text-neutral-600">
+        <span data-original="Selected:">Selected:</span> 
+        <span id="side-total" class="font-bold text-red-700">0</span>/1
+      </div>
     </section>
 
     <section>
-      <div class="text-sm uppercase tracking-[0.2em] text-red-700 font-bold mb-3">Entrees</div>
-      <div class="text-xs text-neutral-600 mb-2">Choose up to <span id="entree-max">1</span> • <span class="text-yellow-600 font-semibold">Premium entrees +$1.50</span></div>
+      <div class="text-sm uppercase tracking-[0.2em] text-red-700 font-bold mb-3" 
+           data-original="Entrees">Entrees</div>
+      
+      <div class="text-xs text-neutral-600 mb-2">
+        <span data-original="Choose up to">Choose up to</span> 
+        <span id="entree-max">1</span> • 
+        <span class="text-yellow-600 font-semibold" 
+              data-original="Premium entrees +$1.50">Premium entrees +$1.50</span>
+      </div>
+      
       <div id="entrees" class="grid grid-cols-2 gap-4"></div>
-      <div class="mt-3 text-xs text-neutral-600">Selected: <span id="entree-count" class="font-bold text-red-700">0</span>/<span id="entree-max-2">1</span> • Total: $<span id="calculated-price" class="font-bold text-red-700">0.00</span></div>
+      
+      <div class="mt-3 text-xs text-neutral-600">
+        <span data-original="Selected:">Selected:</span> 
+        <span id="entree-count" class="font-bold text-red-700">0</span>/<span id="entree-max-2">1</span> • 
+        <span data-original="Total:">Total:</span> $<span id="calculated-price" class="font-bold text-red-700">0.00</span>
+      </div>
     </section>
   </main>
 
   <footer class="sticky bottom-0 w-full bg-white border-t border-neutral-200 shadow-lg">
     <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-end gap-3">
-      <button id="cancel" class="px-4 py-2 text-sm border border-neutral-300 bg-white hover:bg-neutral-100 rounded">Cancel</button>
-      <button id="save" class="px-5 py-2 text-sm font-semibold bg-red-700 text-white border border-red-700 hover:bg-red-800 rounded disabled:opacity-40 disabled:cursor-not-allowed" disabled>Add to Cart</button>
+      <button id="cancel" data-original="Cancel" class="px-4 py-2 text-sm border border-neutral-300 bg-white hover:bg-neutral-100 rounded">Cancel</button>
+      <button id="save" data-original="Add to Cart" class="px-5 py-2 text-sm font-semibold bg-red-700 text-white border border-red-700 hover:bg-red-800 rounded disabled:opacity-40 disabled:cursor-not-allowed" disabled>Add to Cart</button>
     </div>
   </footer>
 
@@ -139,9 +166,6 @@
     // Data from server
     const builderData = JSON.parse('<%- JSON.stringify({ menu, type, price, premiumSurcharge }) %>');
     console.log('Builder Data:', builderData);
-    console.log('Menu structure:', builderData.menu);
-    console.log('Entrees:', builderData.menu.entrees);
-    console.log('Sides:', builderData.menu.sides);
 
     // LocalStorage cart helpers
     const CART_KEY = 'kiosk_cart';
@@ -164,15 +188,23 @@
 
     document.getElementById('entree-max').textContent = cfg.entreeSlots;
     document.getElementById('entree-max-2').textContent = cfg.entreeSlots;
-    document.getElementById('side-hint').textContent = cfg.allowHalf ? 'Select sides up to a total of 1 (halves allowed).' : 'Select one full side.';
+
+    // UPDATED: Set text content AND data-original for translation
+    const hintText = cfg.allowHalf 
+      ? 'Select sides up to a total of 1 (halves allowed).'
+      : 'Select one full side.';
+    const sideHintEl = document.getElementById('side-hint');
+    sideHintEl.textContent = hintText;
+    sideHintEl.setAttribute('data-original', hintText);
 
     const proteins = (builderData.menu.entrees || []);
     const sides = builderData.menu.sides || [];
-    
-    console.log('Proteins array:', proteins);
-    console.log('Proteins count:', proteins.length);
-    console.log('Sides array:', sides);
-    console.log('Sides count:', sides.length);
+
+    let translationMap = {
+      names: {},     // "Orange Chicken" -> "Pollo a la Naranja"
+      allergens: {}  // "Wheat, Soy" -> "Trigo, Soja"
+    };
+    let currentLang = 'en';
 
     // Image map
     const imageMap = {
@@ -239,13 +271,25 @@
       sides.forEach(s => {
         const val = sideCounts[s.name] || 0;
         const isSelected = val > 0;
+        
+        // Resolve Text
+        const displayName = (currentLang !== 'en' && translationMap.names[s.name]) ? translationMap.names[s.name] : s.name;
+        
+        // Resolve Allergens Tooltip
+        const rawAllergens = (s.allergens || []).join(', ');
+        const displayAllergens = (currentLang !== 'en' && translationMap.allergens[rawAllergens]) ? translationMap.allergens[rawAllergens] : rawAllergens;
+        
+        const allergenBadge = s.allergens && s.allergens.length 
+          ? `<span class="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-700 text-white text-xs font-bold flex items-center justify-center" title="Allergens: ${displayAllergens}">i</span>` 
+          : '';
+
         const card = document.createElement('button');
         card.className = `relative w-full bg-white border-2 ${isSelected ? 'border-red-600' : 'border-neutral-300'} rounded-lg overflow-hidden text-left hover:border-red-600 transition`;
-        const allergensList = s.allergens || [];
-        const allergenBadge = allergensList.length ? `<span class="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-700 text-white text-xs font-bold flex items-center justify-center" title="Allergens: ${allergensList.join(', ')}">i</span>` : '';
+        
         const img = imageMap[s.name] ? `/images/${imageMap[s.name]}` : '/images/placeholder.jpg';
         const statusLabel = val === 1 ? 'Full' : (val === 0.5 ? 'Half' : '');
         const statusBadge = isSelected ? `<span class="absolute top-2 left-2 px-2 py-1 text-xs font-bold bg-red-600 text-white rounded z-10">${statusLabel}</span>` : '';
+        
         card.innerHTML = `
           ${statusBadge}
           ${allergenBadge}
@@ -253,34 +297,25 @@
             <img src="${img}" alt="${s.name}" class="w-full h-full object-contain" />
           </div>
           <div class="px-3 py-2">
-            <div class="text-sm font-semibold">${s.name}</div>
+            <div class="text-sm font-semibold" data-original="${s.name}">${displayName}</div>
           </div>
         `;
+        
         card.addEventListener('click', () => {
           if (!cfg.allowHalf) {
-            // Bowl: only one full side allowed
             Object.keys(sideCounts).forEach(k => sideCounts[k] = 0);
             sideCounts[s.name] = 1;
           } else {
-            // Plate/Bigger Plate: smart halves logic
             const selectedSides = Object.entries(sideCounts).filter(([_,v]) => v > 0);
             if (val === 0) {
-              // First click: check how many sides already selected
               if (selectedSides.length === 0) {
-                // First side ever: make it Full
                 sideCounts[s.name] = 1;
               } else if (selectedSides.length === 1) {
-                // Second side: convert both to Half
-                Object.keys(sideCounts).forEach(k => {
-                  if (sideCounts[k] === 1) sideCounts[k] = 0.5;
-                });
+                Object.keys(sideCounts).forEach(k => { if (sideCounts[k] === 1) sideCounts[k] = 0.5; });
                 sideCounts[s.name] = 0.5;
               }
-              // Don't allow third side
             } else {
-              // Clicking selected side: deselect it
               sideCounts[s.name] = 0;
-              // If only one side remains at 0.5, convert it to Full
               const remaining = Object.entries(sideCounts).filter(([_,v]) => v > 0);
               if (remaining.length === 1 && remaining[0][1] === 0.5) {
                 sideCounts[remaining[0][0]] = 1;
@@ -298,39 +333,43 @@
       proteins.forEach(p => {
         const count = entreeCounts[p.name] || 0;
         const isSelected = count > 0;
+        
+        // Resolve Text
+        const displayName = (currentLang !== 'en' && translationMap.names[p.name]) ? translationMap.names[p.name] : p.name;
+        
+        // Resolve Allergens Tooltip
+        const rawAllergens = (p.allergens || []).join(', ');
+        const displayAllergens = (currentLang !== 'en' && translationMap.allergens[rawAllergens]) ? translationMap.allergens[rawAllergens] : rawAllergens;
+
+        const allergenBadge = p.allergens && p.allergens.length 
+          ? `<span class="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-700 text-white text-xs font-bold flex items-center justify-center z-10" title="Allergens: ${displayAllergens}">i</span>` 
+          : '';
+          
         const card = document.createElement('button');
         card.className = `relative w-full bg-white border-2 ${isSelected ? 'border-red-600' : 'border-neutral-300'} rounded-lg overflow-hidden text-left hover:border-red-600 transition`;
-        const allergensList = p.allergens || [];
-        const allergenBadge = allergensList.length ? `<span class="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-700 text-white text-xs font-bold flex items-center justify-center z-10" title="Allergens: ${allergensList.join(', ')}">i</span>` : '';
         const premiumBadge = p.isPremium ? `<span class="absolute top-2 left-2 px-2 py-1 text-xs font-bold bg-yellow-400 text-black rounded z-10">+$${builderData.premiumSurcharge}</span>` : '';
         const countBadge = isSelected ? `<span class="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-red-600 text-white text-sm font-bold flex items-center justify-center z-10">${count}</span>` : '';
         const img = imageMap[p.name] ? `/images/${imageMap[p.name]}` : '/images/placeholder.jpg';
+        
         card.innerHTML = `
           ${allergenBadge}
           ${premiumBadge}
           ${countBadge}
           <div class="aspect-square bg-neutral-100 flex items-center justify-center p-2">
-            <img src="${img}" alt="${p.name}" class="w-full h-full object-contain" />
-          </div>
-          <div class="px-3 py-2">
-            <div class="text-sm font-semibold">${p.name}</div>
-          </div>
-        `;
+              <img src="${img}" alt="${p.name}" class="w-full h-full object-contain" />
+            </div>
+            <div class="px-3 py-2">
+              <div class="text-sm font-semibold" data-original="${p.name}">${displayName}</div>
+            </div>
+          `;
+        
         card.addEventListener('click', () => {
           const currentTotal = totalEntrees();
           if (count === 0) {
-            // Adding new entree
-            if (currentTotal < cfg.entreeSlots) {
-              entreeCounts[p.name] = 1;
-            }
+            if (currentTotal < cfg.entreeSlots) entreeCounts[p.name] = 1;
           } else {
-            // Already selected, increment count
-            if (currentTotal < cfg.entreeSlots) {
-              entreeCounts[p.name] = count + 1;
-            } else {
-              // At max, clicking cycles back to 0 (deselect)
-              entreeCounts[p.name] = 0;
-            }
+            if (currentTotal < cfg.entreeSlots) entreeCounts[p.name] = count + 1;
+            else entreeCounts[p.name] = 0;
           }
           update();
         });
@@ -386,6 +425,61 @@
 
     // Initial render
     update();
+
+    // TRANSLATION LOGIC
+    document.addEventListener('DOMContentLoaded', () => {
+      const titleEl = document.getElementById('builder-title');
+      if (titleEl && !titleEl.hasAttribute('data-original')) {
+        titleEl.setAttribute('data-original', titleEl.textContent.trim());
+      }
+      
+      const savedLang = localStorage.getItem('kiosk_lang');
+      if (savedLang && savedLang !== 'en') {
+        currentLang = savedLang;
+        initTranslation(savedLang);
+      }
+    });
+
+    async function initTranslation(lang) {
+      if (lang === 'en') return;
+
+      const namesToTranslate = [...new Set([...sides.map(s=>s.name), ...proteins.map(p=>p.name)])];
+      const allergensToTranslate = [...new Set([...sides.map(s=>(s.allergens||[]).join(', ')), ...proteins.map(p=>(p.allergens||[]).join(', '))])].filter(Boolean);
+      
+      const staticElements = Array.from(document.querySelectorAll('[data-original]'));
+      const staticTexts = staticElements.map(el => el.getAttribute('data-original'));
+
+      const allTexts = [...namesToTranslate, ...allergensToTranslate, ...staticTexts];
+      
+      if (allTexts.length === 0) return;
+
+      try {
+        const res = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: allTexts, target: lang })
+        });
+        const data = await res.json();
+        
+        if (data.success && Array.isArray(data.translatedText)) {
+          let cursor = 0;
+          
+          namesToTranslate.forEach(original => {
+            translationMap.names[original] = data.translatedText[cursor++];
+          });
+          
+          allergensToTranslate.forEach(original => {
+            translationMap.allergens[original] = data.translatedText[cursor++];
+          });
+
+          staticElements.forEach(el => {
+            el.textContent = data.translatedText[cursor++];
+          });
+
+          update();
+        }
+      } catch (e) { console.error(e); }
+    }
   </script>
 </body>
 </html>

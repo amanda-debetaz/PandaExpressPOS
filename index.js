@@ -1181,6 +1181,89 @@ app.get('/kitchen/stock', requireAuth, async (req, res) => {
   }
 });
 
+// Google Maps Weather API Endpoint
+app.get('/api/weather', async (req, res) => {
+  try {
+    const apiKey = process.env.GOOGLE_WEATHER_API;
+    // Coordinates for College Station
+    const lat = 30.6280;
+    const lon = -96.3344;
+
+    const url = `https://weather.googleapis.com/v1/currentConditions:lookup?key=${apiKey}&location.latitude=${lat}&location.longitude=${lon}&unitsSystem=IMPERIAL`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error?.message || 'Failed to fetch weather');
+    }
+
+    const conditions = data.weatherCondition;
+    const temp = data.temperature;
+    
+    const iconUrl = conditions.iconBaseUri ? `${conditions.iconBaseUri}.png` : '';
+
+    res.json({
+      success: true,
+      temp: Math.round(temp.degrees),
+      desc: conditions.description?.text || 'Clear',
+      icon: iconUrl
+    });
+
+  } catch (err) {
+    console.error("Weather API Error:", err.message);
+    // Fallback data in case API key is invalid/quota exceeded
+    res.json({ 
+      success: true, 
+      temp: 999999, 
+      desc: 'Error', 
+      icon: 'https://maps.gstatic.com/weather/v1/sunny.png',
+      isMock: true 
+    });
+  }
+});
+
+// Google Cloud Translation API Endpoint
+app.post('/api/translate', async (req, res) => {
+  const { text, target } = req.body;
+  const apiKey = process.env.GOOGLE_TRANSLATION_API;
+
+  if (!text || !target) return res.status(400).json({ error: 'Missing data' });
+
+  try {
+    // Ensure input is an array for consistent processing
+    const inputs = Array.isArray(text) ? text : [text];
+
+    const url = `https://translation.googleapis.com/language/translate/v2?key=${apiKey}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        q: inputs,
+        target: target,
+        format: 'text'
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.error) {
+      throw new Error(data.error.message);
+    }
+
+    // Return array of translated strings
+    const translations = data.data.translations.map(t => t.translatedText);
+    
+    res.json({ 
+      success: true, 
+      translatedText: Array.isArray(text) ? translations : translations[0] 
+    });
+  } catch (err) {
+    console.error("Translation API Error:", err.message);
+    res.status(500).json({ success: false, error: 'Translation failed' });
+  }
+});
+
 
 // ---------- 5. TEST DB ----------
 app.get("/test-db", async (req, res) => {

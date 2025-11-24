@@ -58,122 +58,94 @@
     
   </style> -->
 
-  <body class="h-screen flex bg-black text-white overflow-hidden">
+<body class="h-screen flex bg-black text-white overflow-hidden">
     <script>
-      // Pass server-side menu data to JavaScript
       const menuData = JSON.parse('<%- JSON.stringify(menu || {}) %>');
     </script>
-    <!-- Sidebar -->
+    
     <aside class="w-72 bg-black border-r border-red-900 flex flex-col h-screen">
       <div class="px-6 pt-8 pb-4 flex-shrink-0">
-        <div class="text-xs tracking-[0.25em] uppercase text-red-500 font-bold">
-          Panda Express
-        </div>
-        <div class="mt-1 text-[11px] tracking-[0.3em] uppercase text-neutral-400">
-          Self-Service Kiosk
-        </div>
+        <div class="text-xs tracking-[0.25em] uppercase text-red-500 font-bold" data-original="Panda Express">Panda Express</div>
+        <div class="mt-1 text-[11px] tracking-[0.3em] uppercase text-neutral-400" data-original="Self-Service Kiosk">Self-Service Kiosk</div>
       </div>
 
       <nav class="flex-shrink-0">
         <ul class="flex flex-col text-sm">
           <li>
-            <button data-category="entrees" class="nav-link active w-full text-left">
-              Entrees
-            </button>
+            <button data-category="entrees" class="nav-link active w-full text-left" data-original="Entrees">Entrees</button>
           </li>
           <li>
-            <button data-category="a_la_carte" class="nav-link w-full text-left">
-              A La Carte
-            </button>
+            <button data-category="a_la_carte" class="nav-link w-full text-left" data-original="A La Carte">A La Carte</button>
           </li>
           <li>
-            <button data-category="sides" class="nav-link w-full text-left">
-              Sides
-            </button>
+            <button data-category="sides" class="nav-link w-full text-left" data-original="Sides">Sides</button>
           </li>
           <li>
-            <button data-category="appetizers" class="nav-link w-full text-left">
-              Appetizers
-            </button>
+            <button data-category="appetizers" class="nav-link w-full text-left" data-original="Appetizers">Appetizers</button>
           </li>
         </ul>
+        
+        <div class="mt-8 border-t border-neutral-800 pt-4">
+          <div class="px-6 text-[10px] uppercase tracking-widest text-neutral-500 mb-3" data-original="Language">Language</div>
+          <div class="px-6 flex gap-2 flex-wrap">
+            <button onclick="changeLanguage('en')" class="text-xs font-bold text-white bg-neutral-800 px-3 py-2 rounded hover:bg-red-700 transition">EN</button>
+            <button onclick="changeLanguage('es')" class="text-xs font-bold text-white bg-neutral-800 px-3 py-2 rounded hover:bg-red-700 transition">ES</button>
+            <button onclick="changeLanguage('zh')" class="text-xs font-bold text-white bg-neutral-800 px-3 py-2 rounded hover:bg-red-700 transition">ZH</button>
+            <button onclick="changeLanguage('fr')" class="text-xs font-bold text-white bg-neutral-800 px-3 py-2 rounded hover:bg-red-700 transition">FR</button>
+            <button onclick="changeLanguage('de')" class="text-xs font-bold text-white bg-neutral-800 px-3 py-2 rounded hover:bg-red-700 transition">DE</button>
+          </div>
+        </div>
       </nav>
 
-      <!-- Spacer (cart moved to right drawer) -->
       <div class="flex-1 border-t border-neutral-800 min-h-0"></div>
 
-      <div class="px-6 py-4 text-[11px] text-neutral-500 border-t border-neutral-800 flex-shrink-0">
+      <div id="instruction-text" 
+           class="px-6 py-4 text-[11px] text-neutral-500 border-t border-neutral-800 flex-shrink-0" 
+           data-original="Tap items to add them to your order.">
         Tap items to add them to your order.
       </div>
     </aside>
 
-    <!-- Main Content -->
     <main class="flex-1 flex flex-col bg-white text-black h-screen">
-      <!-- Header -->
       <header class="flex items-center justify-between px-10 py-6 border-b border-neutral-200 flex-shrink-0">
         <div>
-          <h1 id="category-title" class="text-3xl font-semibold tracking-tight">
-            Entrees
-          </h1>
-          <p class="mt-1 text-sm text-neutral-500">
+          <h1 id="category-title" class="text-3xl font-semibold tracking-tight" data-original="Entrees">Entrees</h1>
+          <p class="mt-1 text-sm text-neutral-500" data-original="Choose your main dish to start your order.">
             Choose your main dish to start your order.
           </p>
         </div>
 
-        <!-- Removed redundant 'Ready to order' badge -->
+        <div id="weather-widget" class="flex items-center gap-3 bg-neutral-100 px-4 py-2 rounded-lg hidden">
+          <img id="weather-icon" src="" alt="Weather" class="w-10 h-10 object-contain">
+          <div class="text-right">
+            <div id="weather-temp" class="text-xl font-bold text-neutral-800">--°</div>
+            <div id="weather-desc" class="text-xs text-neutral-500 uppercase tracking-wider">Loading</div>
+          </div>
+        </div>
       </header>
 
-      <!-- Scrollable Content Area -->
       <section class="flex-1 overflow-y-auto px-10 py-8 bg-neutral-50">
-        <!-- Entrees -->
-        <div id="entrees" class="category-section">
-          <div class="grid gap-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            <!-- Will be populated by JavaScript -->
-          </div>
-        </div>
-
-        <!-- A La Carte -->
-        <div id="a_la_carte" class="category-section hidden">
-          <div class="grid gap-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            <!-- Will be populated by JavaScript -->
-          </div>
-        </div>
-
-        <!-- Sides -->
-        <div id="sides" class="category-section hidden">
-          <div class="grid gap-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            <!-- Will be populated by JavaScript -->
-          </div>
-        </div>
-
-        <!-- Appetizers -->
-        <div id="appetizers" class="category-section hidden">
-          <div class="grid gap-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            <!-- Will be populated by JavaScript -->
-          </div>
-        </div>
+        <div id="entrees" class="category-section"><div class="grid gap-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div></div>
+        <div id="a_la_carte" class="category-section hidden"><div class="grid gap-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div></div>
+        <div id="sides" class="category-section hidden"><div class="grid gap-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div></div>
+        <div id="appetizers" class="category-section hidden"><div class="grid gap-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div></div>
       </section>
 
-      <!-- Fixed Bottom Cart Bar -->
       <div class="border-t border-neutral-300 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex-shrink-0">
         <div class="px-10 py-5 flex items-center justify-between">
-          <div class="text-xs uppercase tracking-[0.25em] text-neutral-500 font-medium">
-            Order Summary
-          </div>
+          <div class="text-xs uppercase tracking-[0.25em] text-neutral-500 font-medium" data-original="Order Summary">Order Summary</div>
           <div class="flex items-center gap-6">
             <div class="flex items-baseline gap-4 text-sm">
               <span class="text-neutral-500 text-xs">
-                Items: <span id="cart-count" class="font-semibold text-black">0</span>
+                <span data-original="Items:">Items:</span> <span id="cart-count" class="font-semibold text-black">0</span>
               </span>
               <span class="font-bold text-red-700 text-xl">
                 $<span id="cart-total">0.00</span>
               </span>
             </div>
-
-            <button
-              id="cart-open-drawer"
-              class="px-8 py-2.5 text-xs font-semibold uppercase tracking-[0.22em] bg-red-700 text-white border-2 border-red-700 hover:bg-red-800 hover:border-red-800 transition-all"
-            >
+            <button id="cart-open-drawer" 
+                    class="px-8 py-2.5 text-xs font-semibold uppercase tracking-[0.22em] bg-red-700 text-white border-2 border-red-700 hover:bg-red-800 hover:border-red-800 transition-all"
+                    data-original="View Cart">
               View Cart
             </button>
           </div>
@@ -181,204 +153,174 @@
       </div>
     </main>
 
-    <!-- Right-side cart drawer + backdrop -->
-    <div id="cart-drawer-backdrop" class="fixed inset-0 bg-black/30 z-30 hidden"></div>
-    <aside id="cart-drawer" 
-      class="fixed top-0 right-0 h-screen w-[570px] max-w-full bg-white text-black shadow-2xl border-l border-neutral-200 z-40 
-            transform translate-x-full transition-transform duration-400 ease-out 
-            flex flex-col">
+  <div id="cart-drawer-backdrop" class="fixed inset-0 bg-black/30 z-30 hidden"></div>
+
+  <aside id="cart-drawer" 
+    class="fixed top-0 right-0 h-screen w-[570px] max-w-full bg-white text-black shadow-2xl border-l border-neutral-200 z-40 
+          transform translate-x-full transition-transform duration-400 ease-out 
+          flex flex-col">
+    
+    <div class="flex items-center justify-between px-6 py-5 border-b border-neutral-200">
+      <div class="text-lg font-bold tracking-wider uppercase text-neutral-800" data-original="Your Cart">Your Cart</div>
+      <button id="cart-drawer-close" class="text-sm uppercase tracking-wider text-neutral-500 hover:text-black font-medium" data-original="Close">Close</button>
+    </div>
+
+    <div id="cart-drawer-items" class="flex-1 overflow-y-auto p-5 space-y-3 text-sm">
+      <div class="text-neutral-500 italic" data-original="No items yet">No items yet</div>
+    </div>
+
+    <div class="p-5 border-t border-neutral-200">
+      <div class="flex items-center justify-between mb-3">
+        <div class="text-lg font-bold"><span data-original="Total:">Total:</span> $<span id="cart-drawer-total">0.00</span></div>
+      </div>
       
-      <!-- Rest of your drawer content stays exactly the same -->
-      <div class="flex items-center justify-between px-6 py-5 border-b border-neutral-200">
-        <div class="text-lg font-bold tracking-wider uppercase text-neutral-800">Your Cart</div>
-        <button id="cart-drawer-close" class="text-sm uppercase tracking-wider text-neutral-500 hover:text-black font-medium">Close</button>
+      <div class="flex gap-2">
+        <button id="cart-clear" class="flex-1 px-4 py-2 text-xs font-medium uppercase tracking-[0.18em] border border-neutral-400 bg-white text-black hover:bg-neutral-100" data-original="Clear Cart">Clear Cart</button>
+        <button id="cart-go-checkout" class="flex-1 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] bg-red-700 text-white border border-red-700 hover:bg-red-800" data-original="Checkout">Checkout</button>
       </div>
-      <div id="cart-drawer-items" class="flex-1 overflow-y-auto p-5 space-y-3 text-sm">
-        <div class="text-neutral-500 italic">No items yet</div>
-      </div>
-      <div class="p-5 border-t border-neutral-200">
-        <div class="flex items-center justify-between mb-3">
-          <div class="text-lg font-bold">Total: $<span id="cart-drawer-total">0.00</span></div>
-        </div>
-        <div class="flex gap-2">
-          <button id="cart-clear" class="flex-1 px-4 py-2 text-xs font-medium uppercase tracking-[0.18em] border border-neutral-400 bg-white text-black hover:bg-neutral-100">Clear Cart</button>
-          <button id="cart-go-checkout" class="flex-1 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] bg-red-700 text-white border border-red-700 hover:bg-red-800">Checkout</button>
-        </div>
-      </div>
-    </aside>
+    </div>
+  </aside>
 
-        <!-- Meal builder modal (Bowl/Plate/Bigger Plate) -->
-        <div id="meal-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-50">
-          <div class="bg-white text-black w-full max-w-3xl border border-neutral-200 rounded-lg overflow-hidden shadow-xl flex flex-col">
-            <div class="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
-              <div>
-                <div class="text-lg font-semibold" id="meal-modal-title">Build Your Meal</div>
-                <div class="text-sm text-neutral-600">Price: $<span id="meal-modal-price">0.00</span></div>
-              </div>
-              <button id="meal-modal-close" class="text-sm text-neutral-500 hover:text-black">Close</button>
-            </div>
-            <div class="px-6 py-5 grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-y-auto max-h-[70vh]">
-              <!-- Sides -->
-              <section>
-                <div class="text-sm uppercase tracking-[0.18em] text-neutral-700 font-semibold mb-3">Side (total 1)</div>
-                <div class="text-xs text-neutral-500 mb-2" id="meal-side-hint">Select one full side.</div>
+    <div id="meal-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-50">
+       <div class="bg-white text-black w-full max-w-3xl border border-neutral-200 rounded-lg overflow-hidden shadow-xl flex flex-col">
+          <div class="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
+             <div>
+                <div class="text-lg font-semibold" id="meal-modal-title" data-original="Build Your Meal">Build Your Meal</div>
+                <div class="text-sm text-neutral-600"><span data-original="Price:">Price:</span> $<span id="meal-modal-price">0.00</span></div>
+             </div>
+             <button id="meal-modal-close" class="text-sm text-neutral-500 hover:text-black" data-original="Close">Close</button>
+          </div>
+          <div class="px-6 py-5 grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-y-auto max-h-[70vh]">
+             <section>
+                <div class="text-sm uppercase tracking-[0.18em] text-neutral-700 font-semibold mb-3" data-original="Side (total 1)">Side (total 1)</div>
+                <div class="text-xs text-neutral-500 mb-2" id="meal-side-hint" data-original="Select one full side.">Select one full side.</div>
                 <div id="meal-sides" class="grid grid-cols-2 gap-2"></div>
-                <div class="mt-2 text-xs text-neutral-600">Selected: <span id="meal-side-count">0</span>/1</div>
-              </section>
-              <!-- Entrees -->
-              <section>
-                <div class="text-sm uppercase tracking-[0.18em] text-neutral-700 font-semibold mb-3">Entrees</div>
-                <div class="text-xs text-neutral-500 mb-2">Choose up to <span id="meal-entree-max">1</span></div>
+                <div class="mt-2 text-xs text-neutral-600"><span data-original="Selected:">Selected:</span> <span id="meal-side-count">0</span>/1</div>
+             </section>
+             <section>
+                <div class="text-sm uppercase tracking-[0.18em] text-neutral-700 font-semibold mb-3" data-original="Entrees">Entrees</div>
+                <div class="text-xs text-neutral-500 mb-2"><span data-original="Choose up to">Choose up to</span> <span id="meal-entree-max">1</span></div>
                 <div id="meal-entrees" class="space-y-2 overflow-y-auto"></div>
-                <div class="mt-2 text-xs text-neutral-600">Selected: <span id="meal-entree-count">0</span>/<span id="meal-entree-max-2">1</span></div>
-              </section>
-            </div>
-            <div class="px-6 py-4 border-t border-neutral-200 flex items-center justify-end gap-3 bg-neutral-50">
-              <button id="meal-modal-cancel" class="px-4 py-2 text-sm border border-neutral-300 bg-white hover:bg-neutral-100">Cancel</button>
-              <button id="meal-add" class="px-5 py-2 text-sm font-semibold bg-red-700 text-white border border-red-700 hover:bg-red-800 disabled:opacity-40 disabled:cursor-not-allowed" disabled>Add to Cart</button>
+                <div class="mt-2 text-xs text-neutral-600"><span data-original="Selected:">Selected:</span> <span id="meal-entree-count">0</span>/<span id="meal-entree-max-2">1</span></div>
+             </section>
+          </div>
+          <div class="px-6 py-4 border-t border-neutral-200 flex items-center justify-end gap-3 bg-neutral-50">
+             <button id="meal-modal-cancel" class="px-4 py-2 text-sm border border-neutral-300 bg-white hover:bg-neutral-100" data-original="Cancel">Cancel</button>
+             <button id="meal-add" class="px-5 py-2 text-sm font-semibold bg-red-700 text-white border border-red-700 hover:bg-red-800 disabled:opacity-40 disabled:cursor-not-allowed" disabled data-original="Add to Cart">Add to Cart</button>
+          </div>
+       </div>
+    </div>
+
+    <div id="item-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-50">
+      <div class="bg-white text-black w-full max-w-md border border-neutral-200 rounded-lg overflow-hidden shadow-xl">
+        <div class="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
+          <div class="text-lg font-semibold" id="item-modal-title">Item</div>
+          <button id="item-modal-close" class="text-sm text-neutral-500 hover:text-black" data-original="Close">Close</button>
+        </div>
+        <div class="px-6 py-5 space-y-4">
+          <div class="text-neutral-600"><span data-original="Price:">Price:</span> $<span id="item-modal-price">0.00</span></div>
+          <div class="text-sm">
+            <span class="text-neutral-600" data-original="Allergens:">Allergens:</span>
+            <span id="item-modal-allergens" class="font-medium text-red-700">None</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-sm text-neutral-600" data-original="Quantity">Quantity</span>
+            <div class="flex items-center gap-2">
+              <button id="item-qty-minus" class="px-3 py-2 border border-neutral-300">-</button>
+              <div id="item-qty" class="w-10 text-center font-semibold">1</div>
+              <button id="item-qty-plus" class="px-3 py-2 border border-neutral-300">+</button>
             </div>
           </div>
         </div>
-
-        <!-- Item details modal for adding to cart -->
-        <div id="item-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-50">
-          <div class="bg-white text-black w-full max-w-md border border-neutral-200 rounded-lg overflow-hidden shadow-xl">
-            <div class="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
-              <div class="text-lg font-semibold" id="item-modal-title">Item</div>
-              <button id="item-modal-close" class="text-sm text-neutral-500 hover:text-black">Close</button>
-            </div>
-            <div class="px-6 py-5 space-y-4">
-              <div class="text-neutral-600">Price: $<span id="item-modal-price">0.00</span></div>
-              <div class="text-sm">
-                <span class="text-neutral-600">Allergens:</span>
-                <span id="item-modal-allergens" class="font-medium text-red-700">None</span>
-              </div>
-              <div class="flex items-center gap-3">
-                <span class="text-sm text-neutral-600">Quantity</span>
-                <div class="flex items-center gap-2">
-                  <button id="item-qty-minus" class="px-3 py-2 border border-neutral-300">-</button>
-                  <div id="item-qty" class="w-10 text-center font-semibold">1</div>
-                  <button id="item-qty-plus" class="px-3 py-2 border border-neutral-300">+</button>
-                </div>
-              </div>
-            </div>
-            <div class="px-6 py-4 border-t border-neutral-200 flex items-center justify-end gap-3 bg-neutral-50">
-              <button id="item-modal-cancel" class="px-4 py-2 text-sm border border-neutral-300 bg-white hover:bg-neutral-100">Cancel</button>
-              <button id="item-add" class="px-5 py-2 text-sm font-semibold bg-red-700 text-white border border-red-700 hover:bg-red-800">Add to Cart</button>
-            </div>
-          </div>
+        <div class="px-6 py-4 border-t border-neutral-200 flex items-center justify-end gap-3 bg-neutral-50">
+          <button id="item-modal-cancel" class="px-4 py-2 text-sm border border-neutral-300 bg-white hover:bg-neutral-100" data-original="Cancel">Cancel</button>
+          <button id="item-add" class="px-5 py-2 text-sm font-semibold bg-red-700 text-white border border-red-700 hover:bg-red-800" data-original="Add to Cart">Add to Cart</button>
         </div>
+      </div>
+    </div>
 
-    <!-- Dine Option Selection Modal -->
     <div id="dine-option-modal" class="fixed inset-0 hidden items-center justify-center bg-black/70 z-50">
       <div class="bg-white text-black w-full max-w-md border border-neutral-200 rounded-lg overflow-hidden shadow-xl">
         <div class="px-6 py-4 border-b border-neutral-200 bg-red-700 text-white">
-          <div class="text-lg font-semibold">Dine In or Takeout?</div>
-          <div class="text-sm mt-1">Please select your dining preference</div>
+          <div class="text-lg font-semibold" data-original="Dine In or Takeout?">Dine In or Takeout?</div>
+          <div class="text-sm mt-1" data-original="Please select your dining preference">Please select your dining preference</div>
         </div>
         <div class="px-6 py-6 grid grid-cols-2 gap-4">
           <button data-dine-option="dine_in" class="dine-option-btn flex flex-col items-center justify-center p-8 border-2 border-neutral-300 rounded-lg hover:border-red-600 hover:bg-red-50 transition-all">
-            <svg class="w-16 h-16 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-            </svg>
-            <span class="font-semibold text-lg">Dine In</span>
+            <svg class="w-16 h-16 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            <span class="font-semibold text-lg" data-original="Dine In">Dine In</span>
           </button>
           <button data-dine-option="takeout" class="dine-option-btn flex flex-col items-center justify-center p-8 border-2 border-neutral-300 rounded-lg hover:border-red-600 hover:bg-red-50 transition-all">
-            <svg class="w-16 h-16 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-            </svg>
-            <span class="font-semibold text-lg">Takeout</span>
+            <svg class="w-16 h-16 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+            <span class="font-semibold text-lg" data-original="Takeout">Takeout</span>
           </button>
         </div>
         <div class="px-6 py-4 border-t border-neutral-200 flex justify-end">
-          <button id="dine-option-cancel" class="px-4 py-2 text-sm border border-neutral-300 bg-white hover:bg-neutral-100 rounded">Cancel</button>
+          <button id="dine-option-cancel" class="px-4 py-2 text-sm border border-neutral-300 bg-white hover:bg-neutral-100 rounded" data-original="Cancel">Cancel</button>
         </div>
       </div>
     </div>
 
-    <!-- Payment Method Selection Modal -->
     <div id="payment-modal" class="fixed inset-0 hidden items-center justify-center bg-black/70 z-50">
       <div class="bg-white text-black w-full max-w-md border border-neutral-200 rounded-lg overflow-hidden shadow-xl">
         <div class="px-6 py-4 border-b border-neutral-200 bg-red-700 text-white">
-          <div class="text-lg font-semibold">Select Payment Method</div>
-          <div class="text-sm mt-1">Total: $<span id="payment-total">0.00</span></div>
+          <div class="text-lg font-semibold" data-original="Select Payment Method">Select Payment Method</div>
+          <div class="text-sm mt-1"><span data-original="Total:">Total:</span> $<span id="payment-total">0.00</span></div>
         </div>
         <div class="px-6 py-6 grid grid-cols-2 gap-3">
           <button data-method="card" class="payment-method-btn flex flex-col items-center justify-center p-6 border-2 border-neutral-300 rounded-lg hover:border-red-600 hover:bg-red-50 transition-all">
-            <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
-            </svg>
-            <span class="font-semibold">Card</span>
+            <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+            <span class="font-semibold" data-original="Card">Card</span>
           </button>
           <button data-method="cash" class="payment-method-btn flex flex-col items-center justify-center p-6 border-2 border-neutral-300 rounded-lg hover:border-red-600 hover:bg-red-50 transition-all">
-            <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-            </svg>
-            <span class="font-semibold">Cash</span>
+            <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            <span class="font-semibold" data-original="Cash">Cash</span>
           </button>
           <button data-method="giftcard" class="payment-method-btn flex flex-col items-center justify-center p-6 border-2 border-neutral-300 rounded-lg hover:border-red-600 hover:bg-red-50 transition-all">
-            <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path>
-            </svg>
-            <span class="font-semibold">Gift Card</span>
+            <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path></svg>
+            <span class="font-semibold" data-original="Gift Card">Gift Card</span>
           </button>
           <button data-method="dining_dollars" class="payment-method-btn flex flex-col items-center justify-center p-6 border-2 border-neutral-300 rounded-lg hover:border-red-600 hover:bg-red-50 transition-all">
-            <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <span class="font-semibold text-sm">Dining Dollars</span>
+            <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span class="font-semibold text-sm" data-original="Dining Dollars">Dining Dollars</span>
           </button>
           <button data-method="meal_swipe" class="payment-method-btn col-span-2 flex flex-col items-center justify-center p-6 border-2 border-neutral-300 rounded-lg hover:border-red-600 hover:bg-red-50 transition-all">
-            <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path>
-            </svg>
-            <span class="font-semibold">Meal Swipe</span>
+            <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path></svg>
+            <span class="font-semibold" data-original="Meal Swipe">Meal Swipe</span>
           </button>
         </div>
         <div class="px-6 py-4 border-t border-neutral-200 flex justify-end">
-          <button id="payment-cancel" class="px-4 py-2 text-sm border border-neutral-300 bg-white hover:bg-neutral-100 rounded">Cancel</button>
+          <button id="payment-cancel" class="px-4 py-2 text-sm border border-neutral-300 bg-white hover:bg-neutral-100 rounded" data-original="Cancel">Cancel</button>
         </div>
       </div>
     </div>
 
-    <!-- ORDER SUCCESS MODAL -->
     <div id="order-success-modal" class="fixed inset-0 hidden items-center justify-center bg-black/70 z-50">
       <div class="bg-white text-black w-full max-w-lg border border-neutral-200 rounded-lg overflow-hidden shadow-2xl">
         <div class="px-8 py-10 text-center">
           <div class="mx-auto w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-6">
-            <svg class="w-16 h-16 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
-            </svg>
+            <svg class="w-16 h-16 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
           </div>
-
-          <h2 class="text-3xl font-bold text-neutral-900 mb-3">Order Placed!</h2>
-          <p class="text-lg text-neutral-600 mb-6">
-            Your order has been sent to the kitchen.
-          </p>
-
+          <h2 class="text-3xl font-bold text-neutral-900 mb-3" data-original="Order Placed!">Order Placed!</h2>
+          <p class="text-lg text-neutral-600 mb-6" data-original="Your order has been sent to the kitchen.">Your order has been sent to the kitchen.</p>
           <div class="bg-neutral-50 rounded-lg px-6 py-5 mb-8 text-left">
             <div class="flex justify-between text-sm mb-2">
-              <span class="text-neutral-600">Order Number</span>
+              <span class="text-neutral-600" data-original="Order Number">Order Number</span>
               <span class="font-bold text-xl" id="success-order-number">#0000</span>
             </div>
             <div class="flex justify-between text-sm mb-2">
-              <span class="text-neutral-600">Total Paid</span>
+              <span class="text-neutral-600" data-original="Total Paid">Total Paid</span>
               <span class="font-bold text-xl" id="success-total">$0.00</span>
             </div>
             <div class="flex justify-between text-sm">
-              <span class="text-neutral-600">Dine Option</span>
+              <span class="text-neutral-600" data-original="Dine Option">Dine Option</span>
               <span class="font-medium capitalize" id="success-dine-option">—</span>
             </div>
           </div>
-
-          <p class="text-sm text-neutral-500 mb-8">
-            Please wait at the counter or take a seat.<br>
-            We'll call your number when it's ready!
+          <p class="text-sm text-neutral-500 mb-8" data-original="Please wait at the counter or take a seat. We'll call your number when it's ready!">
+            Please wait at the counter or take a seat.<br>We'll call your number when it's ready!
           </p>
-
-          <button id="success-done-btn" class="px-10 py-4 text-lg font-semibold uppercase tracking-wider bg-red-700 text-white rounded-lg hover:bg-red-800 transition-all">
-            Done
-          </button>
+          <button id="success-done-btn" class="px-10 py-4 text-lg font-semibold uppercase tracking-wider bg-red-700 text-white rounded-lg hover:bg-red-800 transition-all" data-original="Done">Done</button>
         </div>
       </div>
     </div>
@@ -541,7 +483,9 @@
                 <img src="${imageSrc}" alt="${item.name}" class="item-img" />
               </div>
               <div class="px-4 py-4 flex flex-col gap-2">
-                <div class="text-sm font-semibold leading-snug">${item.name}</div>
+                <div class="text-sm font-semibold leading-snug" 
+                     data-translate-type="item-name" 
+                     data-original="${item.name}">${item.name}</div>
                 <div class="text-base font-bold text-red-700">$${item.price.toFixed(2)}</div>
               </div>
             `;
@@ -599,6 +543,12 @@
             document.getElementById("category-title").textContent = info.title;
             document.querySelector("header p").textContent = info.description;
           }
+
+          const currentLang = localStorage.getItem('kiosk_lang') || 'en';
+          if (currentLang !== 'en') {
+            // Small timeout to let the text update to English first (from existing logic), then translate
+            setTimeout(() => changeLanguage(currentLang), 50);
+          }
         });
       });
 
@@ -650,42 +600,49 @@
         
         document.getElementById("cart-count").textContent = count;
         document.getElementById("cart-total").textContent = total;
+        
         const itemsEl = document.getElementById('cart-drawer-items');
         const totalEl = document.getElementById('cart-drawer-total');
         totalEl.textContent = total;
+
         if (cart.length === 0) {
-          itemsEl.innerHTML = '<div class="text-neutral-500 italic">No items yet</div>';
+          itemsEl.innerHTML = '<div class="text-neutral-500 italic" data-original="No items yet">No items yet</div>';
         } else {
           itemsEl.innerHTML = cart.map((item, idx) => {
+            let childrenHtml = '';
+            
+            // Handle Meal Details (Sides/Entrees)
             if (item.type === 'meal' && item.details) {
-              // Tree format for meals
-              const maybeEdit = `<button data-idx="${idx}" class="edit-meal px-2 py-1 text-xs border border-neutral-300">Edit</button>`;
-              let childrenHtml = '';
-              // Sides
+              const maybeEdit = `<button data-idx="${idx}" class="edit-meal px-2 py-1 text-xs border border-neutral-300" data-original="Edit">Edit</button>`;
+              
+              // Render Sides
               if (item.details.sides) {
                 if (item.details.sides.type === 'full') {
-                  childrenHtml += `<div class="ml-4 pl-3 border-l-2 border-neutral-300 text-xs text-neutral-700">Side: ${item.details.sides.name} (Full)</div>`;
+                  childrenHtml += `<div class="ml-4 pl-3 border-l-2 border-neutral-300 text-xs text-neutral-700"><span data-original="Side:">Side:</span> <span data-translate-type="item-name" data-original="${item.details.sides.name}">${item.details.sides.name}</span> (<span data-original="Full">Full</span>)</div>`;
                 } else if (Array.isArray(item.details.sides.items)) {
-                  childrenHtml += `<div class="ml-4 pl-3 border-l-2 border-neutral-300 text-xs text-neutral-700">Sides: ${item.details.sides.items.join(' + ')} (Halves)</div>`;
+                  const sideNames = item.details.sides.items.map(s => `<span data-translate-type="item-name" data-original="${s}">${s}</span>`).join(' + ');
+                  childrenHtml += `<div class="ml-4 pl-3 border-l-2 border-neutral-300 text-xs text-neutral-700"><span data-original="Sides:">Sides:</span> ${sideNames} (<span data-original="Halves">Halves</span>)</div>`;
                 }
               }
-              // Entrees
+              
+              // Render Entrees
               if (Array.isArray(item.details.entrees) && item.details.entrees.length) {
                 const entreesLines = item.details.entrees.map(e => {
                   const countLabel = e.count > 1 ? ` x${e.count}` : '';
-                  return `<div class="ml-4 pl-3 border-l-2 border-neutral-300 text-xs text-neutral-700">Entree: ${e.name}${countLabel}</div>`;
+                  return `<div class="ml-4 pl-3 border-l-2 border-neutral-300 text-xs text-neutral-700"><span data-original="Entree:">Entree:</span> <span data-translate-type="item-name" data-original="${e.name}">${e.name}</span>${countLabel}</div>`;
                 }).join('');
                 childrenHtml += entreesLines;
               }
+
               return `
               <div class="border-b border-neutral-200 pb-3 last:border-b-0">
                 <div class="flex items-start justify-between gap-3">
                   <div class="flex-1">
-                    <div class="font-medium">${item.name}</div>
+                    <div class="font-medium" data-translate-type="item-name" data-original="${item.name}">${item.name}</div>
                   </div>
                   <div class="flex items-center gap-2">
                     ${maybeEdit}
-                    <button data-idx="${idx}" class="delete-item px-2 py-1 text-xs text-red-700 border border-red-300 hover:bg-red-50">Delete</button>
+                    <button data-idx="${idx}" class="delete-item px-2 py-1 text-xs text-red-700 border border-red-300 hover:bg-red-50" data-original="Delete">Delete</button>
                     <div class="w-16 text-right font-semibold">$${(item.price * item.quantity).toFixed(2)}</div>
                   </div>
                 </div>
@@ -696,13 +653,13 @@
               return `
               <div class="flex items-start justify-between gap-3 border-b border-neutral-200 pb-3 last:border-b-0">
                 <div class="flex-1">
-                  <div class="font-medium">${item.name}</div>
-                  <div class="text-xs text-neutral-500 mt-1">Qty: ${item.quantity}</div>
+                  <div class="font-medium" data-translate-type="item-name" data-original="${item.name}">${item.name}</div>
+                  <div class="text-xs text-neutral-500 mt-1"><span data-original="Qty:">Qty:</span> ${item.quantity}</div>
                 </div>
                 <div class="flex items-center gap-2">
                   <button data-idx="${idx}" class="qty-minus px-2 py-1 text-xs border border-neutral-300">-</button>
                   <button data-idx="${idx}" class="qty-plus px-2 py-1 text-xs border border-neutral-300">+</button>
-                  <button data-idx="${idx}" class="delete-item px-2 py-1 text-xs text-red-700 border border-red-300 hover:bg-red-50">Delete</button>
+                  <button data-idx="${idx}" class="delete-item px-2 py-1 text-xs text-red-700 border border-red-300 hover:bg-red-50" data-original="Delete">Delete</button>
                   <div class="w-16 text-right font-semibold">$${(item.price * item.quantity).toFixed(2)}</div>
                 </div>
               </div>`;
@@ -773,17 +730,42 @@
       let selectedQty = 1;
       let selectedAllergens = [];
 
-      function openItemModal(name, price, allergens = []) {
+      async function openItemModal(name, price, allergens = []) {
         selectedItemName = name;
         selectedItemPrice = parseFloat(price);
         selectedQty = 1;
-        selectedAllergens = Array.isArray(allergens) ? allergens : [];
+        
         itemModalTitle.textContent = name;
         itemModalPrice.textContent = selectedItemPrice.toFixed(2);
         itemQtyEl.textContent = String(selectedQty);
-        itemModalAllergens.textContent = selectedAllergens.length ? selectedAllergens.join(', ') : 'None';
-        itemModal.classList.remove('hidden');
+        
+        const allergenText = allergens.length ? allergens.join(', ') : 'None';
+        itemModalAllergens.textContent = allergenText;
+        
+        itemModal.classList.remove('hidden'); 
         itemModal.classList.add('flex');
+
+        const lang = localStorage.getItem('kiosk_lang') || 'en';
+        
+        if (lang !== 'en') {
+          try {
+            const inputs = [name, allergenText];
+            
+            const res = await fetch('/api/translate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text: inputs, target: lang })
+            });
+            
+            const data = await res.json();
+            if (data.success && Array.isArray(data.translatedText)) {
+              itemModalTitle.textContent = data.translatedText[0];
+              itemModalAllergens.textContent = data.translatedText[1];
+            }
+          } catch (e) { 
+            console.error("Modal translation error", e); 
+          }
+        }
       }
 
       function closeItemModal() {
@@ -1174,6 +1156,120 @@
 
       // Initialize cart display
       renderCartDrawer();
+    
+    // Weather Logic
+    async function loadWeather() {
+      try {
+        const res = await fetch('/api/weather');
+        const data = await res.json();
+        if (data.success) {
+          const descEl = document.getElementById('weather-desc');
+          
+          document.getElementById('weather-temp').textContent = `${data.temp}°F`;
+          descEl.textContent = data.desc;
+          document.getElementById('weather-icon').src = data.icon;
+          
+          descEl.setAttribute('data-original', data.desc);
+
+          const widget = document.getElementById('weather-widget');
+          widget.classList.remove('hidden');
+          widget.classList.add('flex');
+
+          const currentLang = localStorage.getItem('kiosk_lang') || 'en';
+          if (currentLang !== 'en') {
+            translateTextSingle(data.desc, currentLang).then(translated => {
+              if (translated) descEl.textContent = translated;
+            });
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load weather", e);
+      }
+    }
+    loadWeather();
+
+    async function translateTextSingle(text, targetLang) {
+      try {
+        const res = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: text, target: targetLang })
+        });
+        const data = await res.json();
+        return data.success ? data.translatedText : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+      // Translation Logic
+      const originalTexts = new Map();
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const savedLang = localStorage.getItem('kiosk_lang');
+        if (savedLang && savedLang !== 'en') {
+          setTimeout(() => changeLanguage(savedLang), 100);
+        }
+        loadWeather(); // Load weather on startup
+      });
+
+    async function changeLanguage(lang) {
+      localStorage.setItem('kiosk_lang', lang);
+      
+      const staticElements = [
+        { el: document.getElementById('category-title'), original: 'Entrees' },
+        { el: document.querySelector('header p'), original: 'Choose your main dish to start your order.' },
+        { el: document.querySelector('.nav-link[data-category="entrees"]'), original: 'Entrees' },
+        { el: document.querySelector('.nav-link[data-category="sides"]'), original: 'Sides' },
+        { el: document.querySelector('.nav-link[data-category="a_la_carte"]'), original: 'A La Carte' },
+        { el: document.querySelector('.nav-link[data-category="appetizers"]'), original: 'Appetizers' },
+        { el: document.getElementById('cart-open-drawer'), original: 'View Cart' },
+        { el: document.getElementById('instruction-text'), original: 'Tap items to add them to your order.' },
+        { el: document.getElementById('weather-desc'), original: document.getElementById('weather-desc')?.getAttribute('data-original') },
+      ];
+
+      staticElements.forEach(item => {
+        if(item.el && item.original && !item.el.hasAttribute('data-original')) {
+            item.el.setAttribute('data-original', item.original);
+        }
+      });
+
+      if (lang === 'en') {
+        document.querySelectorAll('[data-original]').forEach(el => {
+            const orig = el.getAttribute('data-original');
+            if(orig) el.textContent = orig;
+        });
+        return;
+      }
+
+      const allDomTargets = [
+        ...staticElements.map(i => i.el), 
+        ...Array.from(document.querySelectorAll('[data-translate-type="item-name"]')),
+        ...Array.from(document.querySelectorAll('[data-original]'))
+      ].filter(el => el && el.hasAttribute('data-original'));
+      
+      const uniqueDomTargets = [...new Set(allDomTargets)];
+      
+      const textsToTranslate = uniqueDomTargets.map(el => el.getAttribute('data-original'));
+
+      if(textsToTranslate.length === 0) return;
+
+      try {
+        const res = await fetch('/api/translate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ text: textsToTranslate, target: lang })
+        });
+        
+        const data = await res.json();
+        
+        if(data.success && Array.isArray(data.translatedText)) {
+            data.translatedText.forEach((txt, i) => {
+              if(uniqueDomTargets[i]) uniqueDomTargets[i].textContent = txt;
+            });
+        }
+      } catch(e) { console.error("Translation failed", e); }
+    }
     </script>
   </body>
 </html>
