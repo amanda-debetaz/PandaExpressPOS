@@ -958,7 +958,7 @@ async function fetchSalesReport() {
   if (!endDate) return;
 
   try {
-    const res = await fetch(`https://team-31-project-3.onrender.com/api/sales-report?start=${startDate}&end=${endDate}`);
+    const res = await fetch(`/api/sales-report?start=${startDate}&end=${endDate}`);
     const data = await res.json();
 
     let html = `<h3>Sales Report (${startDate} to ${endDate})</h3>`;
@@ -973,7 +973,7 @@ async function fetchSalesReport() {
 
 async function fetchXReport() {
   const panel = document.getElementById('xReport');
-  const res = await fetch('https://team-31-project-3.onrender.com/api/x-report');
+  const res = await fetch('/api/x-report');
   const data = await res.json();
 
   let html = `<h3>X Report</h3>`;
@@ -1014,7 +1014,7 @@ const generateZBtn = document.getElementById('generateZBtn');
 
   generateZBtn.addEventListener('click', async () => {
     generateZBtn.disabled = true; // optional: prevent double-click
-    const res = await fetch('https://team-31-project-3.onrender.com/api/z-report');
+    const res = await fetch('/api/z-report');
     const data = await res.json();
 
     let html = `<p>Total Orders: ${data.totalOrders}</p>`;
@@ -1066,7 +1066,7 @@ const generateZBtn = document.getElementById('generateZBtn');
 
 async function fetchRestockReport() {
   const panel = document.getElementById('restockReport');
-  const res = await fetch('https://team-31-project-3.onrender.com/api/restock-report');
+  const res = await fetch('/api/restock-report');
   const data = await res.json();
 
   let table = `<h3>Restock Report</h3>
