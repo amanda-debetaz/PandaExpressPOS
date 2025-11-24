@@ -249,7 +249,13 @@ app.get("/", (req, res) => {
     success: req.flash('success')
   });
 });
-app.get("/manager", requireAuth, (req, res) => res.render("manager"));
+app.get("/manager", async (req, res) => {
+  const employees = await prisma.employee.findMany({
+    where: { is_active: true }
+  });
+
+  res.render("manager", { employees });
+});
 app.get("/cashier", requireAuth, (req, res) => res.render("cashier"));
 
 let doneViewCutoff = new Date("2025-11-08T00:00:00Z");
@@ -1179,6 +1185,631 @@ app.get('/kitchen/stock', requireAuth, async (req, res) => {
     console.error('Get stock error:', err);
     res.status(500).json({ success: false, error: 'Failed to fetch stock' });
   }
+});
+
+// --- EMPLOYEE ROUTES ---
+
+// Get all employees
+app.get('/api/employees', async (req, res) => {
+  const employees = await prisma.employee.findMany();
+  res.json(employees);
+});
+
+// Add Employee route
+app.post("/api/employees", async (req, res) => {
+  try {
+    const { display_name, email, role } = req.body;
+
+    if (!display_name || !role) {
+      return res.status(400).json({ error: "Name and role are required" });
+    }
+
+    // Default password
+    const defaultPassword = "password123";
+
+    const newEmployee = await prisma.employee.create({
+      data: {
+        display_name,
+        email,
+        role,
+        password_hash: defaultPassword, // store default password directly
+        is_active: true
+      }
+    });
+
+    res.json(newEmployee);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to add employee" });
+  }
+});
+
+// Update employee info
+app.put('/api/employees/:id', async (req, res) => {
+  const { id } = req.params;
+  const { display_name, email, role } = req.body;
+
+  const updated = await prisma.employee.update({
+    where: { employee_id: parseInt(id) },
+    data: { display_name, email, role }
+  });
+
+  res.json(updated);
+});
+
+// Change employee role
+app.put("/api/employees/:id/role", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+
+    if (!role) return res.status(400).json({ error: "Role is required" });
+
+    const updated = await prisma.employee.update({
+      where: { employee_id: parseInt(id) },
+      data: { role }
+    });
+
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to update role" });
+  }
+});
+
+// Deactivate employee
+app.put('/api/employees/:id/deactivate', async (req, res) => {
+  const updated = await prisma.employee.update({
+    where: { employee_id: parseInt(req.params.id) },
+    data: { is_active: false }
+  });
+  res.json(updated);
+});
+
+// Reactivate employee
+app.put('/api/employees/:id/reactivate', async (req, res) => {
+  const updated = await prisma.employee.update({
+    where: { employee_id: parseInt(req.params.id) },
+    data: { is_active: true }
+  });
+  res.json(updated);
+});
+
+// Reset password for employee
+app.put("/api/employees/:id/reset-password", async (req, res) => {
+  const { id } = req.params;
+
+  // Generate a simple random password
+  const newPassword = Math.random().toString(36).slice(-8); // 8-char alphanumeric
+
+  const updated = await prisma.employee.update({
+    where: { employee_id: parseInt(id) },
+    data: { password_hash: newPassword } // store as plain text
+  });
+
+  res.json({ newPassword });
+});
+
+// --- Shifts ---
+// Create shift
+app.post("/api/shifts", async (req, res) => {
+  const { manager_id, shift_date, start_time, end_time } = req.body;
+
+  if (!manager_id || !shift_date || !start_time || !end_time) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  try {
+    const shift = await prisma.shift_schedule.create({
+      data: {
+        manager_id: Number(manager_id), // ensure Int
+        shift_date: new Date(shift_date),
+        start_time: new Date(`1970-01-01T${start_time}:00`),
+        end_time: new Date(`1970-01-01T${end_time}:00`),
+      },
+    });
+    res.json(shift);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete a shift
+app.delete("/api/shifts/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Delete all assignments for this shift
+    await prisma.shift_assignment.deleteMany({
+      where: {
+        shift_schedule: {
+          schedule_id: Number(id)  // <- use relation filter
+        }
+      }
+    });
+
+    // Delete the shift itself
+    await prisma.shift_schedule.delete({
+      where: { schedule_id: Number(id) }
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to delete shift" });
+  }
+});
+// Assign employee to shift
+app.post("/api/shifts/:id/assign", async (req, res) => {
+  const { id } = req.params;
+  const { employee_id } = req.body;
+
+  if (!employee_id) {
+    return res.status(400).json({ error: "Employee ID is required" });
+  }
+
+  try {
+    // Fetch the employee role first
+    const employee = await prisma.employee.findUnique({
+      where: { employee_id: Number(employee_id) },
+      select: { role: true },
+    });
+
+    if (!employee) {
+      return res.status(404).json({ error: "Employee not found" });
+    }
+
+    // Create the shift assignment
+    await prisma.shift_assignment.create({
+      data: {
+        role: employee.role,
+        employee: {
+          connect: { employee_id: Number(employee_id) } // connect to existing employee
+        },
+        shift_schedule: {
+          connect: { schedule_id: Number(id) } // connect to existing shift
+        }
+      },
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to assign employee" });
+  }
+});
+
+// Remove employee from shift
+app.post("/api/shifts/:id/remove", async (req, res) => {
+  const { id } = req.params;
+  const { employee_id } = req.body;
+
+  if (!employee_id) {
+    return res.status(400).json({ error: "Employee ID is required" });
+  }
+
+  try {
+    await prisma.shift_assignment.deleteMany({
+      where: {
+        employee: {
+          employee_id: Number(employee_id) // filter by related employee
+        },
+        shift_schedule: {
+          schedule_id: Number(id) // filter by related shift
+        }
+      }
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to remove employee" });
+  }
+});
+
+// List shifts by date
+app.get("/api/shifts/date/:date", async (req, res) => {
+  const { date } = req.params;
+  try {
+    const shifts = await prisma.shift_schedule.findMany({
+      where: { shift_date: new Date(date) },
+      include: {
+        shift_assignment: {
+          include: { employee: true } // include employee info
+        }
+      },
+      orderBy: { start_time: 'asc' }
+    });
+
+    // Format start/end times as HH:MM AM/PM
+    const formattedShifts = shifts.map(s => {
+      const formatTime = t => {
+        const dateObj = new Date(t);
+        let hours = dateObj.getHours();
+        const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12 || 12;
+        return `${hours}:${minutes} ${ampm}`;
+      };
+
+      return {
+        shift_id: s.schedule_id, // renamed for frontend
+        start: formatTime(s.start_time),
+        end: formatTime(s.end_time),
+        shift_assignment: s.shift_assignment // pass the array of assignments with employee data
+      };
+    });
+
+    res.json(formattedShifts);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch shifts" });
+  }
+});
+
+// List shifts for employee
+app.get("/api/shifts/employee/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const shifts = await prisma.shiftAssignment.findMany({
+      where: { employee_id: parseInt(id) },
+      include: { shift: true }
+    });
+
+    // Map to a simple format for frontend
+    const result = shifts.map(a => ({
+      shift_id: a.shift.shift_id,
+      date: a.shift.date,
+      start_time: a.shift.start_time,
+      end_time: a.shift.end_time,
+      role: a.role
+    }));
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- MENU ROUTES ---
+app.post("/api/menu", async (req, res) => {
+  try {
+    const { menu_item_id, name, price, category_id, is_active } = req.body;
+
+    const created = await prisma.menu_item.create({
+      data: {
+        menu_item_id: menu_item_id || undefined,
+        name,
+        price,
+        category_id,
+        is_active
+      }
+    });
+
+    res.json(created);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET all menu items with category info
+app.get("/api/menu", async (req, res) => {
+  try {
+    const items = await prisma.menu_item.findMany({
+      include: { category: true },
+      orderBy: { name: 'asc' }
+    });
+    res.json(items);
+  } catch (err) {
+    console.error("Failed to fetch menu items:", err);
+    res.status(500).json({ error: "Failed to fetch menu items" });
+  }
+});
+
+// Get menu item by ID
+app.get("/api/menu/:id", async (req, res) => {
+  const { id } = req.params;
+  const item = await prisma.menu_item.findUnique({ where: { menu_item_id: parseInt(id) } });
+  if (!item) return res.status(404).json({ error: "Menu item not found" });
+  res.json(item);
+});
+
+// Delete menu item
+app.delete("/api/menu/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    await prisma.menu_item.delete({ where: { menu_item_id: parseInt(id) } });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Get recipe for a menu item
+app.get("/api/menu/:id/recipe", async (req, res) => {
+  const { id } = req.params;
+  const recipe = await prisma.recipe.findMany({
+    where: { menu_item_id: parseInt(id) },
+    select: { 
+      ingredient_id: true, 
+      qty_per_item: true, 
+      qty_unit: true 
+    }
+  });
+  res.json(recipe);
+});
+
+// Update recipe
+app.put("/api/menu/:id/recipe", async (req, res) => {
+  const { id } = req.params;
+  const { ingredients } = req.body;
+
+  try {
+    // Delete existing recipe first
+    await prisma.recipe.deleteMany({ where: { menu_item_id: parseInt(id) } });
+
+    // Insert new recipe, defaulting qty_unit to "units" if missing
+    const createData = ingredients.map(i => ({
+      menu_item_id: parseInt(id),
+      ingredient_id: i.ingredient_id,
+      qty_per_item: i.qty_per_item,
+      qty_unit: i.qty_unit || "units"
+    }));
+
+    await prisma.recipe.createMany({ data: createData });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to update recipe" });
+  }
+});
+
+// --- INVENTORY ROUTES ---
+// GET all inventory items
+app.get('/api/inventory', async (req, res) => {
+  try {
+    const items = await prisma.inventory.findMany({
+      orderBy: { ingredient_id: 'asc' },
+    });
+    res.json(items);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch inventory' });
+  }
+});
+
+// POST add a new inventory item
+app.post('/api/inventory', async (req, res) => {
+  try {
+    const {
+      name,
+      unit,
+      current_quantity,
+      cost_per_unit,
+      servings_per_unit,
+      par_level = 0,       // default if not provided
+      reorder_point = 0,   // default if not provided
+      is_active = true     // default if not provided
+    } = req.body;
+
+    // Validate required fields
+    if (
+      !name ||
+      !unit ||
+      current_quantity == null ||
+      cost_per_unit == null ||
+      servings_per_unit == null
+    ) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const item = await prisma.inventory.create({
+      data: {
+        name,
+        unit,
+        current_quantity: Number(current_quantity),
+        cost_per_unit: Number(cost_per_unit),
+        servings_per_unit: Number(servings_per_unit),
+        par_level: Number(par_level),
+        reorder_point: Number(reorder_point),
+        is_active: Boolean(is_active),
+      },
+    });
+
+    res.json(item);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to add inventory item' });
+  }
+});
+
+// PUT update an inventory item by ID
+app.put('/api/inventory/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const { current_quantity, name, unit, cost_per_unit } = req.body;
+
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid ingredient ID' });
+    }
+
+    const item = await prisma.inventory.update({
+      where: { ingredient_id: id },
+      data: {
+        ...(current_quantity !== undefined && { current_quantity }),
+        ...(name && { name }),
+        ...(unit && { unit }),
+        ...(cost_per_unit !== undefined && { cost_per_unit }),
+      },
+    });
+    res.json(item);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update inventory item' });
+  }
+});
+
+// DELETE an inventory item by ID
+app.delete('/api/inventory/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: 'Invalid ingredient ID' });
+
+    // Check if the ingredient is referenced in any recipe
+    const recipeRef = await prisma.recipe.findFirst({
+      where: { ingredient_id: id }
+    });
+
+    if (recipeRef) {
+      return res.status(400).json({
+        error: `Cannot delete ingredient ID ${id} because it is used in a recipe`
+      });
+    }
+
+    const deleted = await prisma.inventory.delete({
+      where: { ingredient_id: id },
+    });
+
+    res.json({ message: `Deleted ingredient ID ${id}`, deleted });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to delete inventory item' });
+  }
+});
+
+// ---------- REPORTS ----------
+
+// Sales Report
+app.get('/api/sales-report', async (req, res) => {
+  try {
+    const { start, end } = req.query;
+
+    if (!start || !end) {
+      return res.status(400).json({ error: "Start and end dates are required" });
+    }
+
+    const stats = await prisma.store_statistics.findMany({
+      where: {
+        stats_date: {
+          gte: new Date(start + "T00:00:00Z"),
+          lte: new Date(end + "T23:59:59Z")
+        }
+      }
+    });
+
+    // Compute totals
+    const totalOrders = stats.reduce((sum, s) => sum + (s.total_orders || 0), 0);
+    const revenue = stats.reduce((sum, s) => sum + Number(s.revenue || 0), 0);
+
+    res.json({ totalOrders, revenue });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch sales report' });
+  }
+});
+
+// X Report
+app.get("/api/x-report", async (req, res) => {
+  try {
+    // Select orders that are "done", same as Z report
+    const orders = await prisma.order.findMany({
+      where: { status: "done" }, // same filter as Z report
+      include: { order_item: { include: { menu_item: true } } },
+    });
+
+    // Aggregate totals
+    let totalOrders = orders.length;
+    let totalRevenue = 0;
+    const itemsMap = {};
+
+    for (const order of orders) {
+      for (const item of order.order_item) {
+        const key = item.menu_item.name;
+        const revenue = parseFloat(item.unit_price) * item.qty;
+        totalRevenue += revenue;
+
+        if (!itemsMap[key]) itemsMap[key] = { quantitySold: 0, revenue: 0 };
+        itemsMap[key].quantitySold += item.qty;
+        itemsMap[key].revenue += revenue;
+      }
+    }
+
+    const items = Object.keys(itemsMap).map(name => ({
+      name,
+      ...itemsMap[name],
+    }));
+
+    res.json({
+      totalOrders,
+      totalRevenue: parseFloat(totalRevenue.toFixed(2)),
+      items,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to generate X report" });
+  }
+});
+
+//Z Report
+app.get("/api/z-report", async (req, res) => {
+  try {
+    // Fetch all orders that haven't been included in a Z report yet
+    const orders = await prisma.order.findMany({
+      where: { status: "done" }, // maybe you want a "z_reported: false" flag in production
+      include: { order_item: { include: { menu_item: true } } },
+    });
+
+    // Aggregate sales per menu item
+    const salesMap = {};
+    let totalOrders = 0;
+    let totalRevenue = 0;
+
+    for (const order of orders) {
+      totalOrders += 1;
+      for (const item of order.order_item) {
+        const key = item.menu_item.name;
+        const revenue = parseFloat(item.unit_price) * item.qty;
+        totalRevenue += revenue;
+
+        if (!salesMap[key]) {
+          salesMap[key] = { name: key, quantitySold: 0, revenue: 0 };
+        }
+        salesMap[key].quantitySold += item.qty;
+        salesMap[key].revenue += revenue;
+      }
+    }
+
+    const items = Object.values(salesMap);
+
+    // Mark these orders as "counted in Z report" by setting a timestamp field
+    await prisma.order.updateMany({
+      where: { order_id: { in: orders.map(o => o.order_id) } },
+      data: { status: "queued" } // or add a boolean like z_reported = true in a real system
+    });
+
+    res.json({
+      totalOrders,
+      totalRevenue,
+      items
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to generate Z Report" });
+  }
+});
+
+
+// Restock Report
+app.get('/api/restock-report', async (req, res) => {
+  const items = await prisma.inventory.findMany({
+    where: { current_quantity: { lt: prisma.inventory.fields.reorder_point } }
+  });
+  res.json(items);
 });
 
 // Google Maps Weather API Endpoint

@@ -1,20 +1,1096 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Manager Page 1</title>
-  </head>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manager Page</title>
+<style>
+  :root {
+    --bg-page: #f5f6f7;
+    --bg-panel: #ffffff;
+    --bg-surface: #eceeef;
+    --bg-surface-alt: #e2e4e7;
 
-  <body>
-    <h1>Manager Page</h1>
+    --line-soft: #d1d3d6;
+    --line-strong: #babdc2;
 
-    <div class="nav-container">
-      <a href="/employees" class="nav-card">Manage Employees</a>
-      <a href="/manage-menu" class="nav-card">Manage Menu</a>
-      <a href="/inventory" class="nav-card">Manage Inventory</a>
-      <a href="/reports" class="nav-card">Manage Reports</a>
-      <a href="/navigation" class="nav-card">Back</a>
+    --accent-red: #b91c1c;
+    --accent-red-bright: #ef4444;
+
+    --text-main: #1b1b1d;
+    --text-muted: #4b5563;
+    --text-soft: #6b7280;
+
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --transition-fast: 0.15s ease-out;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg-page);
+    font-family: system-ui, sans-serif;
+    color: var(--text-main);
+  }
+
+  h1 {
+    text-align: center;
+    padding: 1rem;
+    background: #ffffff;
+    border-bottom: 1px solid var(--line-soft);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+
+  .nav-container {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  button {
+    padding: 0.6rem 1rem;
+    border-radius: 999px;
+    border: 1px solid var(--line-strong);
+    background: var(--bg-surface);
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    transition: background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+  }
+
+  button:hover {
+    background: #ffffff;
+    border-color: var(--accent-red);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+
+  .section {
+    display: none;
+    margin: 1rem auto;
+    background: var(--bg-panel);
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    max-width: 900px;
+    border: 1px solid var(--line-soft);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  }
+
+  .active { display: block; }
+
+  .employee-section {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    border: 1px solid var(--line-soft);
+  }
+
+  .employee-section h3 {
+    margin-top: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .button-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 0.6rem;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    background: #ffffff;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+
+  th {
+    background: var(--bg-surface-alt);
+    padding: 0.75rem;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  form label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-soft);
+  }
+
+  input, select {
+    padding: 0.5rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--line-soft);
+    background: var(--bg-surface);
+    outline: none;
+    transition: border-color var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast);
+  }
+
+  input:focus, select:focus {
+    border-color: var(--accent-red-bright);
+    background: #ffffff;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25);
+  }
+
+  .report-panel {
+    display: none;
+    margin-top: 1rem;
+    padding: 1rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-md);
+  }
+
+  #employeeShiftsContainer {
+  display: none;
+  }
+</style>
+</head>
+<body>
+<h1>Manager Dashboard</h1>
+
+<div class="nav-container">
+  <button type="button" onclick="showSection('employees')">Manage Employees</button>
+  <button type="button" onclick="showSection('menu')">Manage Menu</button>
+  <button type="button" onclick="showSection('inventory')">Manage Inventory</button>
+  <button type="button" onclick="showSection('reports')">Manage Reports</button>
+</div>
+
+<div class="nav-container">
+  <button type="button" onclick="location.href='/'">Back</button>
+</div>
+
+<div id="employees" class="section">
+  <h2>Employees</h2>
+
+  <!-- Employee List / Actions -->
+  <div class="employee-section">
+    <h3>Employees</h3>
+    <div class="button-group">
+      <button class="btn-list-employees">List Employees</button>
+      <button class="btn-add-employee">Add Employee</button>
     </div>
-  </body>
+    <div class="employee-table-container" style="margin-top:10px;"></div>
+  </div>
+
+  <!-- Update Employee -->
+  <div class="employee-section">
+    <h3>Update Employee</h3>
+    <div class="button-group">
+      <button class="btn-change-role">Change Role</button>
+      <button class="btn-reset-password">Reset Password</button>
+    </div>
+  </div>
+
+  <!-- Manage Employee -->
+  <div class="employee-section">
+    <h3>Manage Employee</h3>
+    <div class="button-group">
+      <button class="btn-deactivate-employee">Deactivate</button>
+      <button class="btn-reactivate-employee">Reactivate</button>
+    </div>
+  </div>
+
+  <!-- Shift Scheduling -->
+<div class="employee-section">
+  <h3>Shift Scheduling</h3>
+
+  <!-- Select Date and List Shifts -->
+  <div style="margin-top: 20px;">
+    <label for="shiftDate">Select Date:</label>
+    <input type="date" id="shiftDate">
+    <button id="listShiftsBtn">List Shifts</button>
+  </div>
+
+  <!-- Action Buttons -->
+  <div style="margin-top: 10px;">
+    <button id="createShiftBtn">Create Shift</button>
+    <button id="deleteShiftBtn">Delete Shift</button>
+    <button id="assignEmployeeBtn">Assign Employee to Shift</button>
+    <button id="removeEmployeeBtn">Remove Employee from Shift</button>
+  </div>
+
+  <!-- Shifts Table Appears Here -->
+  <div id="shiftTableContainer" style="margin-top: 20px;"></div>
+</div>
+
+<div id="employeeShiftsContainer">
+<h3 style="margin-top: 40px;">List Shifts by Employee</h3>
+
+<select id="employeeShiftSelect">
+  <option value="">--Choose Employee--</option>
+  <% employees.forEach(emp => { %>
+    <option value="<%= emp.employee_id %>"><%= emp.display_name %> (<%= emp.role %>)</option>
+  <% }) %>
+</select>
+<button id="listShiftsByEmployeeBtn">List Employee Shifts</button>
+
+<!-- Employee Shift Table Appears Here -->
+<div id="employeeShiftTableContainer" style="margin-top: 20px;"></div>
+  </div>
+</div>
+</div>
+
+<div id="menu" class="section">
+  <form id="menuForm" style="margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+    <label for="itemID">Item ID:</label>
+    <input type="text" id="itemID" name="itemID">
+
+    <label for="itemName">Item Name:</label>
+    <input type="text" id="itemName" name="itemName">
+
+    <label for="itemPrice">Item Price:</label>
+    <input type="number" step="0.01" id="itemPrice" name="itemPrice">
+
+    <label for="category">Category:</label>
+    <select id="category" name="category">
+      <option value="1">Entree</option>
+      <option value="2">Appetizer</option>
+      <option value="3">A la Carte</option>
+      <option value="4">Side</option>
+    </select>
+
+    <label for="active">Active:</label>
+    <input type="checkbox" id="active" name="active">
+
+    <button type="button" id="addMenuBtn">Add Item</button>
+    <button type="button" id="deleteMenuBtn">Delete Menu Item</button>
+
+    <button type="button" id="editRecipeBtn">Edit Recipe</button>
+    <div id="editRecipeContainer" style="display:none; margin-top:1rem;"></div>
+  </form>
+
+  <h2>Menu Items</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Item ID</th>
+        <th>Item Name</th>
+        <th>Item Price</th>
+        <th>Category</th>
+        <th>Active</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div id="inventory" class="section">
+  <h2>Inventory</h2>
+  <div class="button-group" style="margin-bottom: 1rem;">
+    <button id="listInventoryBtn">List Inventory</button>
+    <button id="addInventoryBtn">Add Inventory Item</button>
+    <button id="updateInventoryBtn">Update Item/Quantity</button>
+    <button id="deleteInventoryBtn">Delete Item</button>
+  </div>
+
+  <div id="inventoryTableContainer" style="margin-top: 1rem;"></div>
+</div>
+
+<div id="reports" class="section">
+  <div class="button-group">
+    <button onclick="showReport('salesReport')">Sales Report</button>
+    <button onclick="showReport('xReport')">X Report</button>
+    <button onclick="showReport('zReport')">Z Report</button>
+    <button onclick="showReport('restockReport')">Restock Report</button>
+  </div>
+
+   <!-- Sales Report -->
+  <div id="salesReport" class="report-panel">
+    <h3>Sales Report</h3>
+    <p>No Sales Currently</p>
+    <button id="fetchSalesReportBtn">Get Sales Report</button>
+  </div>
+
+  <!-- X Report -->
+  <div id="xReport" class="report-panel">
+    <h3>X Report</h3>
+    <p>The X-report is a mid-shift summary report.</p>
+    <button>Regenerate X Report</button>
+  </div>
+
+  <!-- Z Report -->
+  <div id="zReport" class="report-panel">
+  <h3>Z Report</h3>
+  <p>Click the button below to generate the Z Report.</p>
+  <button id="generateZBtn">Generate Z Report</button>
+  <div id="zReportTable" style="display: none; margin-top: 1rem;"></div>
+</div>
+
+  <!-- Restock Report -->
+  <div id="restockReport" class="report-panel">
+    <h3>Restock Report</h3>
+    <p>View items that need restocking.</p>
+    <button>Regenerate Restock Report</button>
+  </div>
+</div>
+<script>
+function showSection(id) {
+  console.log("Trying to show:", id); // debug line
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (!el) {
+    console.error("No element with ID:", id);
+    return;
+  }
+  el.classList.add('active');
+}
+
+// Employee Section
+async function listEmployees() {
+  try {
+    const res = await fetch("/api/employees");
+    const data = await res.json();
+
+    let html = `<table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Active</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${data.map(emp => `
+          <tr>
+            <td>${emp.employee_id}</td>
+            <td>${emp.display_name}</td>
+            <td>${emp.email ?? ''}</td>
+            <td>${emp.role}</td>
+            <td>${emp.is_active ? 'Yes' : 'No'}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>`;
+
+    document.querySelector(".employee-table-container").innerHTML = html;
+  } catch (err) {
+    alert("Failed to fetch employees: " + err.message);
+  }
+}
+
+async function addEmployee() {
+  const name = prompt("Employee Name:");
+  const email = prompt("Email (optional):");
+  const role = prompt("Role (manager, cook, cashier):");
+  if (!name || !role) return alert("Name and role are required");
+
+  const res = await fetch("/api/employees", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ display_name: name, email, role })
+  });
+
+  if (!res.ok) return alert("Failed to add employee");
+  alert("Employee added successfully!");
+}
+
+
+
+async function deactivateEmployee() {
+  const id = prompt("Enter Employee ID to deactivate:");
+  if (!id) return;
+  await fetch(`/api/employees/${id}/deactivate`, { method: "PUT" });
+  alert("Employee deactivated.");
+}
+
+async function reactivateEmployee() {
+  const id = prompt("Enter Employee ID to reactivate:");
+  if (!id) return;
+  await fetch(`/api/employees/${id}/reactivate`, { method: "PUT" });
+  alert("Employee reactivated.");
+}
+
+async function resetPassword() {
+  const id = prompt("Enter Employee ID to reset password:");
+  if (!id) return;
+  const res = await fetch(`/api/employees/${id}/reset-password`, { method: "PUT" });
+  const data = await res.json();
+  alert("New password: " + data.newPassword);
+}
+
+// -------------------- LIST SHIFTS BY DATE --------------------
+async function listShiftsByDate() {
+  const date = document.getElementById("shiftDate").value;
+  if (!date) return alert("Please select a date.");
+
+  try {
+    const res = await fetch(`/api/shifts/date/${date}`);
+    if (!res.ok) throw new Error("Failed to fetch shifts");
+
+    const shifts = await res.json();
+
+    if (shifts.length === 0) {
+      document.getElementById("shiftTableContainer").innerHTML =
+        "<p>No shifts found for this date.</p>";
+      return;
+    }
+
+    let html = `
+      <table>
+        <thead>
+          <tr>
+            <th>Shift ID</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Employee</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    shifts.forEach(shift => {
+      const employees = shift.shift_assignment?.map(a => a.employee.display_name);
+      if (employees && employees.length > 0) {
+        employees.forEach(emp => {
+          html += `
+            <tr>
+              <td>${shift.shift_id}</td>
+              <td>${shift.start}</td>
+              <td>${shift.end}</td>
+              <td>${emp}</td>
+            </tr>
+          `;
+        });
+      } else {
+        html += `
+          <tr>
+            <td>${shift.shift_id}</td>
+            <td>${shift.start}</td>
+            <td>${shift.end}</td>
+            <td>Unassigned</td>
+          </tr>
+        `;
+      }
+    });
+
+    html += `</tbody></table>`;
+    document.getElementById("shiftTableContainer").innerHTML = html;
+
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
+}
+
+// -------------------- CREATE SHIFT --------------------
+document.getElementById("createShiftBtn").addEventListener("click", async () => {
+  const manager_id = Number(prompt("Enter manager ID:")); // convert to number
+  const shift_date = prompt("Enter shift date (YYYY-MM-DD):");
+  const start_time = prompt("Enter start time (HH:MM):");
+  const end_time = prompt("Enter end time (HH:MM):");
+
+  if (!manager_id || !shift_date || !start_time || !end_time) {
+    alert("All fields are required!");
+    return;
+  }
+
+  const res = await fetch("/api/shifts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ manager_id, shift_date, start_time, end_time })
+  });
+
+  const data = await res.json();
+  console.log(data);
+  alert("Shift created successfully!");
+});
+
+// -------------------- DELETE SHIFT --------------------
+document.getElementById("deleteShiftBtn").addEventListener("click", async () => {
+  const shiftId = prompt("Enter Shift ID to delete:");
+  if (!shiftId) return;
+
+  try {
+    const res = await fetch(`/api/shifts/${shiftId}`, { method: "DELETE" });
+    if (!res.ok) throw new Error("Failed to delete shift");
+    alert("Shift deleted successfully!");
+    listShiftsByDate();
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
+});
+
+// -------------------- ASSIGN EMPLOYEE --------------------
+document.getElementById("assignEmployeeBtn").addEventListener("click", async () => {
+  const shiftId = prompt("Enter Shift ID:");
+  const empId = prompt("Enter Employee ID to assign:");
+  if (!shiftId || !empId) return;
+
+  try {
+    const res = await fetch(`/api/shifts/${shiftId}/assign`, {
+      method: 'POST',
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ employee_id: empId })
+    });
+    if (!res.ok) throw new Error("Failed to assign employee");
+    alert("Employee assigned!");
+    listShiftsByDate();
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
+});
+
+// -------------------- REMOVE EMPLOYEE --------------------
+document.getElementById("removeEmployeeBtn").addEventListener("click", async () => {
+  const shiftId = prompt("Enter Shift ID:");
+  const empId = prompt("Enter Employee ID to remove:");
+  if (!shiftId || !empId) return;
+
+  try {
+    const res = await fetch(`/api/shifts/${shiftId}/remove`, {
+      method: 'POST',
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ employee_id: empId })
+    });
+    if (!res.ok) throw new Error("Failed to remove employee");
+    alert("Employee removed!");
+    listShiftsByDate();
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
+});
+
+// --- Attach Event Listeners ---
+document.querySelector(".btn-list-employees").addEventListener("click", listEmployees);
+document.querySelector(".btn-add-employee").addEventListener("click", addEmployee);
+document.querySelector(".btn-deactivate-employee").addEventListener("click", deactivateEmployee);
+document.querySelector(".btn-reactivate-employee").addEventListener("click", reactivateEmployee);
+document.querySelector(".btn-reset-password").addEventListener("click", resetPassword);
+document.getElementById("listShiftsBtn").addEventListener("click", listShiftsByDate);
+
+// --- Change Role ---
+document.querySelector(".btn-change-role").addEventListener("click", async () => {
+  const id = prompt("Enter Employee ID to change role:");
+  if (!id) return;
+
+  const newRole = prompt("Enter new role (manager, cook, cashier):");
+  if (!newRole) return alert("Role is required");
+
+  try {
+    const res = await fetch(`/api/employees/${id}/role`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: newRole })
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || "Failed to update role");
+    }
+
+    alert("Role updated successfully!");
+    listEmployees(); // optional: refresh employee table
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
+});
+
+//Menu Section
+
+document.getElementById("addMenuBtn").addEventListener("click", async () => {
+  const menu_item_id = document.getElementById("itemID").value.trim();
+  const name = document.getElementById("itemName").value.trim();
+  const price = parseFloat(document.getElementById("itemPrice").value);
+  const category_id = parseInt(document.getElementById("category").value);
+  const is_active = document.getElementById("active").checked;
+
+  console.log({ menu_item_id, name, price, category_id, is_active });
+
+  if (!name || isNaN(price) || isNaN(category_id)) {
+    alert("Please fill out name, price, and category.");
+    return;
+  }
+
+  const res = await fetch("/api/menu", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      menu_item_id: menu_item_id ? parseInt(menu_item_id) : undefined,
+      name,
+      price,
+      category_id,
+      is_active
+    })
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    alert("Error: " + (data.error || "Failed to add item"));
+    return;
+  }
+
+  alert("Menu item added!");
+  listMenuItems();
+});
+
+async function listMenuItems() {
+  const res = await fetch("/api/menu");
+  const data = await res.json();
+
+  const tbody = document.querySelector("#menu tbody");
+
+  tbody.innerHTML = data.map(item => `
+    <tr>
+      <td>${item.menu_item_id}</td>
+      <td>${item.name}</td>
+      <td>$${Number(item.price).toFixed(2)}</td>
+      <td>${item.category ? item.category.name : "N/A"}</td>
+      <td>${item.is_active ? "Yes" : "No"}</td>
+    </tr>
+  `).join("");
+}
+
+document.getElementById("deleteMenuBtn").addEventListener("click", async () => {
+  const id = prompt("Enter the Menu Item ID to delete:");
+  if (!id) return;
+
+  // Fetch the menu item first to check if it's active
+  try {
+    const res = await fetch(`/api/menu/${id}`);
+    if (!res.ok) throw new Error("Menu item not found");
+
+    const item = await res.json();
+
+    if (item.is_active) {
+      alert("Cannot delete an active menu item. Please deactivate it first.");
+      return;
+    }
+
+    const confirmed = confirm(`Are you sure you want to delete "${item.name}"?`);
+    if (!confirmed) return;
+
+    const deleteRes = await fetch(`/api/menu/${id}`, { method: "DELETE" });
+    if (!deleteRes.ok) throw new Error("Failed to delete menu item");
+
+    alert(`Menu item "${item.name}" deleted successfully!`);
+    listMenuItems(); // refresh the table
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
+});
+
+document.getElementById("editRecipeBtn").addEventListener("click", async () => {
+  const menuId = prompt("Enter the Menu Item ID to edit recipe:");
+  if (!menuId) return;
+
+  const container = document.getElementById("editRecipeContainer");
+
+  try {
+    // Fetch all inventory items
+    const inventoryRes = await fetch('/api/inventory');
+    if (!inventoryRes.ok) throw new Error("Failed to fetch inventory");
+    const inventoryItems = await inventoryRes.json();
+
+    // Fetch current recipe for this menu item
+    const recipeRes = await fetch(`/api/menu/${menuId}/recipe`);
+    const currentRecipe = recipeRes.ok ? await recipeRes.json() : [];
+
+    // Clear container and show header
+    container.innerHTML = "";
+    const header = document.createElement("h3");
+    header.textContent = `Edit Recipe for Menu Item ${menuId}`;
+    container.appendChild(header);
+
+    // Create the form
+    const form = document.createElement("form");
+    form.id = "recipeForm";
+    form.style.display = "flex";
+    form.style.flexDirection = "column";
+    form.style.gap = "5px";
+    container.appendChild(form);
+
+    // Build form inputs for each inventory item
+    inventoryItems.forEach(item => {
+      const used = currentRecipe.find(r => r.ingredient_id === item.ingredient_id);
+      const div = document.createElement("div");
+      div.style.display = "flex";
+      div.style.alignItems = "center";
+      div.style.gap = "10px";
+
+      div.innerHTML = `
+        <input type="checkbox" id="ing_${item.ingredient_id}" ${used ? "checked" : ""}>
+        <label for="ing_${item.ingredient_id}">${item.name}</label>
+        <input type="number" placeholder="Amount" min="0" step="0.01" value="${used ? used.qty_per_item : ''}" style="width:70px;">
+        <input type="text" placeholder="Unit" value="${used ? used.qty_unit : 'units'}" style="width:70px;">
+      `;
+      form.appendChild(div);
+    });
+
+    // Create the save button
+    const saveBtn = document.createElement("button");
+    saveBtn.type = "button";
+    saveBtn.id = "saveRecipeBtn";
+    saveBtn.textContent = "Save Recipe";
+    saveBtn.style.marginTop = "10px";
+    container.appendChild(saveBtn);
+
+    container.style.display = "block";
+
+    // Save recipe button handler
+    document.getElementById("saveRecipeBtn").onclick = async () => {
+      try {
+        const recipeData = [];
+
+        form.querySelectorAll("div").forEach(div => {
+          const checkbox = div.querySelector("input[type=checkbox]");
+          if (checkbox.checked) {
+            const amountInput = div.querySelector("input[type=number]");
+            let amount = parseFloat(amountInput.value);
+            if (isNaN(amount) || amount < 0) amount = 0;
+
+            const unitInput = div.querySelector("input[type=text]");
+            const unit = unitInput.value.trim() || "units";
+
+            const id = parseInt(checkbox.id.replace("ing_", ""));
+            recipeData.push({
+              ingredient_id: id,
+              qty_per_item: amount,
+              qty_unit: unit
+            });
+          }
+        });
+
+        // Send to server
+        const res = await fetch(`/api/menu/${menuId}/recipe`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ingredients: recipeData })
+        });
+
+        if (!res.ok) throw new Error("Failed to update recipe");
+
+        alert("Recipe updated!");
+        container.style.display = "none";
+        container.innerHTML = "";
+
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
+    };
+
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
+});
+
+// --- List Inventory ---
+const inventoryTableContainer = document.getElementById('inventoryTableContainer');
+
+document.getElementById('listInventoryBtn').addEventListener('click', async () => {
+  try {
+    const res = await fetch('/api/inventory'); // Make sure this endpoint exists
+    if (!res.ok) throw new Error('Failed to fetch inventory');
+
+    const data = await res.json();
+
+    if (data.length === 0) {
+      inventoryTableContainer.innerHTML = '<p>No inventory items found.</p>';
+      return;
+    }
+
+    let html = `
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Unit</th>
+            <th>Servings per Unit</th>
+            <th>Par Level</th>
+            <th>Reorder Point</th>
+            <th>Cost per Unit</th>
+            <th>Current Quantity</th>
+            <th>Active</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    data.forEach(item => {
+      html += `
+        <tr>
+          <td>${item.ingredient_id}</td>
+          <td>${item.name}</td>
+          <td>${item.unit}</td>
+          <td>${item.servings_per_unit}</td>
+          <td>${item.par_level}</td>
+          <td>${item.reorder_point}</td>
+          <td>$${Number(item.cost_per_unit).toFixed(2)}</td>
+          <td>${item.current_quantity ?? 0}</td>
+          <td>${item.is_active ? 'Yes' : 'No'}</td>
+        </tr>
+      `;
+    });
+
+    html += `</tbody></table>`;
+    inventoryTableContainer.innerHTML = html;
+  } catch (err) {
+    console.error(err);
+    inventoryTableContainer.innerHTML = `<p style="color:red;">Error loading inventory: ${err.message}</p>`;
+  }
+});
+
+// --- Add Inventory Item ---
+document.getElementById('addInventoryBtn').addEventListener('click', async () => {
+  const name = prompt("Enter inventory item name:");
+  const unit = prompt("Enter unit of measurement (e.g., g, ml, pcs):");
+  const current_quantity = prompt("Enter current quantity:");
+  const cost_per_unit = prompt("Enter cost per unit:");
+  const servings_per_unit = prompt("Enter servings per unit:");
+  const par_level = prompt("Enter par level (default 0):") || 0;
+  const reorder_point = prompt("Enter reorder point (default 0):") || 0;
+  const is_active = confirm("Is this item active? OK for Yes, Cancel for No");
+
+  const payload = {
+    name,
+    unit,
+    current_quantity,
+    cost_per_unit,
+    servings_per_unit,
+    par_level,
+    reorder_point,
+    is_active
+  };
+
+  try {
+    const res = await fetch('/api/inventory', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to add inventory');
+
+    alert(`Inventory item "${data.name}" added successfully!`);
+    // optionally refresh your inventory list here
+  } catch (err) {
+    alert(`Error: ${err.message}`);
+  }
+});
+
+// --- Update Item/Quantity ---
+document.getElementById('updateInventoryBtn').addEventListener('click', async () => {
+  const id = prompt("Ingredient ID to update:");
+  const qty = parseInt(prompt("New Quantity:"), 10);
+
+  if (!id || isNaN(qty)) {
+    alert("Invalid input.");
+    return;
+  }
+
+  const res = await fetch(`/api/inventory/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ current_quantity: qty })
+  });
+
+  const data = await res.json();
+  alert(`Updated ${data.name} quantity to ${data.current_quantity}`);
+  document.getElementById('listInventoryBtn').click(); // refresh list
+});
+
+// --- Delete Item ---
+document.getElementById('deleteInventoryBtn').addEventListener('click', async () => {
+  const id = prompt("Ingredient ID to delete:");
+  if (!id) return;
+
+  const confirmed = confirm("Are you sure you want to delete this item?");
+  if (!confirmed) return;
+
+  await fetch(`/api/inventory/${id}`, { method: 'DELETE' });
+  alert("Item deleted.");
+  document.getElementById('listInventoryBtn').click(); // refresh list
+});
+
+function showReport(reportId) {
+  document.querySelectorAll('.report-panel').forEach(r => r.style.display = "none");
+  document.getElementById(reportId).style.display = "block";
+
+  // Call the corresponding API
+  switch(reportId) {
+    case 'salesReport':
+      fetchSalesReport();
+      break;
+    case 'xReport':
+      fetchXReport();
+      break;
+    case 'zReport':
+      fetchZReport();
+      break;
+    case 'restockReport':
+      fetchRestockReport();
+      break;
+  }
+}
+
+// --- REST API calls ---
+document.getElementById('fetchSalesReportBtn').addEventListener('click', fetchSalesReport);
+
+async function fetchSalesReport() {
+  const panel = document.getElementById('salesReport');
+
+  // Prompt user for start and end dates
+  const startDate = prompt("Enter start date (YYYY-MM-DD):");
+  if (!startDate) return;
+
+  const endDate = prompt("Enter end date (YYYY-MM-DD):");
+  if (!endDate) return;
+
+  try {
+    const res = await fetch(`http://localhost:3000/api/sales-report?start=${startDate}&end=${endDate}`);
+    const data = await res.json();
+
+    let html = `<h3>Sales Report (${startDate} to ${endDate})</h3>`;
+    html += `<p>Total Orders: ${data.totalOrders}</p>`;
+    html += `<p>Revenue: $${data.revenue.toFixed(2)}</p>`;
+    panel.innerHTML = html + `<button>Download PDF</button>`;
+  } catch (err) {
+    console.error(err);
+    panel.innerHTML = `<p style="color:red;">Failed to fetch sales report.</p>`;
+  }
+}
+
+async function fetchXReport() {
+  const panel = document.getElementById('xReport');
+  const res = await fetch('/api/x-report');
+  const data = await res.json();
+
+  let html = `<h3>X Report</h3>`;
+  html += `<p>Total Orders: ${data.totalOrders}</p>`;
+  html += `<p>Total Revenue: $${data.totalRevenue.toFixed(2)}</p>`;
+
+  if (data.items.length > 0) {
+    html += `
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Quantity Sold</th>
+            <th>Revenue</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.items.map(i => `
+            <tr>
+              <td>${i.name}</td>
+              <td>${i.quantitySold}</td>
+              <td>$${i.revenue.toFixed(2)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } else {
+    html += "<p>No sales data available.</p>";
+  }
+
+  panel.innerHTML = html;
+}
+
+const zReportPanel = document.getElementById('zReport');
+const zReportTable = document.getElementById('zReportTable');
+const generateZBtn = document.getElementById('generateZBtn');
+
+  generateZBtn.addEventListener('click', async () => {
+    generateZBtn.disabled = true; // optional: prevent double-click
+    const res = await fetch('/api/z-report');
+    const data = await res.json();
+
+    let html = `<p>Total Orders: ${data.totalOrders}</p>`;
+    html += `<p>Total Revenue: $${data.totalRevenue.toFixed(2)}</p>`;
+
+    if (data.items.length > 0) {
+      html += `
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Quantity Sold</th>
+              <th>Revenue</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.items.map(i => `
+              <tr>
+                <td>${i.name}</td>
+                <td>${i.quantitySold}</td>
+                <td>$${i.revenue.toFixed(2)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    } else {
+      html += "<p>No sales data available.</p>";
+    }
+
+    html += `<button id="resetZBtn" style="margin-top:10px;">Reset</button>`;
+
+    zReportTable.innerHTML = html;
+    zReportTable.style.display = 'block';
+
+    document.getElementById('resetZBtn').addEventListener('click', () => {
+      // Clear Z report
+      zReportTable.style.display = 'none';
+      zReportTable.innerHTML = '';
+      generateZBtn.disabled = false;
+
+      // ALSO clear X report if needed
+      const xPanel = document.getElementById('xReport');
+      xPanel.innerHTML = `<h3>X Report</h3>
+                          <p>The X-report is a mid-shift summary report.</p>
+                          <button onclick="fetchXReport()">Regenerate X Report</button>`;
+    });
+  });
+
+async function fetchRestockReport() {
+  const panel = document.getElementById('restockReport');
+  const res = await fetch('http://localhost:3000/api/restock-report');
+  const data = await res.json();
+
+  let table = `<h3>Restock Report</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Ingredient</th>
+          <th>Current Quantity</th>
+          <th>Reorder Point</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${data.map(i => `
+          <tr>
+            <td>${i.name}</td>
+            <td>${i.current_quantity}</td>
+            <td>${i.reorder_point}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+  panel.innerHTML = table;
+}
+
+listMenuItems();
+</script>
+</body>
 </html>
