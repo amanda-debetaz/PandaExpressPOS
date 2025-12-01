@@ -6,10 +6,9 @@
     <title>Panda Express Kiosk</title>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
-<!-- LARGER TEXT
   <style>
     html {
-      font-size: 19px !important; /* ~+20% larger base */
+      font-size: 17px !important;
     }
 
     /* Buttons & key numbers */
@@ -45,6 +44,13 @@
       font-size: 1.8rem !important;
     }
 
+    /* Item Modal – Quantity Selector */
+    #item-qty {
+      font-size: 4.5rem !important;
+      font-weight: 900 !important;
+      min-width: 120px;
+    }
+
     /* Success modal title */
     #order-success-modal h2 {
       font-size: 4.5rem !important;
@@ -56,7 +62,7 @@
       font-weight: 900 !important;
     }
     
-  </style> -->
+  </style>
 
 <body class="h-screen flex bg-black text-white overflow-hidden">
     <script>
@@ -152,6 +158,15 @@
         </div>
       </div>
     </main>
+    <button id="call-staff-btn"
+      class="fixed bottom-8 left-8 z-50 px-6 py-4
+            bg-blue-600 hover:bg-blue-700 active:bg-blue-800
+            text-white font-bold text-2xl rounded-xl
+            shadow-2xl transform transition-all duration-200
+            active:scale-95"
+      style="left: 2rem; bottom: 2rem;">
+      Call Staff for Help
+    </button>
 
   <div id="cart-drawer-backdrop" class="fixed inset-0 bg-black/30 z-30 hidden"></div>
 
@@ -218,7 +233,7 @@
           <button id="item-modal-close" class="text-sm text-neutral-500 hover:text-black" data-original="Close">Close</button>
         </div>
         <div class="px-6 py-5 space-y-4">
-          <div class="text-neutral-600"><span data-original="Price:">Price:</span> $<span id="item-modal-price">0.00</span></div>
+          <div class="text-5xl font-bold text-neutral-600 mb-4"><span data-original="Price:">Price:</span> $<span id="item-modal-price">0.00</span></div>
           <div class="text-sm">
             <span class="text-neutral-600" data-original="Allergens:">Allergens:</span>
             <span id="item-modal-allergens" class="font-medium text-red-700">None</span>
@@ -424,6 +439,107 @@
     </style>
 
     <script>
+      // ==================================================================
+      // BLOCKING POPUP: More than 10 of one item → ONLY Cancel or Call Staff
+      // ==================================================================
+      function showTooManyItemsWarning(itemName, attemptedQty) {
+        return new Promise((resolve) => {
+          const overlay = document.createElement('div');
+          overlay.className = 'fixed inset-0 bg-black/90 flex items-center justify-center z-[60]';
+
+          overlay.innerHTML = `
+            <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-6 p-10 text-center">
+              <h2 class="text-5xl font-black text-red-700 mb-8">Too Many Items</h2>
+              
+              <p class="text-3xl leading-relaxed mb-10 text-neutral-800">
+                You are trying to order <strong>${attemptedQty}</strong> × <br><em>${itemName}</em>
+              </p>
+
+              <p class="text-2xl text-neutral-600 mb-12">
+                For orders this large, please speak with a staff member.
+              </p>
+
+              <div class="flex flex-col gap-6 max-w-md mx-auto">
+                <button id="too-many-cancel"
+                        class="px-10 py-6 bg-neutral-200 text-black font-bold text-2xl rounded-xl hover:bg-neutral-300 transition">
+                  Cancel
+                </button>
+
+                <button id="too-many-call-staff"
+                        class="px-10 py-6 bg-blue-600 hover:bg-blue-700 active:bg-blue-800
+                              text-white font-bold text-3xl rounded-xl shadow-2xl transition-all">
+                  Call Staff for Help
+                </button>
+              </div>
+            </div>
+          `;
+
+          document.body.appendChild(overlay);
+
+          overlay.querySelector('#too-many-cancel').onclick = () => {
+            document.body.removeChild(overlay);
+            resolve(false); // blocked
+          };
+
+          const staffBtn = overlay.querySelector('#too-many-call-staff');
+          staffBtn.onclick = async () => {
+            staffBtn.disabled = true;
+            staffBtn.textContent = 'Help Requested…';
+
+            try {
+              await fetch('/api/call-staff', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+              });
+            } catch (e) {
+              console.error('Call staff failed', e);
+            }
+
+            setTimeout(() => {
+              staffBtn.disabled = false;
+              staffBtn.textContent = 'Call Staff for Help';
+            }, 15000);
+          };
+
+          overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+              document.body.removeChild(overlay);
+              resolve(false);
+            }
+          });
+        });
+      }
+
+      // ==================================================================
+      // ORIGINAL addToCart (save before override)
+      // ==================================================================
+      const originalAddToCart = function(name, price, qty = 1) {
+        const existing = cart.find(i => i.name === name);
+        if (existing) {
+          existing.quantity += qty;
+        } else {
+          cart.push({ name, price: parseFloat(price), quantity: qty });
+        }
+        renderCartDrawer();
+        saveCart(cart);
+        openCartDrawer();
+      };
+
+      // ==================================================================
+      // NEW addToCart — BLOCK >10 of one item
+      // ==================================================================
+      async function addToCart(name, price, qty = 1) {
+        const existing = cart.find(i => i.name === name);
+        const newQty = (existing ? existing.quantity : 0) + qty;
+
+        if (newQty > 10) {
+          await showTooManyItemsWarning(name, newQty);
+          return; // BLOCKED — user cannot proceed
+        }
+
+        // Safe to add
+        originalAddToCart(name, price, qty);
+      }
       // Populate menu items from server data
       function populateMenu() {
         const categories = ['entrees', 'a_la_carte', 'sides', 'appetizers'];
@@ -680,17 +796,6 @@
         document.getElementById('cart-drawer-backdrop').classList.add('hidden');
       }
 
-      function addToCart(name, price, qty = 1) {
-        const existing = cart.find(i => i.name === name);
-        if (existing) {
-          existing.quantity += qty;
-        } else {
-          cart.push({ name, price: parseFloat(price), quantity: qty });
-        }
-        renderCartDrawer();
-        saveCart(cart);
-        openCartDrawer();
-      }
 
       // Add click handlers to all item cards
       document.addEventListener('click', (e) => {
@@ -1270,6 +1375,28 @@
         }
       } catch(e) { console.error("Translation failed", e); }
     }
+    const callStaffBtn = document.getElementById('call-staff-btn');
+
+    callStaffBtn.addEventListener('click', async () => {
+      // Disable button for 15 seconds to prevent spam
+      callStaffBtn.disabled = true;
+      callStaffBtn.textContent = 'Help Requested…';
+
+      try {
+        await fetch('/api/call-staff', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch (e) {
+        console.error('Failed to call staff', e);
+      }
+
+      // Re-enable after 15 seconds
+      setTimeout(() => {
+        callStaffBtn.disabled = false;
+        callStaffBtn.textContent = 'Call Staff for Help';
+      }, 15_000);
+    });
     </script>
   </body>
 </html>

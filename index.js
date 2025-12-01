@@ -1898,6 +1898,44 @@ app.post('/api/translate', async (req, res) => {
   }
 });
 
+// ====================== CALL STAFF REAL-TIME NOTIFICATION ======================
+const staffCallClients = new Set(); // holds all open cashier SSE connections
+
+app.get('/api/call-staff/stream', (req, res) => {
+  // SSE setup
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*',
+  });
+  res.flushHeaders();
+
+  // Send a comment heartbeat every 15s so proxies don’t close it
+  const heartbeat = setInterval(() => res.write(`:\n\n`), 15000);
+
+  staffCallClients.add(res);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    staffCallClients.delete(res);
+  });
+});
+
+app.post('/api/call-staff', (req, res) => {
+  const message = JSON.stringify({
+    timestamp: new Date().toISOString(),
+    message: 'Customer at kiosk needs assistance!'
+  });
+
+  // Broadcast to every connected cashier screen
+  staffCallClients.forEach(client => {
+    client.write(`data: ${message}\n\n`);
+  });
+
+  res.json({ success: true });
+});
+
 
 // ---------- 5. TEST DB ----------
 app.get("/test-db", async (req, res) => {
