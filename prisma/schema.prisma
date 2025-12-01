@@ -30,7 +30,7 @@ model employee {
   role             employee_role_enum
   password_hash    String
   is_active        Boolean            @default(true)
-  google_id        String?            @unique
+  google_id        String?
   email            String?            @unique(map: "unique_email")
   clock_log        clock_log[]
   order            order[]
