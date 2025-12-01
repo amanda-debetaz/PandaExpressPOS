@@ -1032,7 +1032,7 @@
           alert("Please add items to your cart first");
           return;
         }
-        // Show dine option modal first
+        // Show dine option modal
         document.getElementById('dine-option-modal').classList.remove('hidden');
         document.getElementById('dine-option-modal').classList.add('flex');
         closeCartDrawer();
@@ -1065,7 +1065,10 @@
       // Payment modal handlers
       const paymentModal = document.getElementById('payment-modal');
       
+      let orderInProgress = false; // Prevent spam orders
+      
       document.getElementById('payment-cancel').addEventListener('click', () => {
+        if (orderInProgress) return; // Don't allow canceling during order
         paymentModal.classList.add('hidden');
         paymentModal.classList.remove('flex');
         // Go back to dine option modal
@@ -1076,7 +1079,21 @@
 
       document.querySelectorAll('.payment-method-btn').forEach((btn) => {
         btn.addEventListener('click', async () => {
+          // Prevent spam clicks
+          if (orderInProgress) {
+            console.log('Order already in progress, ignoring click');
+            return;
+          }
+          
           const method = btn.getAttribute('data-method');
+          orderInProgress = true;
+          
+          // Disable all payment buttons
+          document.querySelectorAll('.payment-method-btn').forEach(b => {
+            b.disabled = true;
+            b.style.opacity = '0.5';
+            b.style.cursor = 'not-allowed';
+          });
 
           const checkoutCart = cart.map((item) => {
             if (item.type === 'meal' && item.details) {
@@ -1088,6 +1105,12 @@
 
           if (!checkoutCart.length) {
             alert('Cart is empty.');
+            orderInProgress = false;
+            document.querySelectorAll('.payment-method-btn').forEach(b => {
+              b.disabled = false;
+              b.style.opacity = '1';
+              b.style.cursor = 'pointer';
+            });
             return;
           }
 
@@ -1109,10 +1132,11 @@
               document.getElementById('success-dine-option').textContent = 
                 selectedDineOption === 'dine_in' ? 'Dine In' : 'Takeout';
 
-              // Clear cart
+              // Clear cart and reset state
               cart = [];
               renderCartDrawer();
               saveCart(cart);
+              selectedDineOption = null;
 
               // Hide payment modal
               paymentModal.classList.add('hidden');
@@ -1121,8 +1145,22 @@
               // Show success modal
               document.getElementById('order-success-modal').classList.remove('hidden');
               document.getElementById('order-success-modal').classList.add('flex');
+              
+              // Reset order flag after success
+              orderInProgress = false;
+              document.querySelectorAll('.payment-method-btn').forEach(b => {
+                b.disabled = false;
+                b.style.opacity = '1';
+                b.style.cursor = 'pointer';
+              });
             } else {
               alert('Failed to place order: ' + (data.error || 'Unknown error'));
+              orderInProgress = false;
+              document.querySelectorAll('.payment-method-btn').forEach(b => {
+                b.disabled = false;
+                b.style.opacity = '1';
+                b.style.cursor = 'pointer';
+              });
               paymentModal.classList.add('hidden');
               paymentModal.classList.remove('flex');
               openCartDrawer();
@@ -1130,6 +1168,12 @@
           } catch (err) {
             console.error('Checkout error:', err);
             alert('Failed to place order. Please try again.');
+            orderInProgress = false;
+            document.querySelectorAll('.payment-method-btn').forEach(b => {
+              b.disabled = false;
+              b.style.opacity = '1';
+              b.style.cursor = 'pointer';
+            });
             paymentModal.classList.add('hidden');
             paymentModal.classList.remove('flex');
             openCartDrawer();

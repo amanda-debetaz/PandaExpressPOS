@@ -258,6 +258,7 @@ app.get("/manager", async (req, res) => {
 });
 app.get("/cashier", requireAuth, (req, res) => res.render("cashier"));
 
+
 let doneViewCutoff = new Date("2025-11-08T00:00:00Z");
 app.get("/kitchen", requireAuth, async (req, res) => {
   try {
@@ -352,6 +353,28 @@ app.get("/kitchen", requireAuth, async (req, res) => {
       }),
     }));
 
+    // Fetch current prepared stock for color coding
+    const stockRows = await prisma.pricing_settings.findMany({ 
+      where: { key: { startsWith: 'prep:mi:' } }
+    });
+    const stockByMenuItemId = new Map();
+    stockRows.forEach(r => {
+      const id = parseInt(r.key.split(':')[2], 10);
+      if (Number.isFinite(id)) {
+        stockByMenuItemId.set(id, Number(r.value));
+      }
+    });
+
+    // Get menu item IDs and names for prepared items (category 3 & 4)
+    const allPrepItems = await prisma.menu_item.findMany({
+      where: { category_id: { in: PREPARED_CATEGORY_IDS } },
+      select: { menu_item_id: true, name: true }
+    });
+    const nameToMenuItemId = new Map();
+    allPrepItems.forEach(item => {
+      nameToMenuItemId.set(item.name, item.menu_item_id);
+    });
+
     const queued = [];
     const cooking = [];
     const done = [];
@@ -362,7 +385,7 @@ app.get("/kitchen", requireAuth, async (req, res) => {
       else if (o.status === 'done') done.push(o);
     }
 
-    res.render("kitchen", { queued, cooking, done, prepItems });
+    res.render("kitchen", { queued, cooking, done, prepItems, stockByMenuItemId, nameToMenuItemId });
   } catch (err) {
     console.error("Error fetching kitchen orders via Prisma:", err);
     res.status(500).send("Error loading kitchen queue");
@@ -399,7 +422,7 @@ app.post("/kitchen/:orderId/status", requireAuth, async (req, res) => {
         data: { status, completed_at: null },
       });
     }
-
+    try { kitchenBroadcast('queued-changed', { orderId }); } catch {}
     res.redirect("/kitchen");
   } catch (err) {
     if (err && err.__insufficientStock) {
@@ -419,7 +442,7 @@ app.post("/kitchen/:orderId/cancel", requireAuth, async (req, res) => {
     await prisma.order.delete({
       where: { order_id: orderId }
     });
-
+    try { kitchenBroadcast('queued-changed', { orderId }); } catch {}
     res.redirect("/kitchen");
   } catch (err) {
     console.error("Error cancelling order:", err);
@@ -430,6 +453,46 @@ app.post("/kitchen/:orderId/cancel", requireAuth, async (req, res) => {
 app.post("/kitchen/clear-done", requireAuth, (req, res) => {
   doneViewCutoff = new Date();
   res.redirect("/kitchen");
+});
+
+// Simple Server-Sent Events stream for kitchen updates
+const kitchenClients = new Set();
+function kitchenBroadcast(event, data) {
+  console.log(`[SSE] Broadcasting ${event} to ${kitchenClients.size} clients:`, data);
+  const payload = `event: ${event}\ndata: ${JSON.stringify(data || {})}\n\n`;
+  for (const res of kitchenClients) {
+    try { res.write(payload); } catch (e) { console.warn('[SSE] Write failed:', e.message); }
+  }
+}
+
+app.get('/kitchen/events', (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+  });
+  res.write('\n'); // kick things off
+  kitchenClients.add(res);
+
+  const keepalive = setInterval(() => {
+    try { res.write(': keep-alive\n\n'); } catch {}
+  }, 15000);
+
+  req.on('close', () => {
+    clearInterval(keepalive);
+    kitchenClients.delete(res);
+  });
+});
+
+// Lightweight queued count endpoint used by kitchen auto-refresh
+app.get('/kitchen/queued-count', async (req, res) => {
+  try {
+    const count = await prisma.order.count({ where: { status: 'queued' } });
+    res.json({ count });
+  } catch (err) {
+    console.error('queued-count error', err);
+    res.status(500).json({ error: 'failed' });
+  }
 });
 
 app.get("/menu-board", async (req, res) => {
@@ -952,6 +1015,10 @@ app.post("/api/checkout", async (req, res) => {
       },
     });
 
+    try {
+      // Broadcast to kitchen listeners that queued orders changed
+      kitchenBroadcast('queued-changed', { orderId: order.order_id });
+    } catch {}
     res.json({ success: true, order_id: order.order_id });
   } catch (err) {
     console.error("Checkout error:", err);
@@ -1152,7 +1219,9 @@ app.post('/kitchen/stock/:menuItemId/cook', requireAuth, async (req, res) => {
 
     const key = prepKey(menuItemId);
     const row = await prisma.pricing_settings.findUnique({ where: { key } });
-    res.json({ success: true, stock: { menu_item_id: menuItemId, servings_available: Number(row?.value ?? 0) } });
+    const payload = { menu_item_id: menuItemId, servings_available: Number(row?.value ?? 0) };
+    try { kitchenBroadcast('stock-updated', payload); } catch {}
+    res.json({ success: true, stock: payload });
   } catch (err) {
     console.error('Cook batch error:', err);
     res.status(500).json({ success: false, error: 'Failed to cook batch' });
@@ -1164,6 +1233,7 @@ app.post('/kitchen/stock/discard', requireAuth, async (req, res) => {
   try {
     const rows = await prisma.pricing_settings.findMany({ where: { key: { startsWith: 'prep:mi:' } } });
     await prisma.$transaction(rows.map((r) => prisma.pricing_settings.update({ where: { key: r.key }, data: { value: 0 } })));
+    try { kitchenBroadcast('stock-refresh', {}); } catch {}
     res.json({ success: true });
   } catch (err) {
     console.error('Discard stock error:', err);
@@ -1172,7 +1242,7 @@ app.post('/kitchen/stock/discard', requireAuth, async (req, res) => {
 });
 
 // Get current prepared stock snapshot
-app.get('/kitchen/stock', requireAuth, async (req, res) => {
+app.get('/kitchen/stock', async (req, res) => {
   try {
     const rows = await prisma.pricing_settings.findMany({ where: { key: { startsWith: 'prep:mi:' } }, orderBy: { key: 'asc' } });
     const ids = rows.map((r) => parseInt(r.key.split(':')[2], 10)).filter((n) => Number.isFinite(n));

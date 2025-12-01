@@ -54,6 +54,25 @@
     .status-buttons button {
       cursor: pointer;
     }
+
+    /* Color coding for stock levels */
+    .item-in-stock {
+      color: #059669;
+      font-weight: 600;
+    }
+
+    .item-out-of-stock {
+      color: #dc2626;
+      font-weight: 600;
+      background-color: #fee;
+      padding: 2px 4px;
+      border-radius: 3px;
+    }
+
+    .item-low-stock {
+      color: #d97706;
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -80,17 +99,8 @@
       <button id="discard-stock-btn" style="background-color:#dc2626; color:#fff; border-color:#dc2626;">End of Day Discard</button>
     </div>
     <div id="stock-panel" class="order" style="display:none; margin-top:12px;">
-      <div class="order-header">Current Stock</div>
-      <table style="width:100%; border-collapse:collapse;">
-        <thead>
-          <tr>
-            <th style="text-align:left; border-bottom:1px solid #ccc; padding:6px;">Item</th>
-            <th style="text-align:left; border-bottom:1px solid #ccc; padding:6px;">Category</th>
-            <th style="text-align:left; border-bottom:1px solid #ccc; padding:6px;">Servings</th>
-          </tr>
-        </thead>
-        <tbody id="stock-body"></tbody>
-      </table>
+      <div class="order-header">Current Line Stock</div>
+      <div id="stock-body" style="display:grid; gap:12px; margin-top:10px;"></div>
     </div>
   </div>
 
@@ -136,8 +146,6 @@
                 <input type="hidden" name="status" value="prepping">
                 <button type="submit">Start Making</button>
               </form>
-
-              <!-- mark DONE directly from queue if needed -->
               <form method="post" action="/kitchen/<%= order.orderId %>/status">
                 <input type="hidden" name="status" value="done">
                 <button type="submit">Mark Done</button>
@@ -167,6 +175,11 @@
             <div class="order-header">
               Order #<%= order.orderId %> - <%= order.dineOption %>
             </div>
+            <% if (order.customerName) { %>
+              <div class="meta" style="font-size: 1.1em; font-weight: 600; color: #dc2626;">
+                Customer: <%= order.customerName %>
+              </div>
+            <% } %>
             <div class="meta">
               Placed At (CT): <%= order.placedAtCT %>
             </div>
@@ -268,17 +281,20 @@
   </div>
 </body>
 <!-- Status error modal -->
-<div id="status-error-modal" style="position:fixed; inset:0; display:none; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:9999;">
-  <div style="background:#fff; padding:16px; border-radius:8px; max-width:520px; width:90%; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
-    <div class="order-header">Cannot Update Status</div>
-    <div id="status-error-text" style="margin:8px 0 16px; color:#b91c1c;"></div>
-    <div style="text-align:right;">
-      <button id="status-error-close" style="padding:6px 12px;">Close</button>
+<div id="status-error-modal" style="position:fixed; inset:0; display:none; background:rgba(0,0,0,0.7); align-items:center; justify-content:center; z-index:9999;">
+  <div style="background:#fff; padding:24px; border-radius:12px; max-width:600px; width:90%; box-shadow:0 20px 50px rgba(0,0,0,0.4); border: 3px solid #dc2626;">
+    <div style="font-size:1.3em; font-weight:bold; color:#dc2626; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+      <span style="font-size:1.8em;">⚠️</span>
+      <span>Cannot Update Status - Missing Stock!</span>
+    </div>
+    <div id="status-error-text" style="margin:12px 0 20px; font-size:1.1em; line-height:1.6; color:#000; background:#fee2e2; padding:12px; border-radius:6px; border-left:4px solid #dc2626;"></div>
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <button id="status-error-close" style="padding:10px 24px; font-size:1.1em; background:#dc2626; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600;">Close</button>
     </div>
   </div>
-  
 </div>
 <script>
+  // @ts-nocheck
   (function(){
     const CATEGORY_NAMES = { 3: 'Entree', 4: 'Side' };
     const selectEl = document.getElementById('prep-item-select');
@@ -289,6 +305,158 @@
     const stockPanel = document.getElementById('stock-panel');
     const stockBody = document.getElementById('stock-body');
 
+    // Stock data from server (embed raw JSON to avoid HTML-escaping)
+    const stockByMenuItemId = new Map(<%- JSON.stringify(Array.from(stockByMenuItemId || new Map())) %>);
+    const nameToMenuItemId = new Map(<%- JSON.stringify(Array.from(nameToMenuItemId || new Map())) %>);
+
+    // Apply color coding to queued items only
+    function applyColorCoding() {
+      const queuedColumn = document.querySelectorAll('.columns .column')[0];
+      if (!queuedColumn) return;
+      
+      const items = queuedColumn.querySelectorAll('.line-item');
+      items.forEach(item => {
+        const text = item.textContent;
+        const itemNameMatch = text.match(/\d+\s+x\s+(.+?)(?:\s+\(|$)/);
+        if (!itemNameMatch) return;
+        
+        const itemName = itemNameMatch[1].trim();
+        const menuItemId = nameToMenuItemId.get(itemName);
+        
+        if (!menuItemId) return; // Not a prepared item
+        
+        const stock = stockByMenuItemId.get(menuItemId) || 0;
+        
+        item.classList.remove('item-out-of-stock','item-low-stock','item-in-stock');
+        if (stock === 0) {
+          item.classList.add('item-out-of-stock');
+        } else {
+          item.classList.add('item-in-stock');
+        }
+      });
+
+      // Also check options for prepared items in queued column only
+      const optSpans = queuedColumn.querySelectorAll('.options');
+      optSpans.forEach(optSpan => {
+        // Normalize text and extract individual option names
+        const text = optSpan.textContent.trim();
+        // Remove the "(Options:" prefix even if there's leading whitespace
+        const optionsText = text.replace(/\(Options:\s*/, '').replace(/\)$/, '');
+        const rawOptions = optionsText.split(',').map(o => o.trim());
+
+        // Rebuild options HTML with per-option chips colored independently
+        const parts = [];
+        rawOptions.forEach(opt => {
+          let cleanName = opt.replace(/\s+x\d+$/, '').replace(/\s+\(1\/2\)$/, '');
+          cleanName = cleanName.replace(/[\s,]+$/, '').replace(/^\s+/, '');
+          cleanName = cleanName.replace(/\s{2,}/g, ' ').trim();
+          const menuItemId = nameToMenuItemId.get(cleanName);
+          let cls = '';
+          if (menuItemId) {
+            const stock = stockByMenuItemId.get(menuItemId) || 0;
+            cls = stock === 0 ? 'item-out-of-stock' : 'item-in-stock';
+          }
+          parts.push(`<span class="${cls}">${opt}</span>`);
+        });
+        optSpan.innerHTML = `(Options: ${parts.join(', ')})`;
+      });
+    }
+
+    // Run color coding on page load
+    applyColorCoding();
+
+    // Live updates via Server-Sent Events (instant), with polling fallback
+    let lastQueuedCount = null;
+    let sseConnected = false;
+    try {
+      const evt = new EventSource('/kitchen/events');
+      evt.onopen = () => {
+        console.log('SSE connected');
+        sseConnected = true;
+      };
+      evt.onerror = (err) => {
+        console.warn('SSE error, using polling fallback', err);
+        sseConnected = false;
+      };
+      evt.addEventListener('queued-changed', () => {
+        console.log('SSE: queued-changed received, reloading...');
+        location.reload();
+      });
+      evt.addEventListener('stock-updated', (e) => {
+        try {
+          const payload = JSON.parse(e.data || '{}');
+          console.log('SSE: stock-updated', payload);
+          if (payload && typeof payload.menu_item_id === 'number') {
+            stockByMenuItemId.set(payload.menu_item_id, Number(payload.servings_available) || 0);
+            applyColorCoding();
+          }
+        } catch {}
+      });
+      evt.addEventListener('stock-refresh', () => {
+        console.log('SSE: stock-refresh received');
+        refreshStockAndRecolor();
+      });
+    } catch (e) {
+      console.warn('SSE not available', e);
+    }
+    
+    async function refreshStockAndRecolor() {
+      try {
+        const res = await fetch('/kitchen/stock');
+        const data = await res.json();
+        if (!data.success) return;
+        // Update stockByMenuItemId map
+        stockByMenuItemId.clear();
+        (data.stock || []).forEach(row => {
+          stockByMenuItemId.set(row.menu_item_id, Number(row.servings_available) || 0);
+        });
+        // Re-apply color coding to queued column
+        applyColorCoding();
+      } catch (e) {
+        console.warn('stock refresh failed', e);
+      }
+    }
+    
+    async function refreshQueuedCount() {
+      try {
+        const res = await fetch('/kitchen/queued-count');
+        const data = await res.json();
+        if (data && typeof data.count === 'number') {
+          if (lastQueuedCount === null) {
+            lastQueuedCount = data.count;
+          } else if (data.count !== lastQueuedCount) {
+            // New or removed queued orders — auto reload
+            location.reload();
+          }
+        }
+      } catch (e) {
+        console.warn('queued-count fetch failed', e);
+      }
+    }
+
+    // Initialize polling (more aggressive check for new orders)
+    (async function initPolling() {
+      // Wait a moment for SSE to connect
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      try {
+        const res = await fetch('/kitchen/queued-count');
+        const data = await res.json();
+        if (data && typeof data.count === 'number') {
+          lastQueuedCount = data.count;
+          console.log('Initial queued count:', lastQueuedCount);
+        }
+      } catch (e) {
+        console.warn('initial queued-count failed', e);
+      }
+      
+      // Poll every 2 seconds for queued count changes
+      setInterval(() => {
+        refreshStockAndRecolor();
+        refreshQueuedCount();
+      }, 2000);
+    })();
+
     async function loadStock() {
       try {
         const res = await fetch('/kitchen/stock');
@@ -296,15 +464,40 @@
         if (!data.success) throw new Error(data.error || 'Failed to load');
         stockBody.innerHTML = '';
         (data.stock || []).forEach(row => {
-          const tr = document.createElement('tr');
           const name = row.menu_item?.name || ('#' + row.menu_item_id);
-          const cat = CATEGORY_NAMES[row.menu_item?.category_id] || (row.menu_item?.category_id || '');
-          tr.innerHTML = `
-            <td style="padding:6px; border-bottom:1px solid #eee;">${name}</td>
-            <td style="padding:6px; border-bottom:1px solid #eee;">${cat}</td>
-            <td style="padding:6px; border-bottom:1px solid #eee;">${row.servings_available}</td>
+          const cat = CATEGORY_NAMES[row.menu_item?.category_id] || '';
+          const servings = Number(row.servings_available) || 0;
+          
+          let stockColor = '#059669'; // green
+          let stockBg = '#d1fae5';
+          let stockIcon = '✓';
+          if (servings === 0) {
+            stockColor = '#dc2626'; // red
+            stockBg = '#fee2e2';
+            stockIcon = '✗';
+          }
+          
+          const card = document.createElement('div');
+          card.style.cssText = `
+            background: ${stockBg};
+            padding: 12px 16px;
+            border-radius: 8px;
+            border-left: 4px solid ${stockColor};
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
           `;
-          stockBody.appendChild(tr);
+          card.innerHTML = `
+            <div>
+              <div style="font-weight:600; font-size:1.1em; color:#000;">${name}</div>
+              <div style="font-size:0.9em; color:#666; margin-top:2px;">${cat}</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:1.5em; color:${stockColor};">${stockIcon}</span>
+              <span style="font-size:1.8em; font-weight:700; color:${stockColor};">${servings}</span>
+            </div>
+          `;
+          stockBody.appendChild(card);
         });
       } catch (e) {
         console.error('loadStock error', e);
@@ -325,15 +518,38 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ servings })
         });
+        if (!res.ok) {
+          let j = null;
+          try { j = await res.json(); } catch {}
+          if (j && Array.isArray(j.details) && j.details.length) {
+            const list = j.details.map(d => `\u2022 ${d.name} — have ${d.have}, need ${d.need}`).join('<br>');
+            errText.innerHTML = `<strong>Insufficient inventory:</strong><br>${list}`;
+            errModal.style.display = 'flex';
+          } else {
+            errText.innerHTML = `<strong>Cook failed.</strong> ${j?.error || ''}`;
+            errModal.style.display = 'flex';
+          }
+          return;
+        }
         const data = await res.json();
         if (!data.success) throw new Error(data.error || 'Cook failed');
+        // Immediately refresh stock and update colors
+        await refreshStockAndRecolor();
         alert('Batch cooked successfully');
         if (stockPanel.style.display !== 'none') {
           await loadStock();
         }
       } catch (e) {
-        console.error('cook error', e);
-        alert('Failed to cook batch: ' + (e.message || 'Unknown error'));
+        // Try to parse detailed inventory shortage from response body
+        try {
+          const text = e?.message || '';
+          // Attempt to fetch last response body via re-request pattern is unreliable; fallback to modal message
+          errText.innerHTML = '<strong>Failed to cook batch.</strong>\nPlease check inventory quantities for this recipe.';
+          errModal.style.display = 'flex';
+        } catch {
+          errText.innerHTML = '<strong>Failed to cook batch.</strong>';
+          errModal.style.display = 'flex';
+        }
       }
     });
 
@@ -354,6 +570,8 @@
         const data = await res.json();
         if (!data.success) throw new Error(data.error || 'Discard failed');
         alert('Stock discarded');
+        // Immediately refresh stock and update colors
+        await refreshStockAndRecolor();
         if (stockPanel.style.display !== 'none') {
           await loadStock();
         }
@@ -387,11 +605,18 @@
             return;
           }
           const msg = await res.text();
-          errText.textContent = msg || 'Failed to update status.';
+          // Format the error message for better readability
+          let formattedMsg = msg || 'Failed to update status.';
+          if (formattedMsg.includes('Insufficient prepared stock:')) {
+            formattedMsg = formattedMsg.replace('Insufficient prepared stock:', '<strong>You need to cook:</strong><br>');
+            formattedMsg = formattedMsg.replace(/,\s*/g, '<br>\u2022 ');
+            formattedMsg = '\u2022 ' + formattedMsg;
+          }
+          errText.innerHTML = formattedMsg;
           errModal.style.display = 'flex';
         } catch (err) {
           console.error('status update error', err);
-          errText.textContent = 'Network error. Please try again.';
+          errText.innerHTML = '<strong>Network error.</strong> Please try again.';
           errModal.style.display = 'flex';
         }
       });
