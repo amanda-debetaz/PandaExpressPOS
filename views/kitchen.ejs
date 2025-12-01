@@ -3,111 +3,96 @@
 <head>
   <title>Kitchen Queue</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    h1 { text-align: center; margin-bottom: 20px; }
+    body { font-family: Arial, sans-serif; margin:0; padding: 0; background:#f5f5f5; }
+    h1 { margin:0 0 16px; font-size:1.9em; }
 
-    .columns {
-      display: flex;
-      gap: 20px;
-      align-items: flex-start;
-    }
+    .kitchen-layout { display:flex; align-items:stretch; min-height:100vh; }
+    .sidebar { width:320px; background:#ffffff; padding:20px 18px 32px; box-shadow: 2px 0 8px rgba(0,0,0,0.08); display:flex; flex-direction:column; }
+    .board-wrapper { flex:1; padding:20px 24px; }
+    .board-columns { display:flex; gap:24px; align-items:flex-start; }
+    .column { flex:1; min-width:260px; background:#fff; padding:12px 14px 24px; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.08); }
+    .column-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+    .column h2 { margin:0; font-size:1.3em; }
 
-    .column {
-      flex: 1;
-      min-width: 260px;
-    }
-
-    .column-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-
-    .column h2 {
-      margin: 0;
-    }
-
-    .order {
-      border: 1px solid #ccc;
-      padding: 10px;
-      margin-bottom: 15px;
-      border-radius: 8px;
-      background: #fafafa;
-    }
-
-    .order-header { font-weight: bold; margin-bottom: 5px; }
-    .line-item { margin-left: 20px; }
+    .order { border:1px solid #d9d9d9; padding:10px 12px 12px; margin-bottom:14px; border-radius:10px; background:#fafafa; cursor:grab; position:relative; }
+    .order.dragging { opacity:0.35; border-style:dashed; }
+    .order-header { font-weight:600; margin-bottom:6px; font-size:1.05em; }
+    .line-item { margin-left: 18px; }
     .options { font-style: italic; color: #555; }
+    .meta { font-size: 0.8em; color:#555; margin-bottom:4px; }
+    .status-buttons { margin-top:6px; }
+    .status-buttons form { display:inline; margin-right:4px; }
+    .status-buttons button { cursor:pointer; font-size:0.75rem; padding:4px 8px; border-radius:4px; }
 
-    .meta { font-size: 0.9em; color: #666; margin-bottom: 5px; }
+    .dropzone { min-height:60px; transition:background-color .15s ease, border-color .15s ease; }
+    .dropzone.drag-over { background:#eef7ff; border:2px dashed #3b82f6; border-radius:8px; padding:8px; }
 
-    .status-buttons {
-      margin-top: 8px;
-    }
+    /* Sidebar specific */
+    .stock-controls { background:#fff; border:1px solid #ddd; padding:14px 16px; border-radius:12px; margin-bottom:22px; }
+    .stock-controls .order-header { margin-bottom:10px; }
+    .stock-actions { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+    .stock-actions label { font-size:0.8em; font-weight:600; text-transform:uppercase; color:#444; }
+    .stock-actions select, .stock-actions input { padding:4px 6px; font-size:0.85em; }
+    .stock-actions button { padding:6px 10px; font-size:0.75em; border-radius:4px; cursor:pointer; }
+    /* Stock area scrollable */
+    #stock-panel { max-height:62vh; overflow-y:auto; padding-right:4px; }
+    #stock-panel::-webkit-scrollbar { width:8px; }
+    #stock-panel::-webkit-scrollbar-track { background:#f0f0f0; border-radius:4px; }
+    #stock-panel::-webkit-scrollbar-thumb { background:#c7c7c7; border-radius:4px; }
+    #stock-panel::-webkit-scrollbar-thumb:hover { background:#a8a8a8; }
+    #stock-body { display:grid; gap:12px; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); }
+    .stock-section-header { grid-column:1/-1; font-size:0.85em; font-weight:700; letter-spacing:2px; color:#374151; padding:4px 8px; background:#e5e7eb; border-radius:6px; margin-top:4px; text-transform:uppercase; }
+    .stock-mini { background:#fff; border:1px solid #d9d9d9; border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:6px; box-shadow:0 1px 2px rgba(0,0,0,0.06); font-family:'Segoe UI', Arial, sans-serif; }
+    .stock-mini.out { border-color:#dc2626; background:#fef2f2; }
+    .stock-mini.low { border-color:#d97706; background:#fffbeb; }
+    .stock-mini .s-name { font-size:0.78em; font-weight:600; line-height:1.2; letter-spacing:0.4px; color:#111827; }
+    .stock-mini .s-serv { font-size:1.45em; font-weight:600; line-height:1; font-variant-numeric:tabular-nums; }
+    .stock-mini.out .s-serv { color:#dc2626; }
+    .stock-mini.low .s-serv { color:#d97706; }
+    .stock-mini:not(.out):not(.low) .s-serv { color:#047857; }
+    .stock-mini .s-cat { font-size:0.70em; font-weight:700; color:#374151; letter-spacing:0.5px; text-transform:uppercase; }
 
-    .status-buttons form {
-      display: inline;
-      margin-right: 5px;
-    }
-
-    .status-buttons button {
-      cursor: pointer;
-    }
-
-    /* Color coding for stock levels */
-    .item-in-stock {
-      color: #059669;
-      font-weight: 600;
-    }
-
-    .item-out-of-stock {
-      color: #dc2626;
-      font-weight: 600;
-      background-color: #fee;
-      padding: 2px 4px;
-      border-radius: 3px;
-    }
-
-    .item-low-stock {
-      color: #d97706;
-      font-weight: 600;
-    }
+    /* Color coding for stock levels on items/options */
+    .item-in-stock { color:#059669; font-weight:600; }
+    .item-out-of-stock { color:#dc2626; font-weight:600; background-color:#fee; padding:2px 4px; border-radius:3px; }
+    .item-low-stock { color:#d97706; font-weight:600; }
   </style>
 </head>
 <body>
-  <h1>Kitchen Queue</h1>
-
-  <!-- Line Stock Controls -->
-  <div class="order" style="background:#fff; margin-bottom:20px;">
-    <div class="order-header">Line Stock</div>
-    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-      <label for="prep-item-select">Item:</label>
-      <select id="prep-item-select">
-        <% if (typeof prepItems !== 'undefined' && prepItems && prepItems.length) { %>
-          <% prepItems.forEach(it => { %>
-            <option value="<%= it.menu_item_id %>"><%= it.name %></option>
-          <% }) %>
-        <% } %>
-      </select>
-
-      <label for="prep-servings">Servings to cook:</label>
-      <input id="prep-servings" type="number" min="1" step="1" value="12" style="width:100px;" />
-
-      <button id="cook-batch-btn">Cook Batch</button>
-      <button id="view-stock-btn">View Line Stock</button>
-      <button id="discard-stock-btn" style="background-color:#dc2626; color:#fff; border-color:#dc2626;">End of Day Discard</button>
-    </div>
-    <div id="stock-panel" class="order" style="display:none; margin-top:12px;">
-      <div class="order-header">Current Line Stock</div>
-      <div id="stock-body" style="display:grid; gap:12px; margin-top:10px;"></div>
-    </div>
-  </div>
-
-  <div class="columns">
+  <div class="kitchen-layout">
+    <aside class="sidebar">
+      <h1>Kitchen</h1>
+      <!-- Line Stock Controls -->
+      <div class="stock-controls">
+        <div class="order-header">Batch Cook / Line Stock</div>
+        <div class="stock-actions">
+          <label for="prep-item-select">Item</label>
+          <select id="prep-item-select">
+            <% if (typeof prepItems !== 'undefined' && prepItems && prepItems.length) { %>
+              <% prepItems.forEach(it => { %>
+                <option value="<%= it.menu_item_id %>"><%= it.name %></option>
+              <% }) %>
+            <% } %>
+          </select>
+          <label for="prep-servings">Servings</label>
+          <input id="prep-servings" type="number" min="1" step="1" value="12" style="width:80px;" />
+          <button id="cook-batch-btn">Cook</button>
+          <button id="discard-stock-btn" type="button" style="background-color:#dc2626; color:#fff; border-color:#dc2626;">Discard</button>
+        </div>
+        <div id="stock-panel" style="display:block; margin-top:14px;">
+          <div class="order-header" style="font-weight:600;">Current Line Stock</div>
+          <div id="stock-body"></div>
+        </div>
+      </div>
+      <div style="margin-top:auto; font-size:0.7em; color:#666; line-height:1.4;">
+        Drag cards between lanes to update status. Stock coloring applies to queued items.
+      </div>
+    </aside>
+    <main class="board-wrapper">
+      <div class="board-columns">
 
     <!-- QUEUED COLUMN -->
-    <div class="column">
+    <div class="column dropzone" data-status="queued">
       <div class="column-header">
         <h2>Queued</h2>
       </div>
@@ -116,7 +101,7 @@
         <p>No queued orders.</p>
       <% } else { %>
         <% queued.forEach(order => { %>
-          <div class="order">
+          <div class="order" draggable="true" data-order-id="<%= order.orderId %>">
             <div class="order-header">
               Order #<%= order.orderId %> - <%= order.dineOption %>
             </div>
@@ -161,17 +146,17 @@
       <% } %>
     </div>
 
-    <!-- MAKING COLUMN -->
-    <div class="column">
+    <!-- PREPPING COLUMN -->
+    <div class="column dropzone" data-status="prepping">
       <div class="column-header">
-        <h2>Making</h2>
+        <h2>Prepping</h2>
       </div>
 
       <% if (!cooking || cooking.length === 0) { %>
         <p>No orders currently making.</p>
       <% } else { %>
         <% cooking.forEach(order => { %>
-          <div class="order">
+          <div class="order" draggable="true" data-order-id="<%= order.orderId %>">
             <div class="order-header">
               Order #<%= order.orderId %> - <%= order.dineOption %>
             </div>
@@ -224,7 +209,7 @@
     </div>
 
     <!-- DONE COLUMN -->
-    <div class="column">
+    <div class="column dropzone" data-status="done">
       <div class="column-header">
         <h2>Done</h2>
         <!-- CLEAR DONE BUTTON -->
@@ -237,7 +222,7 @@
         <p>No recent completed orders.</p>
       <% } else { %>
         <% done.forEach(order => { %>
-          <div class="order">
+          <div class="order" draggable="true" data-order-id="<%= order.orderId %>">
             <div class="order-header">
               Order #<%= order.orderId %> - <%= order.dineOption %>
             </div>
@@ -278,6 +263,8 @@
       <% } %>
     </div>
 
+      </div>
+    </main>
   </div>
 </body>
 <!-- Status error modal -->
@@ -300,7 +287,7 @@
     const selectEl = document.getElementById('prep-item-select');
     const servingsEl = document.getElementById('prep-servings');
     const cookBtn = document.getElementById('cook-batch-btn');
-    const viewBtn = document.getElementById('view-stock-btn');
+    // Removed view toggle: stock always visible
     const discardBtn = document.getElementById('discard-stock-btn');
     const stockPanel = document.getElementById('stock-panel');
     const stockBody = document.getElementById('stock-body');
@@ -311,7 +298,7 @@
 
     // Apply color coding to queued items only
     function applyColorCoding() {
-      const queuedColumn = document.querySelectorAll('.columns .column')[0];
+      const queuedColumn = document.querySelector('.board-columns .column[data-status="queued"]');
       if (!queuedColumn) return;
       
       const items = queuedColumn.querySelectorAll('.line-item');
@@ -405,12 +392,11 @@
         const res = await fetch('/kitchen/stock');
         const data = await res.json();
         if (!data.success) return;
-        // Update stockByMenuItemId map
         stockByMenuItemId.clear();
         (data.stock || []).forEach(row => {
           stockByMenuItemId.set(row.menu_item_id, Number(row.servings_available) || 0);
         });
-        // Re-apply color coding to queued column
+        buildStockBody(data.stock || []);
         applyColorCoding();
       } catch (e) {
         console.warn('stock refresh failed', e);
@@ -457,52 +443,50 @@
       }, 2000);
     })();
 
-    async function loadStock() {
-      try {
+    function buildStockBody(rows){
+      stockBody.innerHTML='';
+      // Sort: category order (3,4,others) then name alphabetically within each group
+      const catWeight = (id) => id===3?1:id===4?2:3;
+      const sorted = [...rows].sort((a,b) => {
+        const ca = catWeight(a.menu_item?.category_id||0);
+        const cb = catWeight(b.menu_item?.category_id||0);
+        if (ca !== cb) return ca - cb;
+        const na = (a.menu_item?.name||'').toLowerCase();
+        const nb = (b.menu_item?.name||'').toLowerCase();
+        return na.localeCompare(nb);
+      });
+      let currentGroup = null;
+      sorted.forEach(row => {
+        const catId = row.menu_item?.category_id;
+        let groupLabel = catId === 3 ? 'ENTREES' : (catId === 4 ? 'SIDES' : 'OTHER');
+        if (groupLabel !== currentGroup){
+          currentGroup = groupLabel;
+          const header = document.createElement('div');
+            header.textContent = groupLabel;
+            header.className = 'stock-section-header';
+            stockBody.appendChild(header);
+        }
+        const name = row.menu_item?.name || ('#'+row.menu_item_id);
+        const cat = CATEGORY_NAMES[catId] || '';
+        const servings = Number(row.servings_available)||0;
+        const card = document.createElement('div');
+        let stateCls='';
+        if (servings===0) stateCls='out'; else if (servings<5) stateCls='low';
+        card.className='stock-mini '+stateCls;
+        card.innerHTML = `
+          <div class="s-cat">${cat}</div>
+          <div class="s-name">${name}</div>
+          <div class="s-serv">${servings}</div>`;
+        stockBody.appendChild(card);
+      });
+    }
+    async function loadStock(){
+      try{
         const res = await fetch('/kitchen/stock');
         const data = await res.json();
-        if (!data.success) throw new Error(data.error || 'Failed to load');
-        stockBody.innerHTML = '';
-        (data.stock || []).forEach(row => {
-          const name = row.menu_item?.name || ('#' + row.menu_item_id);
-          const cat = CATEGORY_NAMES[row.menu_item?.category_id] || '';
-          const servings = Number(row.servings_available) || 0;
-          
-          let stockColor = '#059669'; // green
-          let stockBg = '#d1fae5';
-          let stockIcon = '✓';
-          if (servings === 0) {
-            stockColor = '#dc2626'; // red
-            stockBg = '#fee2e2';
-            stockIcon = '✗';
-          }
-          
-          const card = document.createElement('div');
-          card.style.cssText = `
-            background: ${stockBg};
-            padding: 12px 16px;
-            border-radius: 8px;
-            border-left: 4px solid ${stockColor};
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-          `;
-          card.innerHTML = `
-            <div>
-              <div style="font-weight:600; font-size:1.1em; color:#000;">${name}</div>
-              <div style="font-size:0.9em; color:#666; margin-top:2px;">${cat}</div>
-            </div>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span style="font-size:1.5em; color:${stockColor};">${stockIcon}</span>
-              <span style="font-size:1.8em; font-weight:700; color:${stockColor};">${servings}</span>
-            </div>
-          `;
-          stockBody.appendChild(card);
-        });
-      } catch (e) {
-        console.error('loadStock error', e);
-        alert('Failed to load stock');
-      }
+        if(!data.success) return;
+        buildStockBody(data.stock||[]);
+      }catch(e){ console.warn('loadStock error', e); }
     }
 
     cookBtn?.addEventListener('click', async () => {
@@ -553,15 +537,8 @@
       }
     });
 
-    viewBtn?.addEventListener('click', async () => {
-      const showing = stockPanel.style.display !== 'none';
-      if (showing) {
-        stockPanel.style.display = 'none';
-        return;
-      }
-      await loadStock();
-      stockPanel.style.display = 'block';
-    });
+    // Stock always shown; initial load:
+    loadStock();
 
     discardBtn?.addEventListener('click', async () => {
       if (!confirm('Discard all remaining prepared stock?')) return;
@@ -618,6 +595,56 @@
           console.error('status update error', err);
           errText.innerHTML = '<strong>Network error.</strong> Please try again.';
           errModal.style.display = 'flex';
+        }
+      });
+    });
+  })();
+  // ----- Drag & Drop for order cards -----
+  (function enableDrag(){
+    const zones = document.querySelectorAll('.dropzone');
+    let dragOrderId = null;
+    document.querySelectorAll('.order[draggable="true"]').forEach(card => {
+      card.addEventListener('dragstart', e => {
+        dragOrderId = card.getAttribute('data-order-id');
+        card.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', dragOrderId);
+      });
+      card.addEventListener('dragend', () => {
+        card.classList.remove('dragging');
+        dragOrderId = null;
+      });
+    });
+    zones.forEach(zone => {
+      zone.addEventListener('dragover', e => {
+        if (!dragOrderId) return;
+        e.preventDefault();
+        zone.classList.add('drag-over');
+        e.dataTransfer.dropEffect = 'move';
+      });
+      zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+      zone.addEventListener('drop', async e => {
+        zone.classList.remove('drag-over');
+        const status = zone.getAttribute('data-status');
+        const orderId = dragOrderId || e.dataTransfer.getData('text/plain');
+        if (!orderId || !status) return;
+        try {
+          const res = await fetch(`/kitchen/${orderId}/status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ status })
+          });
+          if (!res.ok) {
+            const txt = await res.text();
+            const errModal = document.getElementById('status-error-modal');
+            const errText = document.getElementById('status-error-text');
+            errText.innerHTML = txt || 'Failed to move card.';
+            errModal.style.display = 'flex';
+            return;
+          }
+          location.reload();
+        } catch (err) {
+          console.error('Drag move failed', err);
         }
       });
     });
