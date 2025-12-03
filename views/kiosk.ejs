@@ -16,7 +16,11 @@
       font-size: 1.6rem !important;
       padding: 1rem 1.5rem !important;   /* ← fixed line */
     }
-
+    
+    #call-staff-btn {
+      padding: 0.5rem 1rem !important;
+      width: fit-content !important;
+    }
     #cart-total,
     #cart-drawer-total,
     #success-total {
@@ -72,7 +76,7 @@
     <aside class="w-72 bg-black border-r border-red-900 flex flex-col h-screen">
       <div class="px-6 pt-8 pb-4 flex-shrink-0">
         <div class="text-xs tracking-[0.25em] uppercase text-red-500 font-bold" data-original="Panda Express">Panda Express</div>
-        <div class="mt-1 text-[11px] tracking-[0.3em] uppercase text-neutral-400" data-original="Self-Service Kiosk">Self-Service Kiosk</div>
+        <div class="mt-1 text-sm tracking-[0.2em] uppercase text-neutral-300 font-semibold" data-original="Self-Service Kiosk">Self-Service Kiosk</div>
       </div>
 
       <nav class="flex-shrink-0">
@@ -92,7 +96,7 @@
         </ul>
         
         <div class="mt-8 border-t border-neutral-800 pt-4">
-          <div class="px-6 text-[10px] uppercase tracking-widest text-neutral-500 mb-3" data-original="Language">Language</div>
+          <div class="px-6 text-xs uppercase tracking-wide text-neutral-300 font-semibold mb-3" data-original="Language">Language</div>
           <div class="px-6 flex gap-2 flex-wrap">
             <button onclick="changeLanguage('en')" class="text-xs font-bold text-white bg-neutral-800 px-3 py-2 rounded hover:bg-red-700 transition">EN</button>
             <button onclick="changeLanguage('es')" class="text-xs font-bold text-white bg-neutral-800 px-3 py-2 rounded hover:bg-red-700 transition">ES</button>
@@ -106,7 +110,7 @@
       <div class="flex-1 border-t border-neutral-800 min-h-0"></div>
 
       <div id="instruction-text" 
-           class="px-6 py-4 text-[11px] text-neutral-500 border-t border-neutral-800 flex-shrink-0" 
+           class="px-6 py-4 text-sm text-neutral-300 font-medium" 
            data-original="Tap items to add them to your order.">
         Tap items to add them to your order.
       </div>
@@ -160,11 +164,11 @@
     </main>
     <button id="call-staff-btn"
       class="fixed bottom-8 left-8 z-50 px-6 py-4
-            bg-blue-600 hover:bg-blue-700 active:bg-blue-800
+            bg-red-600 hover:bg-red-700 active:bg-red-800
             text-white font-bold text-2xl rounded-xl
             shadow-2xl transform transition-all duration-200
             active:scale-95"
-      style="left: 2rem; bottom: 2rem;">
+      style="left: 2rem; bottom: 4rem;">
       Call Staff for Help
     </button>
 
@@ -466,7 +470,7 @@
                 </button>
 
                 <button id="too-many-call-staff"
-                        class="px-10 py-6 bg-blue-600 hover:bg-blue-700 active:bg-blue-800
+                        class="px-10 py-6 bg-red-600 hover:bg-red-700 active:bg-red-800
                               text-white font-bold text-3xl rounded-xl shadow-2xl transition-all">
                   Call Staff for Help
                 </button>
