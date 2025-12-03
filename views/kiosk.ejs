@@ -442,7 +442,26 @@
         </div>
       </div>
     </div>
+    <div id="clear-cart-modal" class="fixed inset-0 hidden items-center justify-center bg-black/70 z-50">
+      <div class="bg-white text-black w-full max-w-md border border-neutral-200 rounded-lg overflow-hidden shadow-xl">
+        <div class="px-6 py-4 border-b border-neutral-200 bg-red-700 text-white">
+          <div class="text-xl font-semibold">Clear Cart?</div>
+          <div class="text-sm mt-1">Are you sure you want to remove all items?</div>
+        </div>
 
+        <div class="px-6 py-6 flex flex-col gap-4">
+          <button id="confirm-clear-cart"
+            class="w-full px-6 py-3 bg-red-700 text-white font-semibold text-lg rounded hover:bg-red-800 transition">
+            Yes, Clear Cart
+          </button>
+
+          <button id="cancel-clear-cart"
+            class="w-full px-6 py-3 bg-neutral-300 text-black font-semibold text-lg rounded hover:bg-neutral-200 transition">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
     <div id="order-success-modal" class="fixed inset-0 hidden items-center justify-center bg-black/70 z-50">
       <div class="bg-white text-black w-full max-w-lg border border-neutral-200 rounded-lg overflow-hidden shadow-2xl">
         <div class="px-8 py-10 text-center">
@@ -1496,12 +1515,38 @@
       });
       
 
+      const clearCartModal = document.getElementById("clear-cart-modal");
+      const confirmClearCart = document.getElementById("confirm-clear-cart");
+      const cancelClearCart = document.getElementById("cancel-clear-cart");
+
       document.getElementById("cart-clear").addEventListener("click", () => {
         if (cart.length === 0) return;
-        if (confirm("Clear all items from cart?")) {
-          cart = [];
-          renderCartDrawer();
-          saveCart(cart);
+
+        clearCartModal.classList.remove("hidden");
+        clearCartModal.classList.add("flex");
+      });
+
+      // Confirm
+      confirmClearCart.addEventListener("click", () => {
+        cart = [];
+        renderCartDrawer();
+        saveCart(cart);
+
+        clearCartModal.classList.add("hidden");
+        clearCartModal.classList.remove("flex");
+      });
+
+      // Cancel
+      cancelClearCart.addEventListener("click", () => {
+        clearCartModal.classList.add("hidden");
+        clearCartModal.classList.remove("flex");
+      });
+
+      // Clicking the background closes it too
+      clearCartModal.addEventListener("click", (e) => {
+        if (e.target === clearCartModal) {
+          clearCartModal.classList.add("hidden");
+          clearCartModal.classList.remove("flex");
         }
       });
 
