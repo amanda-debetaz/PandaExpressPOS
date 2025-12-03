@@ -96,7 +96,10 @@
     }
     html.text-size-medium button {
       font-size: 1.4rem !important;
-      padding: 0.8rem 1.2rem !important;
+      padding: 2rem 1.2rem !important;
+    }
+    html.text-size-medium .nav-link {
+      padding: 2rem 1.5rem !important;
     }
     html.text-size-medium .text-xs { font-size: 0.9rem !important; }
     html.text-size-medium .text-sm { font-size: 1.1rem !important; }
@@ -137,6 +140,41 @@
     <script>
       const menuData = JSON.parse('<%- JSON.stringify(menu || {}) %>');
     </script>
+
+    <!-- Landing Page / Screensaver -->
+    <div id="landing-page" class="fixed inset-0 z-[100] flex flex-col items-center justify-center cursor-pointer overflow-hidden">
+      <!-- Background Carousel -->
+      <div class="absolute inset-0 bg-gradient-to-br from-red-900 via-red-700 to-red-800"></div>
+      <div id="carousel-container" class="absolute inset-0">
+        <div class="carousel-slide absolute inset-0 opacity-0 transition-opacity duration-1000">
+          <img src="/images/the-original-orange-chicken.jpg" alt="Orange Chicken" class="w-full h-full object-cover opacity-30">
+        </div>
+        <div class="carousel-slide absolute inset-0 opacity-0 transition-opacity duration-1000">
+          <img src="/images/beijing-beef.jpg" alt="Beijing Beef" class="w-full h-full object-cover opacity-30">
+        </div>
+        <div class="carousel-slide absolute inset-0 opacity-0 transition-opacity duration-1000">
+          <img src="/images/honey-walnut-shrimp.jpg" alt="Honey Walnut Shrimp" class="w-full h-full object-cover opacity-30">
+        </div>
+        <div class="carousel-slide absolute inset-0 opacity-0 transition-opacity duration-1000">
+          <img src="/images/broccoli-beef.jpg" alt="Broccoli Beef" class="w-full h-full object-cover opacity-30">
+        </div>
+        <div class="carousel-slide absolute inset-0 opacity-0 transition-opacity duration-1000">
+          <img src="/images/kung-pao-chicken.jpg" alt="Kung Pao Chicken" class="w-full h-full object-cover opacity-30">
+        </div>
+      </div>
+      
+      <!-- Content overlay -->
+      <div class="relative z-10 text-center">
+        <img src="/images/panda_logo.png" alt="Panda Express" class="w-64 h-64 mx-auto mb-8 drop-shadow-2xl animate-pulse">
+        <h1 class="text-6xl font-bold text-white mb-4 drop-shadow-2xl">Welcome to Panda Express</h1>
+        <p class="text-3xl text-white/95 mb-12 drop-shadow-xl">Tap anywhere to start your order</p>
+        <div class="text-white/80 text-xl">
+          <svg class="w-16 h-16 mx-auto animate-bounce drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+          </svg>
+        </div>
+      </div>
+    </div>
     
     <aside class="w-72 bg-black border-r border-red-900 flex flex-col h-screen">
       <div class="px-6 pt-8 pb-4 flex-shrink-0">
@@ -145,7 +183,7 @@
         <div class="mt-1 text-sm tracking-[0.2em] uppercase text-neutral-300 font-semibold" data-original="Self-Service Kiosk">Self-Service Kiosk</div>
       </div>
 
-      <nav class="flex-shrink-0">
+      <nav class="flex-shrink-0 flex-grow-0">
         <ul class="flex flex-col text-sm">
           <li>
             <button data-category="entrees" class="nav-link active w-full text-left" data-original="Entrees">Entrees</button>
@@ -160,29 +198,60 @@
             <button data-category="appetizers" class="nav-link w-full text-left" data-original="Appetizers">Appetizers</button>
           </li>
         </ul>
-        
-        <div class="mt-8 border-t border-neutral-800 pt-4">
-          <div class="px-6 text-xs uppercase tracking-wide text-neutral-300 font-semibold mb-3" data-original="Language">Language</div>
-          <div class="px-6 flex gap-2 flex-wrap">
-            <button onclick="changeLanguage('en')" class="text-xs font-bold text-white bg-neutral-800 px-3 py-2 rounded hover:bg-red-700 transition">EN</button>
-            <button onclick="changeLanguage('es')" class="text-xs font-bold text-white bg-neutral-800 px-3 py-2 rounded hover:bg-red-700 transition">ES</button>
-            <button onclick="changeLanguage('zh')" class="text-xs font-bold text-white bg-neutral-800 px-3 py-2 rounded hover:bg-red-700 transition">ZH</button>
-            <button onclick="changeLanguage('fr')" class="text-xs font-bold text-white bg-neutral-800 px-3 py-2 rounded hover:bg-red-700 transition">FR</button>
-            <button onclick="changeLanguage('de')" class="text-xs font-bold text-white bg-neutral-800 px-3 py-2 rounded hover:bg-red-700 transition">DE</button>
-          </div>
-        </div>
-
-        <div class="mt-8 border-t border-neutral-800 pt-4">
-          <div class="px-6 text-xs uppercase tracking-wide text-neutral-300 font-semibold mb-3" data-original="Text Size">Text Size</div>
-          <div class="px-6 flex gap-2 flex-wrap">
-            <button onclick="changeTextSize('small')" class="text-size-btn text-xs font-bold text-white bg-neutral-800 px-3 py-2 rounded hover:bg-red-700 transition" data-size="small" data-original="Small">Small</button>
-            <button onclick="changeTextSize('medium')" class="text-size-btn text-xs font-bold text-white bg-neutral-800 px-3 py-2 rounded hover:bg-red-700 transition" data-size="medium" data-original="Medium">Medium</button>
-            <button onclick="changeTextSize('large')" class="text-size-btn text-xs font-bold text-white bg-red-700 px-3 py-2 rounded hover:bg-red-800 transition" data-size="large" data-original="Large">Large</button>
-          </div>
-        </div>
       </nav>
 
-      <div class="flex-1 border-t border-neutral-800 min-h-0"></div>
+      <div class="flex-1 overflow-y-auto border-t border-neutral-800">
+        <button id="accessibility-toggle" class="w-full px-6 py-4 text-left text-sm font-semibold text-neutral-300 hover:bg-neutral-900 transition flex items-center justify-between">
+          <span><span class="no-translate">⚙️</span> <span data-original="Accessibility">Accessibility</span></span>
+          <span id="accessibility-arrow" class="transform transition-transform no-translate">▼</span>
+        </button>
+        
+        <div id="accessibility-panel" class="hidden px-6 pb-4">
+          <div class="mb-4">
+            <div class="text-xs uppercase tracking-wide text-neutral-300 font-semibold mb-2" data-original="Language">Language</div>
+            <div class="flex gap-2 flex-wrap">
+              <button onclick="changeLanguage('en')" class="text-xs font-bold text-white bg-neutral-800 px-2 py-2 rounded hover:bg-red-700 transition flex flex-col items-center gap-1">
+                <span class="text-base">🇺🇸</span>
+                <span class="text-[0.6rem]">EN</span>
+              </button>
+              <button onclick="changeLanguage('es')" class="text-xs font-bold text-white bg-neutral-800 px-2 py-2 rounded hover:bg-red-700 transition flex flex-col items-center gap-1">
+                <span class="text-base">🇪🇸</span>
+                <span class="text-[0.6rem]">ES</span>
+              </button>
+              <button onclick="changeLanguage('zh')" class="text-xs font-bold text-white bg-neutral-800 px-2 py-2 rounded hover:bg-red-700 transition flex flex-col items-center gap-1">
+                <span class="text-base">🇨🇳</span>
+                <span class="text-[0.6rem]">ZH</span>
+              </button>
+              <button onclick="changeLanguage('fr')" class="text-xs font-bold text-white bg-neutral-800 px-2 py-2 rounded hover:bg-red-700 transition flex flex-col items-center gap-1">
+                <span class="text-base">🇫🇷</span>
+                <span class="text-[0.6rem]">FR</span>
+              </button>
+              <button onclick="changeLanguage('de')" class="text-xs font-bold text-white bg-neutral-800 px-2 py-2 rounded hover:bg-red-700 transition flex flex-col items-center gap-1">
+                <span class="text-base">🇩🇪</span>
+                <span class="text-[0.6rem]">DE</span>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <div class="text-xs uppercase tracking-wide text-neutral-300 font-semibold mb-2" data-original="Text Size">Text Size</div>
+            <div class="flex gap-2 flex-wrap">
+              <button onclick="changeTextSize('small')" class="text-size-btn text-white bg-neutral-800 px-3 py-2 rounded hover:bg-red-700 transition flex flex-col items-center gap-1" data-size="small">
+                <span class="text-xs font-bold">Aa</span>
+                <span class="text-[0.55rem] uppercase tracking-wide" data-original="Small">Small</span>
+              </button>
+              <button onclick="changeTextSize('medium')" class="text-size-btn text-white bg-neutral-800 px-3 py-2 rounded hover:bg-red-700 transition flex flex-col items-center gap-1" data-size="medium">
+                <span class="text-sm font-bold">Aa</span>
+                <span class="text-[0.55rem] uppercase tracking-wide" data-original="Medium">Medium</span>
+              </button>
+              <button onclick="changeTextSize('large')" class="text-size-btn text-white bg-red-700 px-3 py-2 rounded hover:bg-red-800 transition flex flex-col items-center gap-1" data-size="large">
+                <span class="text-base font-bold">Aa</span>
+                <span class="text-[0.55rem] uppercase tracking-wide" data-original="Large">Large</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div id="instruction-text" 
            class="px-6 py-4 text-sm text-neutral-300 font-medium" 
@@ -200,11 +269,22 @@
           </p>
         </div>
 
-        <div id="weather-widget" class="flex items-center gap-3 bg-neutral-100 px-4 py-2 rounded-lg hidden">
-          <img id="weather-icon" src="" alt="Weather" class="w-10 h-10 object-contain">
-          <div class="text-right">
-            <div id="weather-temp" class="text-xl font-bold text-neutral-800">--°</div>
-            <div id="weather-desc" class="text-xs text-neutral-700 uppercase tracking-wider">Loading</div>
+        <div class="flex items-center gap-4">
+          <button id="call-staff-btn"
+            class="px-5 py-3 bg-red-600 hover:bg-red-700 active:bg-red-800
+                  text-white font-bold text-base rounded-lg
+                  shadow-lg transform transition-all duration-200
+                  active:scale-95 flex items-center gap-2">
+            <span class="text-xl">🆘</span>
+            <span data-original="Call Staff for Help">Call Staff for Help</span>
+          </button>
+          
+          <div id="weather-widget" class="flex items-center gap-3 bg-neutral-100 px-4 py-2 rounded-lg hidden">
+            <img id="weather-icon" src="" alt="Weather" class="w-10 h-10 object-contain">
+            <div class="text-right">
+              <div id="weather-temp" class="text-xl font-bold text-neutral-800">--°</div>
+              <div id="weather-desc" class="text-xs text-neutral-700 uppercase tracking-wider">Loading</div>
+            </div>
           </div>
         </div>
       </header>
@@ -237,15 +317,6 @@
         </div>
       </div>
     </main>
-    <button id="call-staff-btn"
-      class="fixed bottom-8 left-8 z-50 px-6 py-4
-            bg-red-600 hover:bg-red-700 active:bg-red-800
-            text-white font-bold text-2xl rounded-xl
-            shadow-2xl transform transition-all duration-200
-            active:scale-95"
-      style="left: 2rem; bottom: 4rem;">
-      Call Staff for Help
-    </button>
 
   <div id="cart-drawer-backdrop" class="fixed inset-0 bg-black/30 z-30 hidden"></div>
 
@@ -276,52 +347,50 @@
   </aside>
 
     <!-- Item Info Modal -->
-    <div id="item-info-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-50">
-      <div class="bg-white text-black w-full max-w-md border border-neutral-200 rounded-xl overflow-hidden shadow-2xl">
-        <div class="bg-red-700 text-white px-6 py-4 flex items-center justify-between">
-          <h3 class="text-lg font-bold" id="info-modal-title" data-original="Item Information">Item Information</h3>
-          <button id="info-modal-close" class="text-white hover:text-red-100 text-2xl font-bold">&times;</button>
+    <div id="item-info-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-50 backdrop-blur-sm">
+      <div class="bg-white text-black w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl">
+        <div class="bg-gradient-to-r from-red-700 to-red-600 px-6 py-5 flex items-center justify-between">
+          <h3 class="text-2xl font-bold text-white" id="info-item-name"></h3>
+          <button id="info-modal-close" class="text-white/90 hover:text-white text-3xl font-light leading-none transition-colors">&times;</button>
         </div>
         <div class="p-6 space-y-4">
-          <div class="text-center pb-4 border-b border-neutral-200">
-            <h4 id="info-item-name" class="text-xl font-bold text-neutral-800 mb-1"></h4>
-          </div>
-          
-          <div class="space-y-3">
-            <div class="bg-red-50 border-l-4 border-red-700 p-4 rounded">
-              <div class="flex items-start gap-3">
-                <span class="text-2xl">⚠️</span>
-                <div class="flex-1">
-                  <h5 class="font-bold text-red-900 mb-1" data-original="Allergens">Allergens</h5>
-                  <p id="info-allergens" class="text-sm text-red-800"></p>
-                </div>
+          <div class="bg-gradient-to-br from-red-50 to-red-100/50 rounded-xl p-5">
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center flex-shrink-0">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+              </div>
+              <div class="flex-1">
+                <h5 class="font-semibold text-red-900 mb-2 text-lg" data-original="Allergen Information">Allergen Information</h5>
+                <p id="info-allergens" class="text-base text-red-800 leading-relaxed"></p>
               </div>
             </div>
-            
-            <div class="bg-neutral-50 border border-neutral-200 p-4 rounded">
-              <div class="flex items-start gap-3">
-                <span class="text-2xl">📊</span>
-                <div class="flex-1">
-                  <h5 class="font-bold text-neutral-800 mb-2" data-original="Nutritional Information">Nutritional Information</h5>
-                  <div class="grid grid-cols-2 gap-2 text-sm">
-                    <div class="flex justify-between">
-                      <span class="text-neutral-700" data-original="Calories:">Calories:</span>
-                      <span id="info-calories" class="font-semibold">--</span>
-                    </div>
-                    <div class="flex justify-between">
-                      <span class="text-neutral-700" data-original="Protein:">Protein:</span>
-                      <span id="info-protein" class="font-semibold">--</span>
-                    </div>
-                    <div class="flex justify-between">
-                      <span class="text-neutral-700" data-original="Fat:">Fat:</span>
-                      <span id="info-fat" class="font-semibold">--</span>
-                    </div>
-                    <div class="flex justify-between">
-                      <span class="text-neutral-700" data-original="Carbs:">Carbs:</span>
-                      <span id="info-carbs" class="font-semibold">--</span>
-                    </div>
-                  </div>
-                </div>
+          </div>
+          
+          <div class="bg-neutral-50 rounded-xl p-5">
+            <h5 class="font-semibold text-neutral-900 mb-4 text-lg flex items-center gap-2">
+              <svg class="w-5 h-5 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+              </svg>
+              <span data-original="Nutrition Facts">Nutrition Facts</span>
+            </h5>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="bg-white rounded-lg p-3 border border-neutral-200">
+                <div class="text-xs text-neutral-500 uppercase tracking-wide mb-1" data-original="Calories">Calories</div>
+                <div id="info-calories" class="text-2xl font-bold text-neutral-900">--</div>
+              </div>
+              <div class="bg-white rounded-lg p-3 border border-neutral-200">
+                <div class="text-xs text-neutral-500 uppercase tracking-wide mb-1" data-original="Protein">Protein</div>
+                <div id="info-protein" class="text-2xl font-bold text-neutral-900">--</div>
+              </div>
+              <div class="bg-white rounded-lg p-3 border border-neutral-200">
+                <div class="text-xs text-neutral-500 uppercase tracking-wide mb-1" data-original="Fat">Fat</div>
+                <div id="info-fat" class="text-2xl font-bold text-neutral-900">--</div>
+              </div>
+              <div class="bg-white rounded-lg p-3 border border-neutral-200">
+                <div class="text-xs text-neutral-500 uppercase tracking-wide mb-1" data-original="Carbs">Carbs</div>
+                <div id="info-carbs" class="text-2xl font-bold text-neutral-900">--</div>
               </div>
             </div>
           </div>
@@ -492,14 +561,39 @@
       </div>
     </div>
 
+    <!-- Are You Still There Modal -->
+    <div id="still-there-modal" class="fixed inset-0 hidden items-center justify-center bg-black/70 z-[90] backdrop-blur-sm">
+      <div class="bg-white text-black w-full max-w-xl rounded-2xl overflow-hidden shadow-2xl">
+        <div class="bg-gradient-to-r from-red-700 to-red-600 px-8 py-6">
+          <h2 class="text-3xl font-bold text-white text-center" data-original="Are You Still There?">Are You Still There?</h2>
+        </div>
+        <div class="px-10 py-10">
+          <div class="flex items-center justify-center mb-8 p-4">
+            <div class="relative w-40 h-40">
+              <div class="absolute inset-2 rounded-full bg-red-50 flex items-center justify-center">
+                <div id="still-there-countdown" class="text-6xl font-bold text-red-700">10</div>
+              </div>
+              <svg class="absolute inset-0 w-40 h-40 -rotate-90" viewBox="0 0 160 160">
+                <circle cx="80" cy="80" r="72" stroke="#fecaca" stroke-width="8" fill="none"/>
+                <circle id="countdown-circle" cx="80" cy="80" r="72" stroke="#dc2626" stroke-width="8" fill="none" stroke-dasharray="452" stroke-dashoffset="0" class="transition-all duration-1000 ease-linear"/>
+              </svg>
+            </div>
+          </div>
+          <p class="text-xl text-center text-neutral-600 mb-8" data-original="Your session will timeout soon. Tap continue to keep ordering.">Your session will timeout soon. Tap continue to keep ordering.</p>
+          <button id="still-there-continue" class="w-full px-8 py-4 text-xl font-semibold bg-red-700 text-white rounded-lg hover:bg-red-800 transition-all shadow-md" data-original="Continue Ordering">Continue Ordering</button>
+        </div>
+      </div>
+    </div>
+
     <style>
       .nav-link {
         display: block;
-        padding: 1rem 1.5rem;
+        padding: 2rem 1.5rem;
         border-left: 4px solid transparent;
         background: #000;
         color: #d4d4d4;
-        font-weight: 500;
+        font-weight: 600;
+        font-size: 1.1rem;
         cursor: pointer;
         transition: all 0.2s;
       }
@@ -1507,11 +1601,17 @@
         });
       });
 
-      // Close success modal and restart
+      // Close success modal and show landing page after 3 seconds
       document.getElementById('success-done-btn').addEventListener('click', () => {
         document.getElementById('order-success-modal').classList.add('hidden');
         document.getElementById('order-success-modal').classList.remove('flex');
-        setTimeout(() => window.location.reload(), 800);
+        setTimeout(() => {
+          showLandingPage();
+          // Clear cart and reset after returning to landing page
+          cart = [];
+          renderCartDrawer();
+          saveCart(cart);
+        }, 3000);
       });
       
 
@@ -1628,6 +1728,153 @@
         changeTextSize(savedSize);
       }
 
+      // Accessibility panel toggle
+      document.getElementById('accessibility-toggle')?.addEventListener('click', () => {
+        const panel = document.getElementById('accessibility-panel');
+        const arrow = document.getElementById('accessibility-arrow');
+        if (panel.classList.contains('hidden')) {
+          panel.classList.remove('hidden');
+          arrow.style.transform = 'rotate(180deg)';
+        } else {
+          panel.classList.add('hidden');
+          arrow.style.transform = 'rotate(0deg)';
+        }
+      });
+
+      // Background carousel for landing page
+      let carouselInterval = null;
+      let currentSlide = 0;
+      const slides = document.querySelectorAll('.carousel-slide');
+      
+      function startCarousel() {
+        if (slides.length === 0) return;
+        
+        // Show first slide
+        slides[0].style.opacity = '1';
+        
+        carouselInterval = setInterval(() => {
+          // Fade out current slide
+          slides[currentSlide].style.opacity = '0';
+          
+          // Move to next slide
+          currentSlide = (currentSlide + 1) % slides.length;
+          
+          // Fade in next slide
+          slides[currentSlide].style.opacity = '1';
+        }, 4000); // Change slide every 4 seconds
+      }
+      
+      function stopCarousel() {
+        if (carouselInterval) {
+          clearInterval(carouselInterval);
+          carouselInterval = null;
+        }
+      }
+
+      // Landing page / Screensaver functionality
+      let inactivityTimer = null;
+      let warningTimer = null;
+      let countdownTimer = null;
+      const INACTIVITY_WARNING_TIMEOUT = 30000; // 30 seconds before warning
+      const WARNING_COUNTDOWN = 10; // 10 seconds countdown
+      const landingPage = document.getElementById('landing-page');
+      const stillThereModal = document.getElementById('still-there-modal');
+      const stillThereCountdown = document.getElementById('still-there-countdown');
+      let countdownValue = WARNING_COUNTDOWN;
+
+      function showLandingPage() {
+        landingPage.style.display = 'flex';
+        startCarousel();
+      }
+
+      function hideLandingPage() {
+        landingPage.style.display = 'none';
+        stopCarousel();
+        resetInactivityTimer();
+      }
+
+      function showStillThereModal() {
+        stillThereModal.classList.remove('hidden');
+        stillThereModal.classList.add('flex');
+        countdownValue = WARNING_COUNTDOWN;
+        stillThereCountdown.textContent = countdownValue;
+        startCountdown();
+      }
+
+      function hideStillThereModal() {
+        stillThereModal.classList.add('hidden');
+        stillThereModal.classList.remove('flex');
+        clearInterval(countdownTimer);
+        clearTimeout(warningTimer);
+        resetInactivityTimer();
+      }
+
+      function startCountdown() {
+        const circle = document.getElementById('countdown-circle');
+        const circumference = 2 * Math.PI * 72; // radius is 72
+        
+        countdownTimer = setInterval(() => {
+          countdownValue--;
+          stillThereCountdown.textContent = countdownValue;
+          
+          // Animate the circle
+          const progress = countdownValue / WARNING_COUNTDOWN;
+          const offset = circumference * (1 - progress);
+          if (circle) {
+            circle.style.strokeDashoffset = offset;
+          }
+          
+          if (countdownValue <= 0) {
+            clearInterval(countdownTimer);
+            hideStillThereModal();
+            clearCartAndReturnToLanding();
+          }
+        }, 1000);
+      }
+
+      function clearCartAndReturnToLanding() {
+        // Clear the cart
+        cart = [];
+        renderCartDrawer();
+        saveCart(cart);
+        // Close any open modals
+        document.getElementById('item-modal')?.classList.add('hidden');
+        document.getElementById('meal-modal')?.classList.add('hidden');
+        document.getElementById('item-info-modal')?.classList.add('hidden');
+        closeCartDrawer();
+        // Show landing page
+        showLandingPage();
+      }
+
+      function resetInactivityTimer() {
+        clearTimeout(inactivityTimer);
+        clearTimeout(warningTimer);
+        clearInterval(countdownTimer);
+        inactivityTimer = setTimeout(() => {
+          showStillThereModal();
+        }, INACTIVITY_WARNING_TIMEOUT);
+      }
+
+      // Hide landing page on tap/click
+      landingPage.addEventListener('click', hideLandingPage);
+
+      // Continue button in still there modal
+      document.getElementById('still-there-continue').addEventListener('click', hideStillThereModal);
+      stillThereModal.addEventListener('click', (e) => {
+        if (e.target === stillThereModal) {
+          hideStillThereModal();
+        }
+      });
+
+      // Track user activity to reset timer
+      ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+        document.addEventListener(event, () => {
+          if (landingPage.style.display === 'none' && stillThereModal.classList.contains('hidden')) {
+            resetInactivityTimer();
+          }
+        }, true);
+      });
+
       document.addEventListener('DOMContentLoaded', () => {
         const savedLang = localStorage.getItem('kiosk_lang');
         if (savedLang && savedLang !== 'en') {
@@ -1635,6 +1882,8 @@
         }
         loadWeather(); // Load weather on startup
         initTextSize(); // Initialize text size
+        // Start with landing page visible
+        showLandingPage();
       });
 
     async function changeLanguage(lang) {
@@ -1660,8 +1909,10 @@
 
       if (lang === 'en') {
         document.querySelectorAll('[data-original]').forEach(el => {
-            const orig = el.getAttribute('data-original');
-            if(orig) el.textContent = orig;
+            if (!el.classList.contains('no-translate') && !el.closest('.no-translate')) {
+              const orig = el.getAttribute('data-original');
+              if(orig) el.textContent = orig;
+            }
         });
         return;
       }
@@ -1670,7 +1921,7 @@
         ...staticElements.map(i => i.el), 
         ...Array.from(document.querySelectorAll('[data-translate-type="item-name"]')),
         ...Array.from(document.querySelectorAll('[data-original]'))
-      ].filter(el => el && el.hasAttribute('data-original'));
+      ].filter(el => el && el.hasAttribute('data-original') && !el.classList.contains('no-translate') && !el.closest('.no-translate'));
       
       const uniqueDomTargets = [...new Set(allDomTargets)];
       
