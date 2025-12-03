@@ -588,10 +588,64 @@ app.get("/kiosk", async (req, res) => {
         toks.forEach(a => allergenSet.add(a));
       });
 
+      // Manual allergen data for appetizers (based on recipes)
+      const appetizerAllergens = {
+        'Chicken Egg Roll': ['Wheat', 'Soy', 'Egg'],
+        'Veggie Spring Roll': ['Wheat', 'Soy'],
+        'Cream Cheese Rangoon': ['Wheat', 'Milk', 'Egg', 'Soy']
+      };
+
+      // Nutritional information (per serving)
+      const nutritionData = {
+        // Sides
+        'Chow Mein': { calories: 400, protein: 12, fat: 12, carbs: 110 },
+        'Fried Rice': { calories: 570, protein: 18, fat: 16, carbs: 110 },
+        'White Steamed Rice': { calories: 420, protein: 0, fat: 0, carbs: 0 },
+        'Super Greens': { calories: 90, protein: 6, fat: 3, carbs: 13 },
+        // Entrees
+        'Eggplant & Tofu': { calories: 310, protein: 24, fat: 3, carbs: 220 },
+        'Mixed Veggies (entree)': { calories: 70, protein: 5, fat: 0, carbs: 5 },
+        'Mixed Veggies (Entree)': { calories: 35, protein: 0, fat: 0, carbs: 0 },
+        'Black Pepper Chicken': { calories: 200, protein: 11, fat: 2.5, carbs: 100 },
+        'Grilled Teriyaki Chicken': { calories: 180, protein: 9, fat: 2, carbs: 80 },
+        'Kung Pao Chicken': { calories: 300, protein: 20, fat: 4, carbs: 190 },
+        'Mushroom Chicken': { calories: 180, protein: 10, fat: 2, carbs: 90 },
+        'The Original Orange Chicken': { calories: 400, protein: 20, fat: 3.5, carbs: 170 },
+        'Pineapple Chicken': { calories: 230, protein: 10, fat: 2, carbs: 90 },
+        'String Bean Chicken Breast': { calories: 190, protein: 9, fat: 2, carbs: 80 },
+        'Honey Sesame Chicken Breast': { calories: 400, protein: 17, fat: 3, carbs: 150 },
+        'Grilled Chicken': { calories: 230, protein: 12, fat: 2, carbs: 110 },
+        'Grilled Teriyaki': { calories: 300, protein: 12, fat: 2, carbs: 100 },
+        'SweetFire Chicken Breast': { calories: 460, protein: 18, fat: 3.5, carbs: 160 },
+        'Beijing Beef': { calories: 660, protein: 41, fat: 7, carbs: 360 },
+        'Broccoli Beef': { calories: 150, protein: 6, fat: 1.5, carbs: 50 },
+        'Shanghai Beef': { calories: 200, protein: 9, fat: 2, carbs: 80 },
+        'Black Pepper Sirloin Steak': { calories: 360, protein: 19, fat: 8, carbs: 180 },
+        'Honey Walnut Shrimp': { calories: 260, protein: 14, fat: 2.5, carbs: 120 },
+        // Appetizers
+        'Chicken Egg Roll': { calories: 200, protein: 12, fat: 4, carbs: 100 },
+        'Chicken Potsticker': { calories: 220, protein: 11, fat: 2.5, carbs: 100 },
+        'Cream Cheese Rangoon': { calories: 190, protein: 8, fat: 5, carbs: 70 },
+        'Veggie Spring Roll': { calories: 160, protein: 7, fat: 1, carbs: 60 },
+        'Egg Flower Soup': { calories: 90, protein: 2, fat: 0, carbs: 20 },
+        'Hot & Sour Soup': { calories: 90, protein: 3.5, fat: 0.5, carbs: 30 }
+      };
+
+      let finalAllergens = Array.from(allergenSet).map(titleCase);
+      
+      // Override with manual allergens for appetizers if available
+      if (appetizerAllergens[item.name]) {
+        finalAllergens = appetizerAllergens[item.name];
+      }
+
+      // Get nutrition data if available
+      const nutrition = nutritionData[item.name] || null;
+
       const itemData = {
         name: item.name,
         price: parseFloat(item.price),
-        allergens: Array.from(allergenSet).map(titleCase)
+        allergens: finalAllergens,
+        nutrition: nutrition
       };
 
       // Category IDs from your schema:
@@ -629,6 +683,74 @@ function findMealPrice(allEntrees, type) {
   const found = allEntrees.find(e => e.name === name);
   return found ? found.price : 0;
 }
+
+// IMPORTANT: /builder/edit must come BEFORE /builder/:type to avoid route conflicts
+app.get('/builder/edit', async (req, res) => {
+  try {
+    const type = (req.query.type || 'plate').toLowerCase();
+    const editIdx = req.query.idx ? Number(req.query.idx) : null;
+    const items = await prisma.menu_item.findMany({
+      where: { is_active: true },
+      include: {
+        category: true,
+        recipe: {
+          include: {
+            inventory: { select: { name: true, allergen_info: true } }
+          }
+        }
+      },
+      orderBy: { name: 'asc' }
+    });
+
+    // Allergen helpers
+    const stopWords = new Set(['none', 'no', 'n/a', 'na', 'null', '-', '']);
+    const stripPhrases = [/^contains\s*:?/i, /^may\s*contain\s*:?/i, /^traces\s*of\s*:?/i];
+    const splitRegex = /[,/;&]|\band\b/i;
+    function normalizeTokens(text) {
+      if (!text) return [];
+      let t = String(text).trim();
+      for (const rx of stripPhrases) t = t.replace(rx, '').trim();
+      return t.split(splitRegex).map(s => s.trim().toLowerCase()).filter(s => s && !stopWords.has(s));
+    }
+    function titleCase(s) { return s.replace(/\w+/g, w => w.charAt(0).toUpperCase() + w.slice(1)); }
+
+    const menu = { entrees: [], sides: [] };
+    const premiumEntrees = new Set(['Honey Walnut Shrimp', 'Black Pepper Sirloin Steak']); // Define premium items
+
+    for (const item of items) {
+      const allergenSet = new Set();
+      (item.recipe || []).forEach(r => {
+        const s = (r.inventory?.allergen_info || '').trim();
+        if (!s) return;
+        normalizeTokens(s).forEach(a => allergenSet.add(a));
+      });
+      const itemData = {
+        name: item.name,
+        price: Number(item.price),
+        allergens: Array.from(allergenSet).map(titleCase),
+        isPremium: premiumEntrees.has(item.name)
+      };
+      // Category 3 = A La Carte (actual protein dishes)
+      // Category 4 = Sides
+      if (item.category_id === 3) menu.entrees.push(itemData);
+      else if (item.category_id === 4) menu.sides.push(itemData);
+    }
+
+    // Find base price from category 1 (Bowl/Plate/Bigger Plate)
+    const mealItems = items.filter(i => i.category_id === 1);
+    const basePrice = (() => {
+      const map = { bowl: 'Bowl', plate: 'Plate', 'bigger-plate': 'Bigger Plate' };
+      const name = map[type] || 'Plate';
+      const found = mealItems.find(e => e.name === name);
+      return found ? Number(found.price) : 0;
+    })();
+    const premiumSurcharge = 1.50;
+    res.render('builder', { menu, type, price: basePrice, premiumSurcharge, isEdit: true, editIdx });
+  } catch (err) {
+    console.error('Builder edit error:', err);
+    res.status(500).send('Unable to load builder edit');
+  }
+});
 
 app.get('/builder/:type', async (req, res) => {
   try {
@@ -696,73 +818,6 @@ app.get('/builder/:type', async (req, res) => {
   } catch (err) {
     console.error('Builder route error:', err);
     res.status(500).send('Unable to load builder');
-  }
-});
-
-app.get('/builder/edit', async (req, res) => {
-  try {
-    const type = (req.query.type || 'plate').toLowerCase();
-    const editIdx = req.query.idx ? Number(req.query.idx) : null;
-    const items = await prisma.menu_item.findMany({
-      where: { is_active: true },
-      include: {
-        category: true,
-        recipe: {
-          include: {
-            inventory: { select: { name: true, allergen_info: true } }
-          }
-        }
-      },
-      orderBy: { name: 'asc' }
-    });
-
-    // Allergen helpers
-    const stopWords = new Set(['none', 'no', 'n/a', 'na', 'null', '-', '']);
-    const stripPhrases = [/^contains\s*:?/i, /^may\s*contain\s*:?/i, /^traces\s*of\s*:?/i];
-    const splitRegex = /[,/;&]|\band\b/i;
-    function normalizeTokens(text) {
-      if (!text) return [];
-      let t = String(text).trim();
-      for (const rx of stripPhrases) t = t.replace(rx, '').trim();
-      return t.split(splitRegex).map(s => s.trim().toLowerCase()).filter(s => s && !stopWords.has(s));
-    }
-    function titleCase(s) { return s.replace(/\w+/g, w => w.charAt(0).toUpperCase() + w.slice(1)); }
-
-    const menu = { entrees: [], sides: [] };
-    const premiumEntrees = new Set(['Honey Walnut Shrimp', 'Black Pepper Sirloin Steak']); // Define premium items
-
-    for (const item of items) {
-      const allergenSet = new Set();
-      (item.recipe || []).forEach(r => {
-        const s = (r.inventory?.allergen_info || '').trim();
-        if (!s) return;
-        normalizeTokens(s).forEach(a => allergenSet.add(a));
-      });
-      const itemData = {
-        name: item.name,
-        price: Number(item.price),
-        allergens: Array.from(allergenSet).map(titleCase),
-        isPremium: premiumEntrees.has(item.name)
-      };
-      // Category 3 = A La Carte (actual protein dishes)
-      // Category 4 = Sides
-      if (item.category_id === 3) menu.entrees.push(itemData);
-      else if (item.category_id === 4) menu.sides.push(itemData);
-    }
-
-    // Find base price from category 1 (Bowl/Plate/Bigger Plate)
-    const mealItems = items.filter(i => i.category_id === 1);
-    const basePrice = (() => {
-      const map = { bowl: 'Bowl', plate: 'Plate', 'bigger-plate': 'Bigger Plate' };
-      const name = map[type] || 'Plate';
-      const found = mealItems.find(e => e.name === name);
-      return found ? Number(found.price) : 0;
-    })();
-    const premiumSurcharge = 1.50;
-    res.render('builder', { menu, type, price: basePrice, premiumSurcharge, isEdit: true, editIdx });
-  } catch (err) {
-    console.error('Builder edit error:', err);
-    res.status(500).send('Unable to load builder edit');
   }
 });
 

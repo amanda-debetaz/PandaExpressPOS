@@ -82,7 +82,7 @@
 
   /* Hints and counters */
   #side-hint,
-  .text-xs.text-neutral-600 {
+  .text-xs.text-neutral-700 {
     font-size: 1.6rem !important;
     margin-bottom: 2rem !important;
   }
@@ -99,19 +99,32 @@
   }
 </style>
 
+<style>
+  /* Prevent content bleeding over footer */
+  main {
+    padding-bottom: 100px;
+  }
+  footer {
+    z-index: 50;
+  }
+  /* Ensure badges don't overlap footer */
+  .relative button {
+    position: relative;
+    z-index: 1;
+  }
+</style>
 
 <body class="min-h-screen bg-neutral-50 text-black">
   <header class="w-full bg-red-700 text-white border-b border-red-800">
     <div class="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
-      <div>
+      <div class="flex items-center gap-4">
+        <img src="/images/panda_logo.png" alt="Panda Express" class="w-20 h-20">
+        <div>
         <div class="text-xs uppercase tracking-[0.25em] text-red-100 font-semibold" data-original="Panda Express">Panda Express</div>
         <h1 id="builder-title" class="text-2xl font-semibold mt-1">
           <%= (typeof isEdit !== 'undefined' && isEdit) ? 'Edit' : 'Build' %> Your 
           <%= type === 'bowl' ? 'Bowl' : (type === 'bigger-plate' ? 'Bigger Plate' : 'Plate') %>
         </h1>
-        <div class="text-sm text-red-100">
-          <span data-original="Price:">Price:</span> 
-          $<span id="price"><%= Number(price).toFixed(2) %></span>
         </div>
       </div>
       <a href="/kiosk" class="text-sm text-red-100 hover:text-white" data-original="Back to Menu">Back to Menu</a>
@@ -123,12 +136,12 @@
       <div class="text-sm uppercase tracking-[0.2em] text-red-700 font-bold mb-3" 
            data-original="Side (total 1)">Side (total 1)</div>
       
-      <div id="side-hint" class="text-xs text-neutral-600 mb-2" 
+      <div id="side-hint" class="text-xs text-neutral-700 mb-2" 
            data-original="Select one full side.">Select one full side.</div>
 
       <div id="sides" class="grid grid-cols-2 gap-4"></div>
       
-      <div class="mt-3 text-xs text-neutral-600">
+      <div class="mt-3 text-xs text-neutral-700">
         <span data-original="Selected:">Selected:</span> 
         <span id="side-total" class="font-bold text-red-700">0</span>/1
       </div>
@@ -138,7 +151,7 @@
       <div class="text-sm uppercase tracking-[0.2em] text-red-700 font-bold mb-3" 
            data-original="Entrees">Entrees</div>
       
-      <div class="text-xs text-neutral-600 mb-2">
+      <div class="text-xs text-neutral-700 mb-2">
         <span data-original="Choose up to">Choose up to</span> 
         <span id="entree-max">1</span> • 
         <span class="text-yellow-600 font-semibold" 
@@ -147,18 +160,77 @@
       
       <div id="entrees" class="grid grid-cols-2 gap-4"></div>
       
-      <div class="mt-3 text-xs text-neutral-600">
+      <div class="mt-3 text-xs text-neutral-700">
         <span data-original="Selected:">Selected:</span> 
-        <span id="entree-count" class="font-bold text-red-700">0</span>/<span id="entree-max-2">1</span> • 
-        <span data-original="Total:">Total:</span> $<span id="calculated-price" class="font-bold text-red-700">0.00</span>
+        <span id="entree-count" class="font-bold text-red-700">0</span>/<span id="entree-max-2">1</span>
       </div>
     </section>
   </main>
 
+  <!-- Item Info Modal -->
+  <div id="item-info-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-[100]">
+    <div class="bg-white text-black w-full max-w-md border border-neutral-200 rounded-xl overflow-hidden shadow-2xl">
+      <div class="bg-red-700 text-white px-6 py-4 flex items-center justify-between">
+        <h3 class="text-lg font-bold" id="info-modal-title" data-original="Item Information">Item Information</h3>
+        <button id="info-modal-close" class="text-white hover:text-red-100 text-2xl font-bold">&times;</button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div class="text-center pb-4 border-b border-neutral-200">
+          <h4 id="info-item-name" class="text-xl font-bold text-neutral-800 mb-1"></h4>
+        </div>
+        
+        <div class="space-y-3">
+          <div class="bg-red-50 border-l-4 border-red-700 p-4 rounded">
+            <div class="flex items-start gap-3">
+              <span class="text-2xl">⚠️</span>
+              <div class="flex-1">
+                <h5 class="font-bold text-red-900 mb-1" data-original="Allergens">Allergens</h5>
+                <p id="info-allergens" class="text-sm text-red-800"></p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-neutral-50 border border-neutral-200 p-4 rounded">
+            <div class="flex items-start gap-3">
+              <span class="text-2xl">📊</span>
+              <div class="flex-1">
+                <h5 class="font-bold text-neutral-800 mb-2" data-original="Nutritional Information">Nutritional Information</h5>
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                  <div class="flex justify-between">
+                    <span class="text-neutral-700" data-original="Calories:">Calories:</span>
+                    <span id="info-calories" class="font-semibold">--</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-neutral-700" data-original="Protein:">Protein:</span>
+                    <span id="info-protein" class="font-semibold">--</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-neutral-700" data-original="Fat:">Fat:</span>
+                    <span id="info-fat" class="font-semibold">--</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-neutral-700" data-original="Carbs:">Carbs:</span>
+                    <span id="info-carbs" class="font-semibold">--</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer class="sticky bottom-0 w-full bg-white border-t border-neutral-200 shadow-lg">
-    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-end gap-3">
-      <button id="cancel" data-original="Cancel" class="px-4 py-2 text-sm border border-neutral-300 bg-white hover:bg-neutral-100 rounded">Cancel</button>
-      <button id="save" data-original="Add to Cart" class="px-5 py-2 text-sm font-semibold bg-red-700 text-white border border-red-700 hover:bg-red-800 rounded disabled:opacity-40 disabled:cursor-not-allowed" disabled>Add to Cart</button>
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="text-sm text-neutral-700" data-original="Total:">Total:</span>
+        <span class="text-3xl font-bold text-red-700">$<span id="price"><%= Number(price).toFixed(2) %></span></span>
+      </div>
+      <div class="flex items-center gap-3">
+        <button id="cancel" data-original="Cancel" class="px-4 py-2 text-sm border border-neutral-300 bg-white hover:bg-neutral-100 rounded">Cancel</button>
+        <button id="save" data-original="Add to Cart" class="px-5 py-2 text-sm font-semibold bg-red-700 text-white border border-red-700 hover:bg-red-800 rounded disabled:opacity-40 disabled:cursor-not-allowed" disabled>Add to Cart</button>
+      </div>
     </div>
   </footer>
 
@@ -179,6 +251,7 @@
     const editIdx = params.has('idx') ? Number(params.get('idx')) : null;
     const mode = editIdx !== null ? 'edit' : 'create';
     const mealType = (builderData.type || 'plate').toLowerCase();
+    console.log('Meal Type:', mealType, 'Mode:', mode, 'Edit Index:', editIdx);
 
     // Config
     const cfg = { entreeSlots: 1, allowHalf: false };
@@ -250,7 +323,6 @@
     const sidesTotalEl = document.getElementById('side-total');
     const entreesEl = document.getElementById('entrees');
     const entreeCountEl = document.getElementById('entree-count');
-    const calculatedPriceEl = document.getElementById('calculated-price');
     const saveBtn = document.getElementById('save');
     const cancelBtn = document.getElementById('cancel');
 
@@ -275,24 +347,27 @@
         // Resolve Text
         const displayName = (currentLang !== 'en' && translationMap.names[s.name]) ? translationMap.names[s.name] : s.name;
         
-        // Resolve Allergens Tooltip
+        // Resolve Allergens for display
         const rawAllergens = (s.allergens || []).join(', ');
         const displayAllergens = (currentLang !== 'en' && translationMap.allergens[rawAllergens]) ? translationMap.allergens[rawAllergens] : rawAllergens;
+        const allergenText = displayAllergens || 'None';
         
-        const allergenBadge = s.allergens && s.allergens.length 
-          ? `<span class="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-700 text-white text-xs font-bold flex items-center justify-center" title="Allergens: ${displayAllergens}">i</span>` 
-          : '';
+        // Add nutrition data
+        const nutritionData = s.nutrition ? JSON.stringify(s.nutrition) : '{}';
+        const allergenBadge = `<div class="flex items-center gap-1"><span class="text-xs font-medium text-neutral-700 bg-white px-2 py-1 rounded shadow" data-original="More Info">More Info</span><button class="info-badge w-6 h-6 rounded-full bg-red-700 text-white text-xs font-bold flex items-center justify-center hover:bg-red-800 transition" data-item-name="${s.name}" data-allergens="${allergenText}" data-nutrition='${nutritionData}'>i</button></div>`;
 
         const card = document.createElement('button');
-        card.className = `relative w-full bg-white border-2 ${isSelected ? 'border-red-600' : 'border-neutral-300'} rounded-lg overflow-hidden text-left hover:border-red-600 transition`;
+        card.className = `relative w-full bg-white border-2 ${isSelected ? 'border-red-600' : 'border-neutral-300'} rounded-lg text-left hover:border-red-600 transition overflow-hidden`;
         
         const img = imageMap[s.name] ? `/images/${imageMap[s.name]}` : '/images/placeholder.jpg';
         const statusLabel = val === 1 ? 'Full' : (val === 0.5 ? 'Half' : '');
-        const statusBadge = isSelected ? `<span class="absolute top-2 left-2 px-2 py-1 text-xs font-bold bg-red-600 text-white rounded z-10">${statusLabel}</span>` : '';
+        const statusBadge = isSelected ? `<span class="px-2 py-1 text-xs font-bold bg-red-600 text-white rounded">${statusLabel}</span>` : '';
         
         card.innerHTML = `
-          ${statusBadge}
-          ${allergenBadge}
+          <div class="absolute top-0 left-0 right-0 flex items-start justify-between p-2 z-10">
+            <div>${statusBadge}</div>
+            <div>${allergenBadge}</div>
+          </div>
           <div class="aspect-square bg-neutral-100 flex items-center justify-center p-2">
             <img src="${img}" alt="${s.name}" class="w-full h-full object-contain" />
           </div>
@@ -337,29 +412,34 @@
         // Resolve Text
         const displayName = (currentLang !== 'en' && translationMap.names[p.name]) ? translationMap.names[p.name] : p.name;
         
-        // Resolve Allergens Tooltip
+        // Resolve Allergens for display
         const rawAllergens = (p.allergens || []).join(', ');
         const displayAllergens = (currentLang !== 'en' && translationMap.allergens[rawAllergens]) ? translationMap.allergens[rawAllergens] : rawAllergens;
+        const allergenText = displayAllergens || 'None';
 
-        const allergenBadge = p.allergens && p.allergens.length 
-          ? `<span class="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-700 text-white text-xs font-bold flex items-center justify-center z-10" title="Allergens: ${displayAllergens}">i</span>` 
-          : '';
+        // Add nutrition data
+        const nutritionData = p.nutrition ? JSON.stringify(p.nutrition) : '{}';
+        const allergenBadge = `<div class="flex items-center gap-1"><span class="text-xs font-medium text-neutral-700 bg-white px-2 py-1 rounded shadow" data-original="More Info">More Info</span><button class="info-badge w-6 h-6 rounded-full bg-red-700 text-white text-xs font-bold flex items-center justify-center hover:bg-red-800 transition" data-item-name="${p.name}" data-allergens="${allergenText}" data-nutrition='${nutritionData}'>i</button></div>`;
           
         const card = document.createElement('button');
-        card.className = `relative w-full bg-white border-2 ${isSelected ? 'border-red-600' : 'border-neutral-300'} rounded-lg overflow-hidden text-left hover:border-red-600 transition`;
-        const premiumBadge = p.isPremium ? `<span class="absolute top-2 left-2 px-2 py-1 text-xs font-bold bg-yellow-400 text-black rounded z-10">+$${builderData.premiumSurcharge}</span>` : '';
-        const countBadge = isSelected ? `<span class="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-red-600 text-white text-sm font-bold flex items-center justify-center z-10">${count}</span>` : '';
+        card.className = `relative w-full bg-white border-2 ${isSelected ? 'border-red-600' : 'border-neutral-300'} rounded-lg text-left hover:border-red-600 transition overflow-hidden`;
+        const premiumBadge = p.isPremium ? `<span class="px-2 py-1 text-xs font-bold bg-yellow-400 text-black rounded">+$${builderData.premiumSurcharge}</span>` : '';
+        const countBadge = isSelected ? `<span class="w-8 h-8 rounded-full bg-red-600 text-white text-sm font-bold flex items-center justify-center">${count}</span>` : '';
         const img = imageMap[p.name] ? `/images/${imageMap[p.name]}` : '/images/placeholder.jpg';
         
         card.innerHTML = `
-          ${allergenBadge}
-          ${premiumBadge}
-          ${countBadge}
+          <div class="absolute top-0 left-0 right-0 flex items-start justify-between p-2 z-10">
+            <div>${premiumBadge}</div>
+            <div>${allergenBadge}</div>
+          </div>
           <div class="aspect-square bg-neutral-100 flex items-center justify-center p-2">
               <img src="${img}" alt="${p.name}" class="w-full h-full object-contain" />
             </div>
             <div class="px-3 py-2">
-              <div class="text-sm font-semibold" data-original="${p.name}">${displayName}</div>
+              <div class="flex items-center justify-between">
+                <div class="text-sm font-semibold" data-original="${p.name}">${displayName}</div>
+                ${countBadge}
+              </div>
             </div>
           `;
         
@@ -388,7 +468,10 @@
       renderEntrees();
       sidesTotalEl.textContent = String(totalSides());
       entreeCountEl.textContent = String(totalEntrees());
-      calculatedPriceEl.textContent = calculatePrice();
+      const newPrice = calculatePrice();
+      // Update footer price
+      const priceEl = document.getElementById('price');
+      if (priceEl) priceEl.textContent = newPrice;
       saveBtn.disabled = !valid();
     }
 
@@ -422,6 +505,66 @@
     });
 
     cancelBtn.addEventListener('click', () => { window.location.href = '/kiosk'; });
+
+    // Info modal functionality
+    const infoModal = document.getElementById('item-info-modal');
+    const infoModalTitle = document.getElementById('info-item-name');
+    const infoModalAllergens = document.getElementById('info-allergens');
+    const infoModalCalories = document.getElementById('info-calories');
+    const infoModalProtein = document.getElementById('info-protein');
+    const infoModalFat = document.getElementById('info-fat');
+    const infoModalCarbs = document.getElementById('info-carbs');
+    const infoModalClose = document.getElementById('info-modal-close');
+
+    function openInfoModal(itemName, allergens, nutrition = null) {
+      infoModalTitle.textContent = itemName;
+      infoModalAllergens.textContent = allergens || 'None';
+      
+      // Display nutrition data if available
+      if (nutrition && typeof nutrition === 'object') {
+        infoModalCalories.textContent = nutrition.calories || '--';
+        infoModalProtein.textContent = nutrition.protein ? `${nutrition.protein}g` : '--';
+        infoModalFat.textContent = nutrition.fat ? `${nutrition.fat}g` : '--';
+        infoModalCarbs.textContent = nutrition.carbs ? `${nutrition.carbs}g` : '--';
+      } else {
+        infoModalCalories.textContent = '--';
+        infoModalProtein.textContent = '--';
+        infoModalFat.textContent = '--';
+        infoModalCarbs.textContent = '--';
+      }
+      
+      infoModal.classList.remove('hidden');
+      infoModal.classList.add('flex');
+    }
+
+    function closeInfoModal() {
+      infoModal.classList.add('hidden');
+      infoModal.classList.remove('flex');
+    }
+
+    infoModalClose.addEventListener('click', closeInfoModal);
+    infoModal.addEventListener('click', (e) => {
+      if (e.target === infoModal) closeInfoModal();
+    });
+
+    // Add click handlers for info badges
+    document.addEventListener('click', (e) => {
+      const infoBadge = e.target.closest('.info-badge');
+      if (infoBadge) {
+        e.stopPropagation();
+        e.preventDefault();
+        const itemName = infoBadge.getAttribute('data-item-name');
+        const allergens = infoBadge.getAttribute('data-allergens');
+        const nutritionStr = infoBadge.getAttribute('data-nutrition');
+        let nutrition = null;
+        try {
+          nutrition = nutritionStr ? JSON.parse(nutritionStr) : null;
+        } catch (err) {
+          console.error('Failed to parse nutrition data:', err);
+        }
+        openInfoModal(itemName, allergens, nutrition);
+      }
+    });
 
     // Initial render
     update();

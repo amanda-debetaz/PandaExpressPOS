@@ -68,6 +68,71 @@
     
   </style>
 
+  <style id="text-size-styles">
+    /* Text size configurations - Large (default) */
+    html.text-size-large {
+      font-size: 17px !important;
+    }
+    html.text-size-large button {
+      font-size: 1.6rem !important;
+      padding: 1rem 1.5rem !important;
+    }
+    html.text-size-large .text-xs { font-size: 1.1rem !important; }
+    html.text-size-large .text-sm { font-size: 1.4rem !important; }
+    html.text-size-large .text-base { font-size: 1.6rem !important; }
+    html.text-size-large #cart-total,
+    html.text-size-large #cart-drawer-total,
+    html.text-size-large #success-total { font-size: 3.8rem !important; }
+    html.text-size-large #success-order-number { font-size: 5rem !important; }
+    html.text-size-large #item-qty { font-size: 4.5rem !important; }
+    html.text-size-large #cart-drawer-items > div,
+    html.text-size-large .payment-method-btn,
+    html.text-size-large .dine-option-btn,
+    html.text-size-large #success-done-btn { font-size: 1.8rem !important; padding: 1.8rem 1.2rem !important; }
+
+    /* Medium text size */
+    html.text-size-medium {
+      font-size: 14px !important;
+    }
+    html.text-size-medium button {
+      font-size: 1.4rem !important;
+      padding: 0.8rem 1.2rem !important;
+    }
+    html.text-size-medium .text-xs { font-size: 0.9rem !important; }
+    html.text-size-medium .text-sm { font-size: 1.1rem !important; }
+    html.text-size-medium .text-base { font-size: 1.3rem !important; }
+    html.text-size-medium #cart-total,
+    html.text-size-medium #cart-drawer-total,
+    html.text-size-medium #success-total { font-size: 3rem !important; }
+    html.text-size-medium #success-order-number { font-size: 4rem !important; }
+    html.text-size-medium #item-qty { font-size: 3.5rem !important; }
+    html.text-size-medium #cart-drawer-items > div,
+    html.text-size-medium .payment-method-btn,
+    html.text-size-medium .dine-option-btn,
+    html.text-size-medium #success-done-btn { font-size: 1.5rem !important; padding: 1.5rem 1rem !important; }
+
+    /* Small text size */
+    html.text-size-small {
+      font-size: 12px !important;
+    }
+    html.text-size-small button {
+      font-size: 1.2rem !important;
+      padding: 0.6rem 1rem !important;
+    }
+    html.text-size-small .text-xs { font-size: 0.75rem !important; }
+    html.text-size-small .text-sm { font-size: 0.9rem !important; }
+    html.text-size-small .text-base { font-size: 1.1rem !important; }
+    html.text-size-small #cart-total,
+    html.text-size-small #cart-drawer-total,
+    html.text-size-small #success-total { font-size: 2.5rem !important; }
+    html.text-size-small #success-order-number { font-size: 3.2rem !important; }
+    html.text-size-small #item-qty { font-size: 3rem !important; }
+    html.text-size-small #cart-drawer-items > div,
+    html.text-size-small .payment-method-btn,
+    html.text-size-small .dine-option-btn,
+    html.text-size-small #success-done-btn { font-size: 1.3rem !important; padding: 1.2rem 0.8rem !important; }
+  </style>
+
 <body class="h-screen flex bg-black text-white overflow-hidden">
     <script>
       const menuData = JSON.parse('<%- JSON.stringify(menu || {}) %>');
@@ -75,6 +140,7 @@
     
     <aside class="w-72 bg-black border-r border-red-900 flex flex-col h-screen">
       <div class="px-6 pt-8 pb-4 flex-shrink-0">
+        <img src="/images/panda_logo.png" alt="Panda Express" class="w-32 mb-4">
         <div class="text-xs tracking-[0.25em] uppercase text-red-500 font-bold" data-original="Panda Express">Panda Express</div>
         <div class="mt-1 text-sm tracking-[0.2em] uppercase text-neutral-300 font-semibold" data-original="Self-Service Kiosk">Self-Service Kiosk</div>
       </div>
@@ -105,6 +171,15 @@
             <button onclick="changeLanguage('de')" class="text-xs font-bold text-white bg-neutral-800 px-3 py-2 rounded hover:bg-red-700 transition">DE</button>
           </div>
         </div>
+
+        <div class="mt-8 border-t border-neutral-800 pt-4">
+          <div class="px-6 text-xs uppercase tracking-wide text-neutral-300 font-semibold mb-3" data-original="Text Size">Text Size</div>
+          <div class="px-6 flex gap-2 flex-wrap">
+            <button onclick="changeTextSize('small')" class="text-size-btn text-xs font-bold text-white bg-neutral-800 px-3 py-2 rounded hover:bg-red-700 transition" data-size="small" data-original="Small">Small</button>
+            <button onclick="changeTextSize('medium')" class="text-size-btn text-xs font-bold text-white bg-neutral-800 px-3 py-2 rounded hover:bg-red-700 transition" data-size="medium" data-original="Medium">Medium</button>
+            <button onclick="changeTextSize('large')" class="text-size-btn text-xs font-bold text-white bg-red-700 px-3 py-2 rounded hover:bg-red-800 transition" data-size="large" data-original="Large">Large</button>
+          </div>
+        </div>
       </nav>
 
       <div class="flex-1 border-t border-neutral-800 min-h-0"></div>
@@ -120,7 +195,7 @@
       <header class="flex items-center justify-between px-10 py-6 border-b border-neutral-200 flex-shrink-0">
         <div>
           <h1 id="category-title" class="text-3xl font-semibold tracking-tight" data-original="Entrees">Entrees</h1>
-          <p class="mt-1 text-sm text-neutral-500" data-original="Choose your main dish to start your order.">
+          <p class="mt-1 text-sm text-neutral-700" data-original="Choose your main dish to start your order.">
             Choose your main dish to start your order.
           </p>
         </div>
@@ -129,7 +204,7 @@
           <img id="weather-icon" src="" alt="Weather" class="w-10 h-10 object-contain">
           <div class="text-right">
             <div id="weather-temp" class="text-xl font-bold text-neutral-800">--°</div>
-            <div id="weather-desc" class="text-xs text-neutral-500 uppercase tracking-wider">Loading</div>
+            <div id="weather-desc" class="text-xs text-neutral-700 uppercase tracking-wider">Loading</div>
           </div>
         </div>
       </header>
@@ -143,10 +218,10 @@
 
       <div class="border-t border-neutral-300 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex-shrink-0">
         <div class="px-10 py-5 flex items-center justify-between">
-          <div class="text-xs uppercase tracking-[0.25em] text-neutral-500 font-medium" data-original="Order Summary">Order Summary</div>
+          <div class="text-xs uppercase tracking-[0.25em] text-neutral-700 font-medium" data-original="Order Summary">Order Summary</div>
           <div class="flex items-center gap-6">
             <div class="flex items-baseline gap-4 text-sm">
-              <span class="text-neutral-500 text-xs">
+              <span class="text-neutral-700 text-xs">
                 <span data-original="Items:">Items:</span> <span id="cart-count" class="font-semibold text-black">0</span>
               </span>
               <span class="font-bold text-red-700 text-xl">
@@ -181,11 +256,11 @@
     
     <div class="flex items-center justify-between px-6 py-5 border-b border-neutral-200">
       <div class="text-lg font-bold tracking-wider uppercase text-neutral-800" data-original="Your Cart">Your Cart</div>
-      <button id="cart-drawer-close" class="text-sm uppercase tracking-wider text-neutral-500 hover:text-black font-medium" data-original="Close">Close</button>
+      <button id="cart-drawer-close" class="text-sm uppercase tracking-wider text-neutral-700 hover:text-black font-medium" data-original="Close">Close</button>
     </div>
 
     <div id="cart-drawer-items" class="flex-1 overflow-y-auto p-5 space-y-3 text-sm">
-      <div class="text-neutral-500 italic" data-original="No items yet">No items yet</div>
+      <div class="text-neutral-700 italic" data-original="No items yet">No items yet</div>
     </div>
 
     <div class="p-5 border-t border-neutral-200">
@@ -200,27 +275,81 @@
     </div>
   </aside>
 
+    <!-- Item Info Modal -->
+    <div id="item-info-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-50">
+      <div class="bg-white text-black w-full max-w-md border border-neutral-200 rounded-xl overflow-hidden shadow-2xl">
+        <div class="bg-red-700 text-white px-6 py-4 flex items-center justify-between">
+          <h3 class="text-lg font-bold" id="info-modal-title" data-original="Item Information">Item Information</h3>
+          <button id="info-modal-close" class="text-white hover:text-red-100 text-2xl font-bold">&times;</button>
+        </div>
+        <div class="p-6 space-y-4">
+          <div class="text-center pb-4 border-b border-neutral-200">
+            <h4 id="info-item-name" class="text-xl font-bold text-neutral-800 mb-1"></h4>
+          </div>
+          
+          <div class="space-y-3">
+            <div class="bg-red-50 border-l-4 border-red-700 p-4 rounded">
+              <div class="flex items-start gap-3">
+                <span class="text-2xl">⚠️</span>
+                <div class="flex-1">
+                  <h5 class="font-bold text-red-900 mb-1" data-original="Allergens">Allergens</h5>
+                  <p id="info-allergens" class="text-sm text-red-800"></p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="bg-neutral-50 border border-neutral-200 p-4 rounded">
+              <div class="flex items-start gap-3">
+                <span class="text-2xl">📊</span>
+                <div class="flex-1">
+                  <h5 class="font-bold text-neutral-800 mb-2" data-original="Nutritional Information">Nutritional Information</h5>
+                  <div class="grid grid-cols-2 gap-2 text-sm">
+                    <div class="flex justify-between">
+                      <span class="text-neutral-700" data-original="Calories:">Calories:</span>
+                      <span id="info-calories" class="font-semibold">--</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-neutral-700" data-original="Protein:">Protein:</span>
+                      <span id="info-protein" class="font-semibold">--</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-neutral-700" data-original="Fat:">Fat:</span>
+                      <span id="info-fat" class="font-semibold">--</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-neutral-700" data-original="Carbs:">Carbs:</span>
+                      <span id="info-carbs" class="font-semibold">--</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="meal-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-50">
        <div class="bg-white text-black w-full max-w-3xl border border-neutral-200 rounded-lg overflow-hidden shadow-xl flex flex-col">
           <div class="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
              <div>
                 <div class="text-lg font-semibold" id="meal-modal-title" data-original="Build Your Meal">Build Your Meal</div>
-                <div class="text-sm text-neutral-600"><span data-original="Price:">Price:</span> $<span id="meal-modal-price">0.00</span></div>
+                <div class="text-sm text-neutral-700"><span data-original="Price:">Price:</span> $<span id="meal-modal-price">0.00</span></div>
              </div>
-             <button id="meal-modal-close" class="text-sm text-neutral-500 hover:text-black" data-original="Close">Close</button>
+             <button id="meal-modal-close" class="text-sm text-neutral-700 hover:text-black" data-original="Close">Close</button>
           </div>
           <div class="px-6 py-5 grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-y-auto max-h-[70vh]">
              <section>
                 <div class="text-sm uppercase tracking-[0.18em] text-neutral-700 font-semibold mb-3" data-original="Side (total 1)">Side (total 1)</div>
-                <div class="text-xs text-neutral-500 mb-2" id="meal-side-hint" data-original="Select one full side.">Select one full side.</div>
+                <div class="text-xs text-neutral-700 mb-2" id="meal-side-hint" data-original="Select one full side.">Select one full side.</div>
                 <div id="meal-sides" class="grid grid-cols-2 gap-2"></div>
-                <div class="mt-2 text-xs text-neutral-600"><span data-original="Selected:">Selected:</span> <span id="meal-side-count">0</span>/1</div>
+                <div class="mt-2 text-xs text-neutral-700"><span data-original="Selected:">Selected:</span> <span id="meal-side-count">0</span>/1</div>
              </section>
              <section>
                 <div class="text-sm uppercase tracking-[0.18em] text-neutral-700 font-semibold mb-3" data-original="Entrees">Entrees</div>
-                <div class="text-xs text-neutral-500 mb-2"><span data-original="Choose up to">Choose up to</span> <span id="meal-entree-max">1</span></div>
+                <div class="text-xs text-neutral-700 mb-2"><span data-original="Choose up to">Choose up to</span> <span id="meal-entree-max">1</span></div>
                 <div id="meal-entrees" class="space-y-2 overflow-y-auto"></div>
-                <div class="mt-2 text-xs text-neutral-600"><span data-original="Selected:">Selected:</span> <span id="meal-entree-count">0</span>/<span id="meal-entree-max-2">1</span></div>
+                <div class="mt-2 text-xs text-neutral-700"><span data-original="Selected:">Selected:</span> <span id="meal-entree-count">0</span>/<span id="meal-entree-max-2">1</span></div>
              </section>
           </div>
           <div class="px-6 py-4 border-t border-neutral-200 flex items-center justify-end gap-3 bg-neutral-50">
@@ -234,16 +363,16 @@
       <div class="bg-white text-black w-full max-w-md border border-neutral-200 rounded-lg overflow-hidden shadow-xl">
         <div class="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
           <div class="text-lg font-semibold" id="item-modal-title">Item</div>
-          <button id="item-modal-close" class="text-sm text-neutral-500 hover:text-black" data-original="Close">Close</button>
+          <button id="item-modal-close" class="text-sm text-neutral-700 hover:text-black" data-original="Close">Close</button>
         </div>
         <div class="px-6 py-5 space-y-4">
-          <div class="text-5xl font-bold text-neutral-600 mb-4"><span data-original="Price:">Price:</span> $<span id="item-modal-price">0.00</span></div>
+          <div class="text-5xl font-bold text-neutral-700 mb-4"><span data-original="Price:">Price:</span> $<span id="item-modal-price">0.00</span></div>
           <div class="text-sm">
-            <span class="text-neutral-600" data-original="Allergens:">Allergens:</span>
+            <span class="text-neutral-700" data-original="Allergens:">Allergens:</span>
             <span id="item-modal-allergens" class="font-medium text-red-700">None</span>
           </div>
           <div class="flex items-center gap-3">
-            <span class="text-sm text-neutral-600" data-original="Quantity">Quantity</span>
+            <span class="text-sm text-neutral-700" data-original="Quantity">Quantity</span>
             <div class="flex items-center gap-2">
               <button id="item-qty-minus" class="px-3 py-2 border border-neutral-300">-</button>
               <div id="item-qty" class="w-10 text-center font-semibold">1</div>
@@ -321,22 +450,22 @@
             <svg class="w-16 h-16 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
           </div>
           <h2 class="text-3xl font-bold text-neutral-900 mb-3" data-original="Order Placed!">Order Placed!</h2>
-          <p class="text-lg text-neutral-600 mb-6" data-original="Your order has been sent to the kitchen.">Your order has been sent to the kitchen.</p>
+          <p class="text-lg text-neutral-700 mb-6" data-original="Your order has been sent to the kitchen.">Your order has been sent to the kitchen.</p>
           <div class="bg-neutral-50 rounded-lg px-6 py-5 mb-8 text-left">
             <div class="flex justify-between text-sm mb-2">
-              <span class="text-neutral-600" data-original="Order Number">Order Number</span>
+              <span class="text-neutral-700" data-original="Order Number">Order Number</span>
               <span class="font-bold text-xl" id="success-order-number">#0000</span>
             </div>
             <div class="flex justify-between text-sm mb-2">
-              <span class="text-neutral-600" data-original="Total Paid">Total Paid</span>
+              <span class="text-neutral-700" data-original="Total Paid">Total Paid</span>
               <span class="font-bold text-xl" id="success-total">$0.00</span>
             </div>
             <div class="flex justify-between text-sm">
-              <span class="text-neutral-600" data-original="Dine Option">Dine Option</span>
+              <span class="text-neutral-700" data-original="Dine Option">Dine Option</span>
               <span class="font-medium capitalize" id="success-dine-option">—</span>
             </div>
           </div>
-          <p class="text-sm text-neutral-500 mb-8" data-original="Please wait at the counter or take a seat. We'll call your number when it's ready!">
+          <p class="text-sm text-neutral-700 mb-8" data-original="Please wait at the counter or take a seat. We'll call your number when it's ready!">
             Please wait at the counter or take a seat.<br>We'll call your number when it's ready!
           </p>
           <button id="success-done-btn" class="px-10 py-4 text-lg font-semibold uppercase tracking-wider bg-red-700 text-white rounded-lg hover:bg-red-800 transition-all" data-original="Done">Done</button>
@@ -459,7 +588,7 @@
                 You are trying to order <strong>${attemptedQty}</strong> × <br><em>${itemName}</em>
               </p>
 
-              <p class="text-2xl text-neutral-600 mb-12">
+              <p class="text-2xl text-neutral-700 mb-12">
                 For orders this large, please speak with a staff member.
               </p>
 
@@ -590,15 +719,23 @@
             card.dataset.price = item.price.toFixed(2);
             const allergensList = item.allergens || [];
             card.dataset.allergens = allergensList.join(', ');
-            if (allergensList.length) {
-              card.title = `Allergens: ${allergensList.join(', ')}`;
-            }
             card.dataset.category = category;
             
+            // Store nutrition data
+            if (item.nutrition) {
+              card.dataset.nutrition = JSON.stringify(item.nutrition);
+            }
+            
             const imageSrc = imageMap[item.name] ? `/images/${imageMap[item.name]}` : '/images/placeholder.jpg';
+            const isMeal = ['Bowl', 'Plate', 'Bigger Plate'].includes(item.name);
+            const priceDisplay = isMeal ? `$${item.price.toFixed(2)}+` : `$${item.price.toFixed(2)}`;
+            
+            // Only show info badge for non-meal items
+            const nutritionData = item.nutrition ? JSON.stringify(item.nutrition) : '{}';
+            const infoBadge = isMeal ? '' : `<div class="absolute top-2 right-2 flex items-center gap-1 z-10"><span class="text-xs font-medium text-neutral-700 bg-white px-2 py-1 rounded shadow" data-original="More Info">More Info</span><button class="info-badge w-6 h-6 rounded-full bg-red-700 text-white text-xs font-bold flex items-center justify-center hover:bg-red-800 transition" data-item-name="${item.name}" data-allergens="${allergensList.join(', ') || 'None'}" data-nutrition='${nutritionData}'>i</button></div>`;
             
             card.innerHTML = `
-              ${allergensList.length ? `<span class="absolute top-2 right-2 w-5 h-5 rounded-full bg-red-700 text-white text-[10px] font-bold flex items-center justify-center" title="Allergens: ${allergensList.join(', ')}">i</span>` : ''}
+              ${infoBadge}
               <div class="item-image">
                 <img src="${imageSrc}" alt="${item.name}" class="item-img" />
               </div>
@@ -606,7 +743,7 @@
                 <div class="text-sm font-semibold leading-snug" 
                      data-translate-type="item-name" 
                      data-original="${item.name}">${item.name}</div>
-                <div class="text-base font-bold text-red-700">$${item.price.toFixed(2)}</div>
+                <div class="text-base font-bold text-red-700">${priceDisplay}</div>
               </div>
             `;
             
@@ -726,7 +863,7 @@
         totalEl.textContent = total;
 
         if (cart.length === 0) {
-          itemsEl.innerHTML = '<div class="text-neutral-500 italic" data-original="No items yet">No items yet</div>';
+          itemsEl.innerHTML = '<div class="text-neutral-700 italic" data-original="No items yet">No items yet</div>';
         } else {
           itemsEl.innerHTML = cart.map((item, idx) => {
             let childrenHtml = '';
@@ -774,7 +911,7 @@
               <div class="flex items-start justify-between gap-3 border-b border-neutral-200 pb-3 last:border-b-0">
                 <div class="flex-1">
                   <div class="font-medium" data-translate-type="item-name" data-original="${item.name}">${item.name}</div>
-                  <div class="text-xs text-neutral-500 mt-1"><span data-original="Qty:">Qty:</span> ${item.quantity}</div>
+                  <div class="text-xs text-neutral-700 mt-1"><span data-original="Qty:">Qty:</span> ${item.quantity}</div>
                 </div>
                 <div class="flex items-center gap-2">
                   <button data-idx="${idx}" class="qty-minus px-2 py-1 text-xs border border-neutral-300">-</button>
@@ -800,9 +937,66 @@
         document.getElementById('cart-drawer-backdrop').classList.add('hidden');
       }
 
+      // Info modal functions
+      const infoModal = document.getElementById('item-info-modal');
+      const infoModalItemName = document.getElementById('info-item-name');
+      const infoModalAllergens = document.getElementById('info-allergens');
+      const infoModalCalories = document.getElementById('info-calories');
+      const infoModalProtein = document.getElementById('info-protein');
+      const infoModalFat = document.getElementById('info-fat');
+      const infoModalCarbs = document.getElementById('info-carbs');
+      const infoModalClose = document.getElementById('info-modal-close');
+
+      function openInfoModal(itemName, allergens, nutrition = null) {
+        infoModalItemName.textContent = itemName;
+        infoModalAllergens.textContent = allergens || 'None';
+        
+        // Display nutrition data if available
+        if (nutrition && typeof nutrition === 'object') {
+          infoModalCalories.textContent = nutrition.calories || '--';
+          infoModalProtein.textContent = nutrition.protein ? `${nutrition.protein}g` : '--';
+          infoModalFat.textContent = nutrition.fat ? `${nutrition.fat}g` : '--';
+          infoModalCarbs.textContent = nutrition.carbs ? `${nutrition.carbs}g` : '--';
+        } else {
+          infoModalCalories.textContent = '--';
+          infoModalProtein.textContent = '--';
+          infoModalFat.textContent = '--';
+          infoModalCarbs.textContent = '--';
+        }
+        
+        infoModal.classList.remove('hidden');
+        infoModal.classList.add('flex');
+      }
+
+      function closeInfoModal() {
+        infoModal.classList.add('hidden');
+        infoModal.classList.remove('flex');
+      }
+
+      infoModalClose.addEventListener('click', closeInfoModal);
+      infoModal.addEventListener('click', (e) => {
+        if (e.target === infoModal) closeInfoModal();
+      });
 
       // Add click handlers to all item cards
       document.addEventListener('click', (e) => {
+        // Check if info badge was clicked
+        const infoBadge = e.target.closest('.info-badge');
+        if (infoBadge) {
+          e.stopPropagation();
+          const itemName = infoBadge.getAttribute('data-item-name');
+          const allergens = infoBadge.getAttribute('data-allergens');
+          const nutritionStr = infoBadge.getAttribute('data-nutrition');
+          let nutrition = null;
+          try {
+            nutrition = nutritionStr ? JSON.parse(nutritionStr) : null;
+          } catch (e) {
+            console.error('Failed to parse nutrition data:', e);
+          }
+          openInfoModal(itemName, allergens, nutrition);
+          return;
+        }
+        
         const card = e.target.closest('.item-card');
         if (card) {
           const name = card.dataset.name;
@@ -993,7 +1187,7 @@
           btn.className = 'w-full text-left border border-neutral-300 px-3 py-2 flex items-center justify-between hover:bg-neutral-50';
           btn.innerHTML = `
             <span>${s.name}</span>
-            <span class="text-xs text-neutral-600">${val === 1 ? 'Full' : val === 0.5 ? 'Half' : ''}</span>
+            <span class="text-xs text-neutral-700">${val === 1 ? 'Full' : val === 0.5 ? 'Half' : ''}</span>
           `;
           btn.addEventListener('click', () => {
             if (!mealConfig.allowHalfSide) {
@@ -1112,7 +1306,11 @@
           const i = Number(idxAttr);
           const it = cart[i];
           if (it && it.type === 'meal') {
-            const slug = it.name === 'Bowl' ? 'bowl' : (it.name === 'Bigger Plate' ? 'bigger-plate' : 'plate');
+            // Determine the correct slug based on cart item name
+            let slug = 'plate';
+            if (it.name === 'Bowl') slug = 'bowl';
+            else if (it.name === 'Bigger Plate') slug = 'bigger-plate';
+            else if (it.name === 'Plate') slug = 'plate';
             window.location.href = `/builder/edit?idx=${i}&type=${slug}`;
           }
           return;
@@ -1358,12 +1556,40 @@
       // Translation Logic
       const originalTexts = new Map();
 
+      // Text Size Logic
+      function changeTextSize(size) {
+        // Remove all text size classes
+        document.documentElement.classList.remove('text-size-small', 'text-size-medium', 'text-size-large');
+        // Add the selected size class
+        document.documentElement.classList.add(`text-size-${size}`);
+        // Save preference
+        localStorage.setItem('kiosk_text_size', size);
+        
+        // Update button states
+        document.querySelectorAll('.text-size-btn').forEach(btn => {
+          if (btn.getAttribute('data-size') === size) {
+            btn.classList.remove('bg-neutral-800');
+            btn.classList.add('bg-red-700');
+          } else {
+            btn.classList.remove('bg-red-700');
+            btn.classList.add('bg-neutral-800');
+          }
+        });
+      }
+
+      // Initialize text size on page load
+      function initTextSize() {
+        const savedSize = localStorage.getItem('kiosk_text_size') || 'large';
+        changeTextSize(savedSize);
+      }
+
       document.addEventListener('DOMContentLoaded', () => {
         const savedLang = localStorage.getItem('kiosk_lang');
         if (savedLang && savedLang !== 'en') {
           setTimeout(() => changeLanguage(savedLang), 100);
         }
         loadWeather(); // Load weather on startup
+        initTextSize(); // Initialize text size
       });
 
     async function changeLanguage(lang) {
