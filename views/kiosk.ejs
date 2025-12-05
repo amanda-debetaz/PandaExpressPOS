@@ -75,7 +75,10 @@
     }
     html.text-size-large button {
       font-size: 1.6rem !important;
-      padding: 1rem 1.5rem !important;
+      padding: 2rem 1.5rem !important;
+    }
+    html.text-size-large .nav-link {
+      padding: 2rem 1.5rem !important;
     }
     html.text-size-large .text-xs { font-size: 1.1rem !important; }
     html.text-size-large .text-sm { font-size: 1.4rem !important; }
@@ -264,6 +267,17 @@
                 <span class="text-[0.55rem] uppercase tracking-wide" data-original="Large">Large</span>
               </button>
             </div>
+          </div>
+
+          <div class="mt-4">
+            <div class="text-xs uppercase tracking-wide text-neutral-300 font-semibold mb-2" data-original="Screen Reader">Screen Reader</div>
+            <button id="tts-toggle" class="flex items-center gap-3 px-4 py-3 bg-neutral-800 hover:bg-neutral-700 rounded text-white transition-colors w-full">
+              <span class="text-2xl no-translate" id="tts-icon">🔇</span>
+              <div class="text-left flex-1">
+                <div class="text-sm font-semibold" data-original="Text-to-Speech">Text-to-Speech</div>
+                <div class="text-xs text-neutral-400" data-original="Off" id="tts-status">Off</div>
+              </div>
+            </button>
           </div>
         </div>
       </div>
@@ -1745,6 +1759,109 @@
         changeTextSize(savedSize);
       }
 
+      // Text-to-Speech Logic
+      let ttsEnabled = false;
+      let currentUtterance = null;
+      const synth = window.speechSynthesis;
+
+      function initTTS() {
+        const savedTTS = localStorage.getItem('kiosk_tts_enabled');
+        if (savedTTS === 'true') {
+          ttsEnabled = true;
+          updateTTSUI();
+        }
+      }
+
+      function updateTTSUI() {
+        const icon = document.getElementById('tts-icon');
+        const status = document.getElementById('tts-status');
+        const toggle = document.getElementById('tts-toggle');
+        
+        if (ttsEnabled) {
+          icon.textContent = '🔊';
+          status.textContent = 'On';
+          status.setAttribute('data-original', 'On');
+          toggle.classList.remove('bg-neutral-800');
+          toggle.classList.add('bg-green-700');
+        } else {
+          icon.textContent = '🔇';
+          status.textContent = 'Off';
+          status.setAttribute('data-original', 'Off');
+          toggle.classList.remove('bg-green-700');
+          toggle.classList.add('bg-neutral-800');
+        }
+      }
+
+      function speak(text) {
+        if (!ttsEnabled || !text) return;
+        
+        // Cancel any ongoing speech
+        synth.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        const lang = localStorage.getItem('kiosk_lang') || 'en';
+        
+        // Map language codes to speech synthesis language codes
+        const langMap = {
+          'en': 'en-US',
+          'es': 'es-ES',
+          'zh-CN': 'zh-CN',
+          'fr': 'fr-FR',
+          'de': 'de-DE'
+        };
+        
+        utterance.lang = langMap[lang] || 'en-US';
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+        
+        currentUtterance = utterance;
+        synth.speak(utterance);
+      }
+
+      document.getElementById('tts-toggle')?.addEventListener('click', () => {
+        ttsEnabled = !ttsEnabled;
+        localStorage.setItem('kiosk_tts_enabled', ttsEnabled.toString());
+        updateTTSUI();
+        
+        if (ttsEnabled) {
+          speak('Text to speech enabled');
+        } else {
+          synth.cancel();
+        }
+      });
+
+      // Add TTS to navigation buttons
+      document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('mouseenter', () => {
+          const text = link.textContent.trim();
+          speak(text);
+        });
+      });
+
+      // Add TTS to item cards
+      document.addEventListener('mouseenter', (e) => {
+        const card = e.target.closest('.item-card');
+        if (card && ttsEnabled) {
+          const name = card.querySelector('[data-translate-type="item-name"]')?.textContent;
+          const price = card.querySelector('.item-price')?.textContent;
+          if (name) {
+            speak(`${name}. ${price || ''}`);
+          }
+        }
+      }, true);
+
+      // Add TTS to buttons
+      document.addEventListener('mouseenter', (e) => {
+        const button = e.target.closest('button');
+        if (button && ttsEnabled && !button.classList.contains('info-badge')) {
+          const text = button.textContent.trim();
+          if (text && text.length < 100) {
+            speak(text);
+          }
+        }
+      }, true);
+
       // Accessibility panel toggle
       document.getElementById('accessibility-toggle')?.addEventListener('click', () => {
         const panel = document.getElementById('accessibility-panel');
@@ -1899,6 +2016,7 @@
         }
         loadWeather(); // Load weather on startup
         initTextSize(); // Initialize text size
+        initTTS(); // Initialize text-to-speech
         
         // Check if returning from builder - if so, don't show landing page
         const fromBuilder = localStorage.getItem('kiosk_from_builder');
