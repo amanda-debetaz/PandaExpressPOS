@@ -160,10 +160,10 @@
     </script>
 
     <!-- Landing Page / Screensaver -->
-    <div id="landing-page" class="fixed inset-0 z-[100] flex flex-col items-center justify-center cursor-pointer overflow-hidden">
+    <div id="landing-page" role="banner" aria-label="Welcome Screen" class="fixed inset-0 z-[100] flex flex-col items-center justify-center cursor-pointer overflow-hidden">
       <!-- Background Carousel -->
       <div class="absolute inset-0 bg-gradient-to-br from-red-900 via-red-700 to-red-800"></div>
-      <div id="carousel-container" class="absolute inset-0">
+      <div id="carousel-container" role="region" aria-label="Background carousel" class="absolute inset-0">
         <div class="carousel-slide absolute inset-0 opacity-0 transition-opacity duration-1000">
           <img src="/images/the-original-orange-chicken.jpg" alt="Orange Chicken" class="w-full h-full object-cover opacity-30">
         </div>
@@ -194,7 +194,7 @@
       </div>
     </div>
     
-    <aside class="w-72 bg-black border-r border-red-900 flex flex-col h-screen">
+    <aside role="navigation" aria-label="Main navigation and accessibility options" class="w-72 bg-black border-r border-red-900 flex flex-col h-screen">
       <div class="px-6 pt-8 pb-4 flex-shrink-0">
         <img src="/images/panda_logo.png" alt="Panda Express" class="w-32 mb-4">
         <div class="text-xs tracking-[0.25em] uppercase text-red-500 font-bold" data-original="Panda Express">Panda Express</div>
@@ -289,8 +289,8 @@
       </div>
     </aside>
 
-    <main class="flex-1 flex flex-col bg-white text-black h-screen">
-      <header class="flex items-center justify-between px-10 py-6 border-b border-neutral-200 flex-shrink-0">
+    <main role="main" aria-label="Menu and order area" class="flex-1 flex flex-col bg-white text-black h-screen">
+      <header role="banner" class="flex items-center justify-between px-10 py-6 border-b border-neutral-200 flex-shrink-0">
         <div>
           <h1 id="category-title" class="text-3xl font-semibold tracking-tight" data-original="Entrees">Entrees</h1>
           <p class="mt-1 text-sm text-neutral-700" data-original="Choose your main dish to start your order.">
