@@ -10,93 +10,71 @@
 
 
 <style>
-  html {
-    font-size: 19px !important; /* ~+20% larger base */
+  /* Large text size (default) */
+  html.text-size-large {
+    font-size: 19px !important;
   }
-
-  /* Buttons & key numbers */
-  button {
+  html.text-size-large button {
     font-size: 1.6rem !important;
-    padding: 1rem 1.5rem !important;   /* ← fixed line */
+    padding: 1rem 1.5rem !important;
   }
+  html.text-size-large .text-xs { font-size: 1.1rem !important; }
+  html.text-size-large .text-sm { font-size: 1.4rem !important; }
+  html.text-size-large .text-base { font-size: 1.6rem !important; }
+  html.text-size-large .text-lg { font-size: 2rem !important; }
+  html.text-size-large .text-xl { font-size: 2.6rem !important; }
+  html.text-size-large .text-2xl { font-size: 3.2rem !important; }
+  html.text-size-large .text-3xl { font-size: 4rem !important; }
+  html.text-size-large #side-total,
+  html.text-size-large #entree-count { font-size: 2.6rem !important; }
+  html.text-size-large header h1 { font-size: 4rem !important; line-height: 1.2 !important; }
+  html.text-size-large section > div:first-child { font-size: 2.4rem !important; }
+  html.text-size-large #side-hint { font-size: 1.6rem !important; }
+  html.text-size-large footer button { padding: 1.6rem 3rem !important; font-size: 1.9rem !important; }
 
-  #cart-total,
-  #cart-drawer-total,
-  #success-total {
-    font-size: 3.8rem !important;
-    font-weight: 900 !important;
+  /* Medium text size */
+  html.text-size-medium {
+    font-size: 16px !important;
   }
+  html.text-size-medium button {
+    font-size: 1.3rem !important;
+    padding: 0.8rem 1.2rem !important;
+  }
+  html.text-size-medium .text-xs { font-size: 0.9rem !important; }
+  html.text-size-medium .text-sm { font-size: 1.1rem !important; }
+  html.text-size-medium .text-base { font-size: 1.3rem !important; }
+  html.text-size-medium .text-lg { font-size: 1.6rem !important; }
+  html.text-size-medium .text-xl { font-size: 2rem !important; }
+  html.text-size-medium .text-2xl { font-size: 2.5rem !important; }
+  html.text-size-medium .text-3xl { font-size: 3rem !important; }
+  html.text-size-medium #side-total,
+  html.text-size-medium #entree-count { font-size: 2rem !important; }
+  html.text-size-medium header h1 { font-size: 3rem !important; line-height: 1.2 !important; }
+  html.text-size-medium section > div:first-child { font-size: 1.9rem !important; }
+  html.text-size-medium #side-hint { font-size: 1.3rem !important; }
+  html.text-size-medium footer button { padding: 1.3rem 2.5rem !important; font-size: 1.5rem !important; }
 
-  #success-order-number {
-    font-size: 5rem !important;
-    font-weight: 900 !important;
+  /* Small text size */
+  html.text-size-small {
+    font-size: 12px !important;
   }
-
-  /* Text classes – all bumped up */
-  .text-xs   { font-size: 1.1rem !important; }
-  .text-sm   { font-size: 1.4rem !important; }
-  .text-base { font-size: 1.6rem !important; }
-  .text-lg   { font-size: 2rem   !important; }
-  .text-xl   { font-size: 2.6rem !important; }
-  .text-2xl  { font-size: 3.2rem !important; }
-  .text-3xl  { font-size: 4rem   !important; }
-
-  /* Cart drawer items & modal buttons */
-  #cart-drawer-items > div,
-  .payment-method-btn,
-  .dine-option-btn,
-  #success-done-btn {
-    padding: 1.8rem 1.2rem !important;
-    font-weight: 700 !important;
-    font-size: 1.8rem !important;
+  html.text-size-small button {
+    font-size: 1rem !important;
+    padding: 0.6rem 0.9rem !important;
   }
-
-  /* Success modal title */
-  #order-success-modal h2 {
-    font-size: 4.5rem !important;
-  }
-
-  /* Bottom bar total – huge and clear */
-  #cart-total {
-    font-size: 4.2rem !important;
-    font-weight: 900 !important;
-  }
-  /* ——— BUILDER: BIGGER, AIRIER HEADINGS ——— */
-  header h1 {
-    font-size: 4rem !important;
-    line-height: 1.2 !important;
-    margin-bottom: 1rem !important;
-  }
-
-  header .text-sm {
-    font-size: 2rem !important;
-    opacity: 0.95;
-  }
-
-  /* Section titles (Side, Entrees) */
-  section > div:first-child {
-    font-size: 2.4rem !important;
-    margin-bottom: 1.8rem !important;
-    letter-spacing: 0.05em !important;
-  }
-
-  /* Hints and counters */
-  #side-hint,
-  .text-xs.text-neutral-700 {
-    font-size: 1.6rem !important;
-    margin-bottom: 2rem !important;
-  }
-
-  #side-total,
-  #entree-count {
-    font-size: 2.6rem !important;
-  }
-
-  /* Footer buttons */
-  footer button {
-    padding: 1.6rem 3rem !important;
-    font-size: 1.9rem !important;
-  }
+  html.text-size-small .text-xs { font-size: 0.7rem !important; }
+  html.text-size-small .text-sm { font-size: 0.85rem !important; }
+  html.text-size-small .text-base { font-size: 1rem !important; }
+  html.text-size-small .text-lg { font-size: 1.2rem !important; }
+  html.text-size-small .text-xl { font-size: 1.5rem !important; }
+  html.text-size-small .text-2xl { font-size: 1.9rem !important; }
+  html.text-size-small .text-3xl { font-size: 2.3rem !important; }
+  html.text-size-small #side-total,
+  html.text-size-small #entree-count { font-size: 1.6rem !important; }
+  html.text-size-small header h1 { font-size: 2.3rem !important; line-height: 1.2 !important; }
+  html.text-size-small section > div:first-child { font-size: 1.4rem !important; }
+  html.text-size-small #side-hint { font-size: 1rem !important; }
+  html.text-size-small footer button { padding: 1rem 2rem !important; font-size: 1.2rem !important; }
 </style>
 
 <style>
@@ -127,7 +105,7 @@
         </h1>
         </div>
       </div>
-      <a href="/kiosk" class="text-sm text-red-100 hover:text-white" data-original="Back to Menu">Back to Menu</a>
+      <a href="#" onclick="localStorage.setItem('kiosk_from_builder', 'true'); window.location.href='/kiosk'; return false;" class="text-sm text-red-100 hover:text-white" data-original="Back to Menu">Back to Menu</a>
     </div>
   </header>
 
@@ -166,6 +144,40 @@
       </div>
     </section>
   </main>
+
+  <!-- Still There Modal -->
+  <div id="still-there-modal" class="hidden fixed inset-0 items-center justify-center bg-black/70 backdrop-blur-sm z-90">
+    <div class="bg-white text-black w-full max-w-md rounded-2xl overflow-hidden shadow-2xl">
+      <div class="bg-gradient-to-r from-red-700 to-red-600 text-white px-8 py-6 text-center">
+        <h3 class="text-2xl font-bold mb-2">Are You Still There?</h3>
+        <p class="text-red-100 text-sm">Your session will expire soon</p>
+      </div>
+      
+      <div class="p-8 text-center space-y-6">
+        <div class="flex justify-center">
+          <div class="relative w-40 h-40 flex items-center justify-center">
+            <svg class="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 160 160">
+              <circle cx="80" cy="80" r="72" stroke="#fee2e2" stroke-width="8" fill="none" />
+              <circle id="countdown-circle" cx="80" cy="80" r="72" stroke="#dc2626" stroke-width="8" fill="none" 
+                      stroke-dasharray="452" stroke-dashoffset="0" stroke-linecap="round" />
+            </svg>
+            <div class="relative z-10">
+              <div id="still-there-countdown" class="text-6xl font-black text-red-700">10</div>
+              <div class="text-sm text-neutral-600 font-medium mt-1">seconds</div>
+            </div>
+          </div>
+        </div>
+        
+        <p class="text-neutral-700 text-base leading-relaxed">
+          We haven't detected any activity. Your order will be cleared if you don't respond.
+        </p>
+        
+        <button id="still-there-continue" class="w-full bg-gradient-to-r from-red-700 to-red-600 hover:from-red-800 hover:to-red-700 text-white font-bold py-4 px-8 rounded-xl text-lg shadow-lg hover:shadow-xl transition-all">
+          Continue Building
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Item Info Modal -->
   <div id="item-info-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-[100]">
@@ -235,6 +247,93 @@
   </footer>
 
   <script>
+    // Text size initialization - load from localStorage
+    function initTextSize() {
+      const savedSize = localStorage.getItem('kiosk_text_size') || 'large';
+      document.documentElement.classList.remove('text-size-small', 'text-size-medium', 'text-size-large');
+      document.documentElement.classList.add(`text-size-${savedSize}`);
+    }
+    initTextSize();
+
+    // Inactivity warning system
+    let inactivityTimer = null;
+    let warningTimer = null;
+    let countdownTimer = null;
+    const INACTIVITY_WARNING_TIMEOUT = 30000; // 30 seconds
+    const WARNING_COUNTDOWN = 10; // 10 seconds
+    const stillThereModal = document.getElementById('still-there-modal');
+    const stillThereCountdown = document.getElementById('still-there-countdown');
+    let countdownValue = WARNING_COUNTDOWN;
+
+    function showStillThereModal() {
+      stillThereModal.classList.remove('hidden');
+      stillThereModal.classList.add('flex');
+      countdownValue = WARNING_COUNTDOWN;
+      stillThereCountdown.textContent = countdownValue;
+      startCountdown();
+    }
+
+    function hideStillThereModal() {
+      stillThereModal.classList.add('hidden');
+      stillThereModal.classList.remove('flex');
+      clearInterval(countdownTimer);
+      clearTimeout(warningTimer);
+      resetInactivityTimer();
+    }
+
+    function startCountdown() {
+      const circle = document.getElementById('countdown-circle');
+      const circumference = 2 * Math.PI * 72;
+      
+      countdownTimer = setInterval(() => {
+        countdownValue--;
+        stillThereCountdown.textContent = countdownValue;
+        
+        const offset = circumference - (countdownValue / WARNING_COUNTDOWN) * circumference;
+        circle.style.strokeDashoffset = offset;
+        
+        if (countdownValue <= 0) {
+          clearInterval(countdownTimer);
+          clearCartAndReturnToKiosk();
+        }
+      }, 1000);
+    }
+
+    function clearCartAndReturnToKiosk() {
+      localStorage.removeItem('panda_cart');
+      localStorage.setItem('kiosk_from_builder', 'true');
+      window.location.href = '/kiosk';
+    }
+
+    function resetInactivityTimer() {
+      clearTimeout(inactivityTimer);
+      clearTimeout(warningTimer);
+      clearInterval(countdownTimer);
+      inactivityTimer = setTimeout(() => {
+        showStillThereModal();
+      }, INACTIVITY_WARNING_TIMEOUT);
+    }
+
+    // Continue button in still there modal
+    document.getElementById('still-there-continue').addEventListener('click', hideStillThereModal);
+    stillThereModal.addEventListener('click', (e) => {
+      if (e.target === stillThereModal) {
+        hideStillThereModal();
+      }
+    });
+
+    // Track user activity to reset timer
+    ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+      document.addEventListener(event, () => {
+        if (stillThereModal.classList.contains('hidden')) {
+          resetInactivityTimer();
+        }
+      }, true);
+    });
+
+    // Start inactivity timer when page loads
+    resetInactivityTimer();
+
     // Data from server
     const builderData = JSON.parse('<%- JSON.stringify({ menu, type, price, premiumSurcharge }) %>');
     console.log('Builder Data:', builderData);
@@ -501,10 +600,14 @@
         cart.push(itemObj);
       }
       saveCart(cart);
+      localStorage.setItem('kiosk_from_builder', 'true');
       window.location.href = '/kiosk';
     });
 
-    cancelBtn.addEventListener('click', () => { window.location.href = '/kiosk'; });
+    cancelBtn.addEventListener('click', () => {
+      localStorage.setItem('kiosk_from_builder', 'true');
+      window.location.href = '/kiosk';
+    });
 
     // Info modal functionality
     const infoModal = document.getElementById('item-info-modal');

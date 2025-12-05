@@ -89,6 +89,11 @@
     html.text-size-large .payment-method-btn,
     html.text-size-large .dine-option-btn,
     html.text-size-large #success-done-btn { font-size: 1.8rem !important; padding: 1.8rem 1.2rem !important; }
+    html.text-size-large #order-success-modal h2 { font-size: 4.5rem !important; }
+    html.text-size-large #order-success-modal .text-lg { font-size: 2rem !important; }
+    html.text-size-large #order-success-modal .text-sm { font-size: 1.4rem !important; }
+    html.text-size-large #order-success-modal .font-medium { font-size: 1.6rem !important; }
+    html.text-size-large #order-success-modal .font-bold { font-size: 1.8rem !important; }
 
     /* Medium text size */
     html.text-size-medium {
@@ -113,6 +118,11 @@
     html.text-size-medium .payment-method-btn,
     html.text-size-medium .dine-option-btn,
     html.text-size-medium #success-done-btn { font-size: 1.5rem !important; padding: 1.5rem 1rem !important; }
+    html.text-size-medium #order-success-modal h2 { font-size: 3.5rem !important; }
+    html.text-size-medium #order-success-modal .text-lg { font-size: 1.6rem !important; }
+    html.text-size-medium #order-success-modal .text-sm { font-size: 1.1rem !important; }
+    html.text-size-medium #order-success-modal .font-medium { font-size: 1.3rem !important; }
+    html.text-size-medium #order-success-modal .font-bold { font-size: 1.4rem !important; }
 
     /* Small text size */
     html.text-size-small {
@@ -134,6 +144,11 @@
     html.text-size-small .payment-method-btn,
     html.text-size-small .dine-option-btn,
     html.text-size-small #success-done-btn { font-size: 1.3rem !important; padding: 1.2rem 0.8rem !important; }
+    html.text-size-small #order-success-modal h2 { font-size: 2.8rem !important; }
+    html.text-size-small #order-success-modal .text-lg { font-size: 1.3rem !important; }
+    html.text-size-small #order-success-modal .text-sm { font-size: 0.9rem !important; }
+    html.text-size-small #order-success-modal .font-medium { font-size: 1.1rem !important; }
+    html.text-size-small #order-success-modal .font-bold { font-size: 1.2rem !important; }
   </style>
 
 <body class="h-screen flex bg-black text-white overflow-hidden">
@@ -1118,6 +1133,7 @@
           const mealNames = new Set(['Bowl','Plate','Bigger Plate']);
           if (mealNames.has(name)) {
             const slug = name === 'Bowl' ? 'bowl' : (name === 'Bigger Plate' ? 'bigger-plate' : 'plate');
+            localStorage.setItem('kiosk_from_builder', 'true');
             window.location.href = `/builder/${slug}`;
             return;
           }
@@ -1424,6 +1440,7 @@
             if (it.name === 'Bowl') slug = 'bowl';
             else if (it.name === 'Bigger Plate') slug = 'bigger-plate';
             else if (it.name === 'Plate') slug = 'plate';
+            localStorage.setItem('kiosk_from_builder', 'true');
             window.location.href = `/builder/edit?idx=${i}&type=${slug}`;
           }
           return;
@@ -1882,8 +1899,16 @@
         }
         loadWeather(); // Load weather on startup
         initTextSize(); // Initialize text size
-        // Start with landing page visible
-        showLandingPage();
+        
+        // Check if returning from builder - if so, don't show landing page
+        const fromBuilder = localStorage.getItem('kiosk_from_builder');
+        if (fromBuilder === 'true') {
+          localStorage.removeItem('kiosk_from_builder');
+          hideLandingPage();
+        } else {
+          // Start with landing page visible
+          showLandingPage();
+        }
       });
 
     async function changeLanguage(lang) {

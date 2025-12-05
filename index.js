@@ -598,37 +598,43 @@ app.get("/kiosk", async (req, res) => {
       // Nutritional information (per serving)
       const nutritionData = {
         // Sides
-        'Chow Mein': { calories: 400, protein: 12, fat: 12, carbs: 110 },
-        'Fried Rice': { calories: 570, protein: 18, fat: 16, carbs: 110 },
-        'White Steamed Rice': { calories: 420, protein: 0, fat: 0, carbs: 0 },
-        'Super Greens': { calories: 90, protein: 6, fat: 3, carbs: 13 },
-        // Entrees
-        'Eggplant & Tofu': { calories: 310, protein: 24, fat: 3, carbs: 220 },
-        'Mixed Veggies (entree)': { calories: 70, protein: 5, fat: 0, carbs: 5 },
-        'Mixed Veggies (Entree)': { calories: 35, protein: 0, fat: 0, carbs: 0 },
-        'Black Pepper Chicken': { calories: 200, protein: 11, fat: 2.5, carbs: 100 },
-        'Grilled Teriyaki Chicken': { calories: 180, protein: 9, fat: 2, carbs: 80 },
-        'Kung Pao Chicken': { calories: 300, protein: 20, fat: 4, carbs: 190 },
-        'Mushroom Chicken': { calories: 180, protein: 10, fat: 2, carbs: 90 },
-        'The Original Orange Chicken': { calories: 400, protein: 20, fat: 3.5, carbs: 170 },
-        'Pineapple Chicken': { calories: 230, protein: 10, fat: 2, carbs: 90 },
-        'String Bean Chicken Breast': { calories: 190, protein: 9, fat: 2, carbs: 80 },
-        'Honey Sesame Chicken Breast': { calories: 400, protein: 17, fat: 3, carbs: 150 },
-        'Grilled Chicken': { calories: 230, protein: 12, fat: 2, carbs: 110 },
-        'Grilled Teriyaki': { calories: 300, protein: 12, fat: 2, carbs: 100 },
-        'SweetFire Chicken Breast': { calories: 460, protein: 18, fat: 3.5, carbs: 160 },
-        'Beijing Beef': { calories: 660, protein: 41, fat: 7, carbs: 360 },
-        'Broccoli Beef': { calories: 150, protein: 6, fat: 1.5, carbs: 50 },
-        'Shanghai Beef': { calories: 200, protein: 9, fat: 2, carbs: 80 },
-        'Black Pepper Sirloin Steak': { calories: 360, protein: 19, fat: 8, carbs: 180 },
-        'Honey Walnut Shrimp': { calories: 260, protein: 14, fat: 2.5, carbs: 120 },
+        'Chow Mein': { calories: 600, protein: 15, fat: 23, carbs: 94 },
+        'Fried Rice': { calories: 620, protein: 13, fat: 19, carbs: 101 },
+        'White Steamed Rice': { calories: 520, protein: 10, fat: 0, carbs: 118 },
+        'Super Greens': { calories: 130, protein: 9, fat: 4, carbs: 14 },
+        'Chow Fun': { calories: 410, protein: 9, fat: 9, carbs: 73 },
+        // Veggies
+        'Eggplant & Tofu': { calories: 340, protein: 7, fat: 24, carbs: 23 },
+        'Super Greens Entree': { calories: 90, protein: 6, fat: 3, carbs: 10 },
+        // Chicken
+        'Black Pepper Chicken': { calories: 280, protein: 13, fat: 19, carbs: 15 },
+        'Kung Pao Chicken': { calories: 320, protein: 17, fat: 21, carbs: 15 },
+        'Grilled Teriyaki Chicken': { calories: 275, protein: 33, fat: 10, carbs: 14 },
+        'Teriyaki Chicken': { calories: 340, protein: 41, fat: 13, carbs: 14 },
+        'Mushroom Chicken': { calories: 220, protein: 13, fat: 14, carbs: 10 },
+        'The Original Orange Chicken': { calories: 510, protein: 26, fat: 24, carbs: 53 },
+        'Orange Chicken': { calories: 510, protein: 26, fat: 24, carbs: 53 },
+        'Potato Chicken': { calories: 190, protein: 8, fat: 10, carbs: 18 },
+        // Chicken Breast
+        'Honey Sesame Chicken Breast': { calories: 340, protein: 16, fat: 15, carbs: 35 },
+        'String Bean Chicken Breast': { calories: 210, protein: 12, fat: 12, carbs: 13 },
+        'SweetFire Chicken Breast': { calories: 360, protein: 15, fat: 15, carbs: 40 },
+        'Sweet & Sour Chicken Breast': { calories: 300, protein: 10, fat: 12, carbs: 40 },
+        // Beef
+        'Beijing Beef': { calories: 480, protein: 14, fat: 27, carbs: 46 },
+        'Broccoli Beef': { calories: 150, protein: 9, fat: 7, carbs: 13 },
+        'Black Pepper Sirloin Steak': { calories: 210, protein: 19, fat: 10, carbs: 13 },
+        // Seafood
+        'Chili Crisp Shrimp': { calories: 210, protein: 13, fat: 10, carbs: 19 },
+        'Honey Walnut Shrimp': { calories: 430, protein: 13, fat: 28, carbs: 32 },
+        'Wok Fired Shrimp': { calories: 190, protein: 17, fat: 5, carbs: 19 },
+        'Golden Treasure Shrimp': { calories: 360, protein: 14, fat: 18, carbs: 35 },
+        'Steamed Ginger Fish': { calories: 200, protein: 15, fat: 12, carbs: 8 },
         // Appetizers
-        'Chicken Egg Roll': { calories: 200, protein: 12, fat: 4, carbs: 100 },
-        'Chicken Potsticker': { calories: 220, protein: 11, fat: 2.5, carbs: 100 },
-        'Cream Cheese Rangoon': { calories: 190, protein: 8, fat: 5, carbs: 70 },
-        'Veggie Spring Roll': { calories: 160, protein: 7, fat: 1, carbs: 60 },
-        'Egg Flower Soup': { calories: 90, protein: 2, fat: 0, carbs: 20 },
-        'Hot & Sour Soup': { calories: 90, protein: 3.5, fat: 0.5, carbs: 30 }
+        'Chicken Egg Roll': { calories: 200, protein: 6, fat: 10, carbs: 20 },
+        'Chicken Potsticker': { calories: 160, protein: 6, fat: 6, carbs: 20 },
+        'Cream Cheese Rangoon': { calories: 190, protein: 5, fat: 8, carbs: 24 },
+        'Vegetable Spring Roll': { calories: 240, protein: 4, fat: 14, carbs: 24 }
       };
 
       let finalAllergens = Array.from(allergenSet).map(titleCase);
@@ -714,6 +720,42 @@ app.get('/builder/edit', async (req, res) => {
     }
     function titleCase(s) { return s.replace(/\w+/g, w => w.charAt(0).toUpperCase() + w.slice(1)); }
 
+    const nutritionData = {
+      // Sides
+      'Chow Mein': { calories: 600, protein: 15, fat: 23, carbs: 94 },
+      'Fried Rice': { calories: 620, protein: 13, fat: 19, carbs: 101 },
+      'White Steamed Rice': { calories: 520, protein: 10, fat: 0, carbs: 118 },
+      'Super Greens': { calories: 130, protein: 9, fat: 4, carbs: 14 },
+      'Chow Fun': { calories: 410, protein: 9, fat: 9, carbs: 73 },
+      // Veggies
+      'Eggplant & Tofu': { calories: 340, protein: 7, fat: 24, carbs: 23 },
+      'Super Greens Entree': { calories: 90, protein: 6, fat: 3, carbs: 10 },
+      // Chicken
+      'Black Pepper Chicken': { calories: 280, protein: 13, fat: 19, carbs: 15 },
+      'Kung Pao Chicken': { calories: 320, protein: 17, fat: 21, carbs: 15 },
+      'Grilled Teriyaki Chicken': { calories: 275, protein: 33, fat: 10, carbs: 14 },
+      'Teriyaki Chicken': { calories: 340, protein: 41, fat: 13, carbs: 14 },
+      'Mushroom Chicken': { calories: 220, protein: 13, fat: 14, carbs: 10 },
+      'The Original Orange Chicken': { calories: 510, protein: 26, fat: 24, carbs: 53 },
+      'Orange Chicken': { calories: 510, protein: 26, fat: 24, carbs: 53 },
+      'Potato Chicken': { calories: 190, protein: 8, fat: 10, carbs: 18 },
+      // Chicken Breast
+      'Honey Sesame Chicken Breast': { calories: 340, protein: 16, fat: 15, carbs: 35 },
+      'String Bean Chicken Breast': { calories: 210, protein: 12, fat: 12, carbs: 13 },
+      'SweetFire Chicken Breast': { calories: 360, protein: 15, fat: 15, carbs: 40 },
+      'Sweet & Sour Chicken Breast': { calories: 300, protein: 10, fat: 12, carbs: 40 },
+      // Beef
+      'Beijing Beef': { calories: 480, protein: 14, fat: 27, carbs: 46 },
+      'Broccoli Beef': { calories: 150, protein: 9, fat: 7, carbs: 13 },
+      'Black Pepper Sirloin Steak': { calories: 210, protein: 19, fat: 10, carbs: 13 },
+      // Seafood
+      'Chili Crisp Shrimp': { calories: 210, protein: 13, fat: 10, carbs: 19 },
+      'Honey Walnut Shrimp': { calories: 430, protein: 13, fat: 28, carbs: 32 },
+      'Wok Fired Shrimp': { calories: 190, protein: 17, fat: 5, carbs: 19 },
+      'Golden Treasure Shrimp': { calories: 360, protein: 14, fat: 18, carbs: 35 },
+      'Steamed Ginger Fish': { calories: 200, protein: 15, fat: 12, carbs: 8 }
+    };
+
     const menu = { entrees: [], sides: [] };
     const premiumEntrees = new Set(['Honey Walnut Shrimp', 'Black Pepper Sirloin Steak']); // Define premium items
 
@@ -724,11 +766,15 @@ app.get('/builder/edit', async (req, res) => {
         if (!s) return;
         normalizeTokens(s).forEach(a => allergenSet.add(a));
       });
+      
+      const nutrition = nutritionData[item.name] || null;
+      
       const itemData = {
         name: item.name,
         price: Number(item.price),
         allergens: Array.from(allergenSet).map(titleCase),
-        isPremium: premiumEntrees.has(item.name)
+        isPremium: premiumEntrees.has(item.name),
+        nutrition: nutrition
       };
       // Category 3 = A La Carte (actual protein dishes)
       // Category 4 = Sides
@@ -782,6 +828,42 @@ app.get('/builder/:type', async (req, res) => {
     }
     function titleCase(s) { return s.replace(/\w+/g, w => w.charAt(0).toUpperCase() + w.slice(1)); }
 
+    const nutritionData = {
+      // Sides
+      'Chow Mein': { calories: 600, protein: 15, fat: 23, carbs: 94 },
+      'Fried Rice': { calories: 620, protein: 13, fat: 19, carbs: 101 },
+      'White Steamed Rice': { calories: 520, protein: 10, fat: 0, carbs: 118 },
+      'Super Greens': { calories: 130, protein: 9, fat: 4, carbs: 14 },
+      'Chow Fun': { calories: 410, protein: 9, fat: 9, carbs: 73 },
+      // Veggies
+      'Eggplant & Tofu': { calories: 340, protein: 7, fat: 24, carbs: 23 },
+      'Super Greens Entree': { calories: 90, protein: 6, fat: 3, carbs: 10 },
+      // Chicken
+      'Black Pepper Chicken': { calories: 280, protein: 13, fat: 19, carbs: 15 },
+      'Kung Pao Chicken': { calories: 320, protein: 17, fat: 21, carbs: 15 },
+      'Grilled Teriyaki Chicken': { calories: 275, protein: 33, fat: 10, carbs: 14 },
+      'Teriyaki Chicken': { calories: 340, protein: 41, fat: 13, carbs: 14 },
+      'Mushroom Chicken': { calories: 220, protein: 13, fat: 14, carbs: 10 },
+      'The Original Orange Chicken': { calories: 510, protein: 26, fat: 24, carbs: 53 },
+      'Orange Chicken': { calories: 510, protein: 26, fat: 24, carbs: 53 },
+      'Potato Chicken': { calories: 190, protein: 8, fat: 10, carbs: 18 },
+      // Chicken Breast
+      'Honey Sesame Chicken Breast': { calories: 340, protein: 16, fat: 15, carbs: 35 },
+      'String Bean Chicken Breast': { calories: 210, protein: 12, fat: 12, carbs: 13 },
+      'SweetFire Chicken Breast': { calories: 360, protein: 15, fat: 15, carbs: 40 },
+      'Sweet & Sour Chicken Breast': { calories: 300, protein: 10, fat: 12, carbs: 40 },
+      // Beef
+      'Beijing Beef': { calories: 480, protein: 14, fat: 27, carbs: 46 },
+      'Broccoli Beef': { calories: 150, protein: 9, fat: 7, carbs: 13 },
+      'Black Pepper Sirloin Steak': { calories: 210, protein: 19, fat: 10, carbs: 13 },
+      // Seafood
+      'Chili Crisp Shrimp': { calories: 210, protein: 13, fat: 10, carbs: 19 },
+      'Honey Walnut Shrimp': { calories: 430, protein: 13, fat: 28, carbs: 32 },
+      'Wok Fired Shrimp': { calories: 190, protein: 17, fat: 5, carbs: 19 },
+      'Golden Treasure Shrimp': { calories: 360, protein: 14, fat: 18, carbs: 35 },
+      'Steamed Ginger Fish': { calories: 200, protein: 15, fat: 12, carbs: 8 }
+    };
+
     const menu = { entrees: [], sides: [] };
     const premiumEntrees = new Set(['Honey Walnut Shrimp', 'Black Pepper Sirloin Steak']); // Define premium items
 
@@ -792,11 +874,15 @@ app.get('/builder/:type', async (req, res) => {
         if (!s) return;
         normalizeTokens(s).forEach(a => allergenSet.add(a));
       });
+      
+      const nutrition = nutritionData[item.name] || null;
+      
       const itemData = {
         name: item.name,
         price: Number(item.price),
         allergens: Array.from(allergenSet).map(titleCase),
-        isPremium: premiumEntrees.has(item.name)
+        isPremium: premiumEntrees.has(item.name),
+        nutrition: nutrition
       };
       // Category 3 = A La Carte (actual protein dishes)
       // Category 4 = Sides
