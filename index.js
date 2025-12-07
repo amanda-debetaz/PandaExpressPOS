@@ -178,13 +178,37 @@ setInterval(() => {
 }, 60_000);
 
 // ---------- Auth middleware ----------
-function requireAuth(req, res, next) {
-  if (req.isAuthenticated()) {
-    return next(); 
-  }
-  console.log("requireAuth: User not logged in. Redirecting to /");
-  req.flash('error', 'You must be logged in to view that page.');
-  res.redirect('/');
+function requireAuth(allowedRole) {
+  return function(req, res, next) {
+    // 1. Check if user is logged in
+    if (!req.isAuthenticated()) {
+      console.log("requireAuth: User not logged in. Redirecting to /");
+      req.flash('error', 'You must be logged in to view that page.');
+      return res.redirect('/');
+    }
+
+    const userRole = (req.user.role || '').toLowerCase();
+
+    if (userRole === 'manager') {
+      return next(); 
+    }
+
+    // 2. If a specific role is required, check it
+    if (allowedRole) {
+      // Normalize to array to support single string or multiple allowed roles
+      const roles = Array.isArray(allowedRole) ? allowedRole : [allowedRole];
+      
+      const hasPermission = roles.some(r => r.toLowerCase() === userRole);
+
+      if (!hasPermission) {
+        console.log(`Access denied: ${req.user.display_name} (${userRole}) attempted to access restricted page.`);
+        req.flash('error', 'You do not have permission to view that page.');
+        return res.redirect('/');
+      }
+    }
+
+    return next();
+  };
 }
 
 // ---------- Login routes ----------
@@ -249,18 +273,18 @@ app.get("/", (req, res) => {
     success: req.flash('success')
   });
 });
-app.get("/manager", async (req, res) => {
+app.get("/manager", requireAuth('manager'), async (req, res) => {
   const employees = await prisma.employee.findMany({
     where: { is_active: true }
   });
 
   res.render("manager", { employees });
 });
-app.get("/cashier", requireAuth, (req, res) => res.render("cashier"));
+app.get("/cashier", requireAuth('cashier'), (req, res) => res.render("cashier"));
 
 
 let doneViewCutoff = new Date("2025-11-08T00:00:00Z");
-app.get("/kitchen", requireAuth, async (req, res) => {
+app.get("/kitchen", requireAuth('cook'), async (req, res) => {
   try {
     const cutoff = doneViewCutoff;
 
@@ -394,7 +418,7 @@ app.get("/kitchen", requireAuth, async (req, res) => {
 
 
 
-app.post("/kitchen/:orderId/status", requireAuth, async (req, res) => {
+app.post("/kitchen/:orderId/status", requireAuth('cook'), async (req, res) => {
   const orderId = parseInt(req.params.orderId, 10);
   const { status } = req.body;
 
@@ -434,7 +458,7 @@ app.post("/kitchen/:orderId/status", requireAuth, async (req, res) => {
 });
 
 // Cancel order endpoint
-app.post("/kitchen/:orderId/cancel", requireAuth, async (req, res) => {
+app.post("/kitchen/:orderId/cancel", requireAuth('cook'), async (req, res) => {
   const orderId = parseInt(req.params.orderId, 10);
 
   try {
@@ -450,7 +474,7 @@ app.post("/kitchen/:orderId/cancel", requireAuth, async (req, res) => {
   }
 });
 
-app.post("/kitchen/clear-done", requireAuth, (req, res) => {
+app.post("/kitchen/clear-done", requireAuth('cook'), (req, res) => {
   doneViewCutoff = new Date();
   res.redirect("/kitchen");
 });
@@ -534,7 +558,7 @@ app.get("/menu-board", async (req, res) => {
 // ---------- 1. KIOSK MENU ----------
 let menuCache = { entrees: [], a_la_carte: [], sides: [], appetizers: [] };
 
-app.get("/kiosk", async (req, res) => {
+app.get("/kiosk", requireAuth(), async (req, res) => {
   try {
     // Fetch all active menu items with their categories and ingredient allergens
     const menuItems = await prisma.menu_item.findMany({
@@ -953,7 +977,7 @@ app.get("/debug/allergens/:name", async (req, res) => {
 });
 
 // ---------- 2. ORDER ----------
-app.get("/order", requireAuth, async (req, res) => {
+app.get("/order", async (req, res) => {
   const menu = { entrees: [], sides: [], a_la_carte: [] };
   try {
     const items = await prisma.menu_item.findMany({
@@ -975,7 +999,7 @@ app.get("/order", requireAuth, async (req, res) => {
 });
 
 // ---------- 3. SUMMARY (Now supports full cart) ----------
-app.post("/summary", requireAuth, async (req, res) => {
+app.post("/summary", async (req, res) => {
   const { cart: rawCart } = req.body;
 
   if (!rawCart || !Array.isArray(rawCart) || rawCart.length === 0) {
@@ -1006,7 +1030,7 @@ app.post("/summary", requireAuth, async (req, res) => {
 // -------------------------------------------------
 
 // 1. Add item to cart
-app.post("/api/cart/add", requireAuth, (req, res) => {
+app.post("/api/cart/add", requireAuth(), (req, res) => {
   const { name, price } = req.body;
   if (!name || price === undefined) return res.status(400).json({error: "missing data"});
 
@@ -1024,12 +1048,12 @@ app.post("/api/cart/add", requireAuth, (req, res) => {
 });
 
 // 2. Get current cart (for the modal)
-app.get("/api/cart", requireAuth, (req, res) => {
+app.get("/api/cart", (req, res) => {
   res.json({ cart: req.session.cart || [] });
 });
 
 // 3. Clear cart
-app.delete("/api/cart/clear", requireAuth, (req, res) => {
+app.delete("/api/cart/clear", (req, res) => {
   req.session.cart = [];
   res.json({ success: true });
 });
@@ -1300,7 +1324,7 @@ async function ensurePreparedAndConsumeForOrder(tx, orderId) {
 }
 
 // Cook a batch: subtract inventory by recipe and increase KV prepared stock
-app.post('/kitchen/stock/:menuItemId/cook', requireAuth, async (req, res) => {
+app.post('/kitchen/stock/:menuItemId/cook', requireAuth('cook'), async (req, res) => {
   const menuItemId = parseInt(req.params.menuItemId, 10);
   const servings = Math.max(0, parseInt(req.body?.servings ?? '0', 10));
   if (!Number.isFinite(menuItemId) || servings <= 0) {
@@ -1370,7 +1394,7 @@ app.post('/kitchen/stock/:menuItemId/cook', requireAuth, async (req, res) => {
 });
 
 // Discard all remaining prepared stock (end-of-day)
-app.post('/kitchen/stock/discard', requireAuth, async (req, res) => {
+app.post('/kitchen/stock/discard', requireAuth('cook'), async (req, res) => {
   try {
     const rows = await prisma.pricing_settings.findMany({ where: { key: { startsWith: 'prep:mi:' } } });
     await prisma.$transaction(rows.map((r) => prisma.pricing_settings.update({ where: { key: r.key }, data: { value: 0 } })));

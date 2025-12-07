@@ -939,14 +939,19 @@
           // Update header with category info
           const info = categoryInfo[cat];
           if (info) {
-            document.getElementById("category-title").textContent = info.title;
-            document.querySelector("header p").textContent = info.description;
-          }
+            const titleEl = document.getElementById("category-title");
+            const descEl = document.querySelector("header p");
 
-          const currentLang = localStorage.getItem('kiosk_lang') || 'en';
-          if (currentLang !== 'en') {
-            // Small timeout to let the text update to English first (from existing logic), then translate
-            setTimeout(() => changeLanguage(currentLang), 50);
+            titleEl.textContent = info.title;
+            descEl.textContent = info.description;
+
+            titleEl.setAttribute('data-original', info.title);
+            descEl.setAttribute('data-original', info.description);
+          
+            const currentLang = localStorage.getItem('kiosk_lang') || 'en';
+            if (currentLang !== 'en') {
+              setTimeout(() => changeLanguage(currentLang), 20);
+            }
           }
         });
       });
@@ -2033,8 +2038,6 @@
       localStorage.setItem('kiosk_lang', lang);
       
       const staticElements = [
-        { el: document.getElementById('category-title'), original: 'Entrees' },
-        { el: document.querySelector('header p'), original: 'Choose your main dish to start your order.' },
         { el: document.querySelector('.nav-link[data-category="entrees"]'), original: 'Entrees' },
         { el: document.querySelector('.nav-link[data-category="sides"]'), original: 'Sides' },
         { el: document.querySelector('.nav-link[data-category="a_la_carte"]'), original: 'A La Carte' },
