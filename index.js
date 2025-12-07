@@ -126,7 +126,7 @@ passport.use(new GoogleStrategy({
     const display_name = profile.displayName;
 
     try {
-      let user = await prisma.employee.findUnique({
+      let user = await prisma.employee.findFirst({
         where: { google_id: google_id }
       });
 
@@ -136,7 +136,7 @@ passport.use(new GoogleStrategy({
       }
 
       console.log(`GOOGLE LOGIN: No user found for google_id. Checking email: ${email}`);
-      user = await prisma.employee.findUnique({
+      user = await prisma.employee.findFirst({
         where: { email: email }
       });
 
