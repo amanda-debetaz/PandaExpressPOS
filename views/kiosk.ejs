@@ -2077,64 +2077,54 @@
 
     async function changeLanguage(lang) {
       localStorage.setItem('kiosk_lang', lang);
-      
-      const staticElements = [
-        { el: document.querySelector('.nav-link[data-category="entrees"]'), original: 'Entrees' },
-        { el: document.querySelector('.nav-link[data-category="sides"]'), original: 'Sides' },
-        { el: document.querySelector('.nav-link[data-category="a_la_carte"]'), original: 'A La Carte' },
-        { el: document.querySelector('.nav-link[data-category="appetizers"]'), original: 'Appetizers' },
-        { el: document.querySelector('.nav-link[data-category="drinks"]'), original: 'Drinks' },
-        { el: document.getElementById('cart-open-drawer'), original: 'View Cart' },
-        { el: document.getElementById('instruction-text'), original: 'Tap items to add them to your order.' },
-        { el: document.getElementById('weather-desc'), original: document.getElementById('weather-desc')?.getAttribute('data-original') },
-      ];
 
-      staticElements.forEach(item => {
-        if(item.el && item.original && !item.el.hasAttribute('data-original')) {
-            item.el.setAttribute('data-original', item.original);
-        }
-      });
+      const elementsToTranslate = document.querySelectorAll('[data-original]');
+      if (elementsToTranslate.length === 0) return;
 
       if (lang === 'en') {
-        document.querySelectorAll('[data-original]').forEach(el => {
-            if (!el.classList.contains('no-translate') && !el.closest('.no-translate')) {
-              const orig = el.getAttribute('data-original');
-              if(orig) el.textContent = orig;
-            }
+        elementsToTranslate.forEach(el => {
+          if (!el.classList.contains('no-translate')) {
+            el.textContent = el.getAttribute('data-original');
+          }
         });
         return;
       }
-      const allergensToTranslate = [...new Set([...sides.map(s=>(s.allergens||[]).join(', ')), ...proteins.map(p=>(p.allergens||[]).join(', '))])].filter(Boolean);
 
-      const allDomTargets = [
-        ...staticElements.map(i => i.el), 
-        ...Array.from(document.querySelectorAll('[data-translate-type="item-name"]')),
-        ...Array.from(document.querySelectorAll('[data-original]')),
-      ].filter(el => el && el.hasAttribute('data-original') && !el.classList.contains('no-translate') && !el.closest('.no-translate'));
+      const uniqueTexts = new Set();
+      elementsToTranslate.forEach(el => {
+        if (!el.classList.contains('no-translate')) {
+           const text = el.getAttribute('data-original');
+           if (text) uniqueTexts.add(text.trim());
+        }
+      });
       
-      const uniqueDomTargets = [...new Set(allDomTargets)];
-      
-      const otherTargets = uniqueDomTargets.map(el => el.getAttribute('data-original'));
-      const textsToTranslate = [...new Set([...otherTargets, ...allergensToTranslate])];
-
-      if(textsToTranslate.length === 0) return;
+      const textArray = Array.from(uniqueTexts).filter(Boolean);
+      if (textArray.length === 0) return;
 
       try {
         const res = await fetch('/api/translate', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ text: textsToTranslate, target: lang })
+            body: JSON.stringify({ text: textArray, target: lang })
         });
-        
         const data = await res.json();
         
-        if(data.success && Array.isArray(data.translatedText)) {
-            data.translatedText.forEach((txt, i) => {
-              if(uniqueDomTargets[i]) uniqueDomTargets[i].textContent = txt;
+        if (data.success && Array.isArray(data.translatedText)) {
+            const translationMap = {};
+            textArray.forEach((original, index) => {
+                translationMap[original] = data.translatedText[index];
+            });
+
+            elementsToTranslate.forEach(el => {
+                const original = el.getAttribute('data-original').trim();
+                if (translationMap[original]) {
+                    el.textContent = translationMap[original];
+                }
             });
         }
       } catch(e) { console.error("Translation failed", e); }
     }
+
     const callStaffBtn = document.getElementById('call-staff-btn');
 
     callStaffBtn.addEventListener('click', async () => {

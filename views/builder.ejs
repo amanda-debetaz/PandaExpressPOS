@@ -827,14 +827,14 @@
 
     async function initTranslation(lang) {
       if (lang === 'en') return;
-
-      const namesToTranslate = [...new Set([...sides.map(s=>s.name), ...proteins.map(p=>p.name)])];
-      const allergensToTranslate = [...new Set([...sides.map(s=>(s.allergens||[]).join(', ')), ...proteins.map(p=>(p.allergens||[]).join(', '))])].filter(Boolean);
+      
+      const namesToTranslate = [...new Set([...sides.map(s => s.name), ...proteins.map(p => p.name)])];
+      const allergensToTranslate = [...new Set([...sides.map(s => (s.allergens||[]).join(', ')), ...proteins.map(p => (p.allergens||[]).join(', '))])].filter(Boolean);
       
       const staticElements = Array.from(document.querySelectorAll('[data-original]'));
       const staticTexts = staticElements.map(el => el.getAttribute('data-original'));
 
-      const allTexts = [...namesToTranslate, ...allergensToTranslate, ...staticTexts];
+      const allTexts = [...new Set([...namesToTranslate, ...allergensToTranslate, ...staticTexts])];
       
       if (allTexts.length === 0) return;
 
@@ -847,18 +847,24 @@
         const data = await res.json();
         
         if (data.success && Array.isArray(data.translatedText)) {
-          let cursor = 0;
-          
-          namesToTranslate.forEach(original => {
-            translationMap.names[original] = data.translatedText[cursor++];
+          const dictionary = {};
+          allTexts.forEach((original, index) => {
+             dictionary[original] = data.translatedText[index];
           });
-          
+
+          namesToTranslate.forEach(original => {
+            if (dictionary[original]) translationMap.names[original] = dictionary[original];
+          });
+
           allergensToTranslate.forEach(original => {
-            translationMap.allergens[original] = data.translatedText[cursor++];
+            if (dictionary[original]) translationMap.allergens[original] = dictionary[original];
           });
 
           staticElements.forEach(el => {
-            el.textContent = data.translatedText[cursor++];
+            const original = el.getAttribute('data-original');
+            if (original && dictionary[original]) {
+               el.textContent = dictionary[original];
+            }
           });
 
           update();
