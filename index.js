@@ -1810,6 +1810,36 @@ app.put("/api/menu/:id/recipe", async (req, res) => {
   }
 });
 
+// Update menu item
+app.put('/api/menu/:id', async (req, res) => {
+  const id = parseInt(req.params.id);
+  const { name, price, category_id, is_active } = req.body;
+
+  if (!id) return res.status(400).json({ error: 'Menu item ID is required' });
+
+  try {
+    // Fetch the item first (optional)
+    const menuItem = await prisma.menu_item.findUnique({ where: { menu_item_id: id } });
+    if (!menuItem) return res.status(404).json({ error: 'Menu item not found' });
+
+    // Update the item
+    const updated = await prisma.menu_item.update({
+      where: { menu_item_id: id },
+      data: {
+        name: name ?? menuItem.name,
+        price: price ?? menuItem.price,
+        category_id: category_id ?? menuItem.category_id,
+        is_active: is_active ?? menuItem.is_active
+      }
+    });
+
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update menu item' });
+  }
+});
+
 // --- INVENTORY ROUTES ---
 // GET all inventory items
 app.get('/api/inventory', async (req, res) => {

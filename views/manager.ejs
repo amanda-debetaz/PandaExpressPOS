@@ -275,6 +275,9 @@
 
     <button type="button" id="editRecipeBtn">Edit Recipe</button>
     <div id="editRecipeContainer" style="display:none; margin-top:1rem;"></div>
+
+    <button type="button" id="editMenuBtn">Edit Menu Item</button>
+    <div id="editMenuContainer" style="display:none; margin-top:1rem;"></div>
   </form>
 
   <h2>Menu Items</h2>
@@ -783,6 +786,71 @@ document.getElementById("editRecipeBtn").addEventListener("click", async () => {
         container.style.display = "none";
         container.innerHTML = "";
 
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
+    };
+
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
+});
+
+document.getElementById("editMenuBtn").addEventListener("click", async () => {
+  const menuId = prompt("Enter the Menu Item ID to edit:");
+  if (!menuId) return;
+
+  const container = document.getElementById("editMenuContainer");
+
+  try {
+    // Fetch the current menu item details
+    const res = await fetch(`/api/menu/${menuId}`);
+    if (!res.ok) throw new Error("Menu item not found");
+    const item = await res.json();
+
+    container.innerHTML = ""; // clear previous content
+
+    // Build edit form
+    const form = document.createElement("form");
+    form.style.display = "flex";
+    form.style.flexDirection = "column";
+    form.style.gap = "10px";
+
+    form.innerHTML = `
+      <label>
+        Name: <strong>${item.name}</strong>
+      </label>
+      <label>
+        Price: <input type="number" id="editPrice" step="0.01" value="${item.price}">
+      </label>
+      <label>
+        Active: <input type="checkbox" id="editActive" ${item.is_active ? "checked" : ""}>
+      </label>
+      <button type="button" id="saveMenuEditBtn">Save Changes</button>
+    `;
+
+    container.appendChild(form);
+    container.style.display = "block";
+
+    // Save button
+    document.getElementById("saveMenuEditBtn").onclick = async () => {
+      const newPrice = parseFloat(document.getElementById("editPrice").value);
+      const isActive = document.getElementById("editActive").checked;
+
+      if (isNaN(newPrice)) return alert("Invalid price");
+
+      try {
+        const updateRes = await fetch(`/api/menu/${menuId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ price: newPrice, is_active: isActive })
+        });
+
+        if (!updateRes.ok) throw new Error("Failed to update menu item");
+
+        alert("Menu item updated!");
+        container.style.display = "none";
+        listMenuItems(); // refresh table
       } catch (err) {
         alert("Error: " + err.message);
       }
