@@ -1069,7 +1069,7 @@
       function openInfoModal(itemName, allergens, nutrition = null) {
         infoModalItemName.textContent = itemName;
         infoModalAllergens.textContent = allergens || 'None';
-        
+
         // Display nutrition data if available
         if (nutrition && typeof nutrition === 'object') {
           infoModalCalories.textContent = nutrition.calories || '--';
@@ -1085,7 +1085,70 @@
         
         infoModal.classList.remove('hidden');
         infoModal.classList.add('flex');
+
+        const lang = localStorage.getItem('kiosk_lang') || 'en';
+        const vocab = ttsLexicon[lang] || ttsLexicon['en'];
+
+        const speakDetails = (nameToSpeak, finalAllergens) => {
+            if (!ttsEnabled) return;
+            
+            let text = `${vocab.info} ${nameToSpeak}. `;
+            
+            if (finalAllergens && finalAllergens !== 'None' && finalAllergens.trim() !== '') {
+                text += `${vocab.allergens}: ${finalAllergens}. `;
+            } else {
+                text += `${vocab.none}. `;
+            }
+            
+            if (nutrition && typeof nutrition === 'object') {
+                text += `${vocab.nutrition}: `;
+                if (nutrition.calories) text += `${nutrition.calories} ${vocab.cal}, `;
+                if (nutrition.protein) text += `${nutrition.protein} ${vocab.pro}, `;
+                if (nutrition.fat) text += `${nutrition.fat} ${vocab.fat}, `;
+                if (nutrition.carbs) text += `${nutrition.carbs} ${vocab.carb}.`;
+            }
+            speak(text);
+        };
+
+        if (lang === 'en') {
+            speakDetails(itemName, allergens);
+            return;
+        }
+
+        const textsToTranslate = [itemName];
+        if (allergens && allergens !== 'None') {
+            textsToTranslate.push(allergens);
+        }
+
+        fetch('/api/translate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: textsToTranslate, target: lang })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && Array.isArray(data.translatedText) && data.translatedText.length > 0) {
+                const translatedTitle = data.translatedText[0];
+                infoModalItemName.textContent = translatedTitle;
+
+                let translatedAllergens = null;
+                if (textsToTranslate.length > 1) {
+                     translatedAllergens = data.translatedText[1];
+                     infoModalAllergens.textContent = translatedAllergens;
+                }
+
+                speakDetails(translatedTitle, translatedAllergens || allergens);
+            } else {
+                speakDetails(itemName, allergens);
+            }
+        })
+        .catch(e => {
+            console.error(e);
+            speakDetails(itemName, allergens);
+        });
       }
+
+      
 
       function closeInfoModal() {
         infoModal.classList.add('hidden');
@@ -1759,6 +1822,15 @@
       }
 
       // Text-to-Speech Logic
+      const ttsLexicon = {
+      'en': { info: "Information for", allergens: "Allergens", none: "No allergens listed", nutrition: "Nutrition facts", cal: "calories", pro: "grams of protein", fat: "grams of fat", carb: "grams of carbs" },
+      'es': { info: "Información para", allergens: "Alérgenos", none: "No hay alérgenos listados", nutrition: "Información nutricional", cal: "calorías", pro: "gramos de proteína", fat: "gramos de grasa", carb: "gramos de carbohidratos" },
+      'zh': { info: "信息", allergens: "过敏原", none: "未列出过敏原", nutrition: "营养成分", cal: "卡路里", pro: "克蛋白质", fat: "克脂肪", carb: "克碳水化合物" },
+      'zh-CN': { info: "信息", allergens: "过敏原", none: "未列出过敏原", nutrition: "营养成分", cal: "卡路里", pro: "克蛋白质", fat: "克脂肪", carb: "克碳水化合物" },
+      'fr': { info: "Informations pour", allergens: "Allergènes", none: "Aucun allergène répertorié", nutrition: "Valeurs nutritionnelles", cal: "calories", pro: "grammes de protéines", fat: "grammes de lipides", carb: "grammes de glucides" },
+      'de': { info: "Informationen für", allergens: "Allergene", none: "Keine Allergene aufgeführt", nutrition: "Nährwerte", cal: "Kalorien", pro: "Gramm Protein", fat: "Gramm Fett", carb: "Gramm Kohlenhydrate" }
+      };
+
       let ttsEnabled = false;
       let currentUtterance = null;
       const synth = window.speechSynthesis;
@@ -1804,7 +1876,7 @@
         const langMap = {
           'en': 'en-US',
           'es': 'es-ES',
-          'zh-CN': 'zh-CN',
+          'zh': 'zh-CN',
           'fr': 'fr-FR',
           'de': 'de-DE'
         };
@@ -2032,16 +2104,18 @@
         });
         return;
       }
+      const allergensToTranslate = [...new Set([...sides.map(s=>(s.allergens||[]).join(', ')), ...proteins.map(p=>(p.allergens||[]).join(', '))])].filter(Boolean);
 
       const allDomTargets = [
         ...staticElements.map(i => i.el), 
         ...Array.from(document.querySelectorAll('[data-translate-type="item-name"]')),
-        ...Array.from(document.querySelectorAll('[data-original]'))
+        ...Array.from(document.querySelectorAll('[data-original]')),
       ].filter(el => el && el.hasAttribute('data-original') && !el.classList.contains('no-translate') && !el.closest('.no-translate'));
       
       const uniqueDomTargets = [...new Set(allDomTargets)];
       
-      const textsToTranslate = uniqueDomTargets.map(el => el.getAttribute('data-original'));
+      const otherTargets = uniqueDomTargets.map(el => el.getAttribute('data-original'));
+      const textsToTranslate = [...new Set([...otherTargets, ...allergensToTranslate])];
 
       if(textsToTranslate.length === 0) return;
 
