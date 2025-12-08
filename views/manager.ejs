@@ -520,25 +520,42 @@ async function listShiftsByDate() {
 
 // -------------------- CREATE SHIFT --------------------
 document.getElementById("createShiftBtn").addEventListener("click", async () => {
-  const manager_id = Number(prompt("Enter manager ID:")); // convert to number
+  const manager_id = Number(prompt("Enter manager ID:"));
   const shift_date = prompt("Enter shift date (YYYY-MM-DD):");
-  const start_time = prompt("Enter start time (HH:MM):");
-  const end_time = prompt("Enter end time (HH:MM):");
+  const start_time_input = prompt("Enter start time (HH:MM):");
+  const end_time_input = prompt("Enter end time (HH:MM):");
 
-  if (!manager_id || !shift_date || !start_time || !end_time) {
+  if (!manager_id || !shift_date || !start_time_input || !end_time_input) {
     alert("All fields are required!");
     return;
   }
 
-  const res = await fetch("/api/shifts", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ manager_id, shift_date, start_time, end_time })
-  });
+  try {
+    const res = await fetch("/api/shifts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        manager_id,
+        shift_date,
+        start_time: start_time_input,
+        end_time: end_time_input,
+      }),
+    });
 
-  const data = await res.json();
-  console.log(data);
-  alert("Shift created successfully!");
+    const data = await res.json();
+
+    if (!res.ok) {
+      // Show server error if status is not 2xx
+      alert(`Failed to create shift: ${data.error}`);
+      console.error("Server error:", data);
+    } else {
+      alert("Shift created successfully!");
+      console.log("Created shift:", data.shift);
+    }
+  } catch (err) {
+    console.error("Network error:", err);
+    alert("Failed to create shift due to network error. Check console.");
+  }
 });
 
 // -------------------- DELETE SHIFT --------------------

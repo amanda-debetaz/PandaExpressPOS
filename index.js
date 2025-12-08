@@ -1561,22 +1561,56 @@ app.post("/api/shifts", async (req, res) => {
   const { manager_id, shift_date, start_time, end_time } = req.body;
 
   if (!manager_id || !shift_date || !start_time || !end_time) {
-    return res.status(400).json({ error: "Missing required fields" });
+    return res.status(400).json({ error: "All fields are required" });
+  }
+
+  if (isNaN(manager_id)) {
+    return res.status(400).json({ error: "Manager ID must be a number" });
+  }
+
+  // Validate shift_date format
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(shift_date)) {
+    return res.status(400).json({ error: "Shift date must be in YYYY-MM-DD format" });
+  }
+  const shiftDateObj = new Date(shift_date);
+  if (isNaN(shiftDateObj.getTime())) {
+    return res.status(400).json({ error: "Invalid shift date" });
+  }
+
+  // Validate time format
+  const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+  if (!timeRegex.test(start_time) || !timeRegex.test(end_time)) {
+    return res.status(400).json({ error: "Start and end times must be in HH:MM format" });
   }
 
   try {
+    const manager = await prisma.manager.findUnique({
+      where: { manager_id: Number(manager_id) },
+    });
+    if (!manager) {
+      return res.status(400).json({ error: `Manager with ID ${manager_id} does not exist.` });
+    }
+
+    // Parse times and add 6-hour offset
+    const [startHour, startMinute] = start_time.split(":").map(Number);
+    const [endHour, endMinute] = end_time.split(":").map(Number);
+
+    const startDateTime = new Date(Date.UTC(1970, 0, 1, startHour + 6, startMinute));
+    const endDateTime = new Date(Date.UTC(1970, 0, 1, endHour + 6, endMinute));
+
     const shift = await prisma.shift_schedule.create({
       data: {
-        manager_id: Number(manager_id), // ensure Int
-        shift_date: new Date(shift_date),
-        start_time: new Date(`1970-01-01T${start_time}:00`),
-        end_time: new Date(`1970-01-01T${end_time}:00`),
+        manager_id: Number(manager_id),
+        shift_date: shiftDateObj,
+        start_time: startDateTime,
+        end_time: endDateTime,
       },
     });
-    res.json(shift);
+
+    res.json({ message: "Shift created successfully!", shift });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Failed to create shift. Check server logs." });
   }
 });
 
