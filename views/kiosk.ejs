@@ -161,25 +161,8 @@
 
     <!-- Landing Page / Screensaver -->
     <div id="landing-page" role="complementary" aria-label="Welcome Screen" class="fixed inset-0 z-[100] flex flex-col items-center justify-center cursor-pointer overflow-hidden">
-      <!-- Background Carousel -->
+      <!-- Background -->
       <div class="absolute inset-0 bg-gradient-to-br from-red-900 via-red-700 to-red-800"></div>
-      <div id="carousel-container" role="region" aria-label="Background carousel" class="absolute inset-0">
-        <div class="carousel-slide absolute inset-0 opacity-0 transition-opacity duration-1000">
-          <img src="/images/the-original-orange-chicken.jpg" alt="Orange Chicken" class="w-full h-full object-cover opacity-30">
-        </div>
-        <div class="carousel-slide absolute inset-0 opacity-0 transition-opacity duration-1000">
-          <img src="/images/beijing-beef.jpg" alt="Beijing Beef" class="w-full h-full object-cover opacity-30">
-        </div>
-        <div class="carousel-slide absolute inset-0 opacity-0 transition-opacity duration-1000">
-          <img src="/images/honey-walnut-shrimp.jpg" alt="Honey Walnut Shrimp" class="w-full h-full object-cover opacity-30">
-        </div>
-        <div class="carousel-slide absolute inset-0 opacity-0 transition-opacity duration-1000">
-          <img src="/images/broccoli-beef.jpg" alt="Broccoli Beef" class="w-full h-full object-cover opacity-30">
-        </div>
-        <div class="carousel-slide absolute inset-0 opacity-0 transition-opacity duration-1000">
-          <img src="/images/kung-pao-chicken.jpg" alt="Kung Pao Chicken" class="w-full h-full object-cover opacity-30">
-        </div>
-      </div>
       
       <!-- Content overlay -->
       <div class="relative z-10 text-center">
@@ -1880,36 +1863,6 @@
         }
       });
 
-      // Background carousel for landing page
-      let carouselInterval = null;
-      let currentSlide = 0;
-      const slides = document.querySelectorAll('.carousel-slide');
-      
-      function startCarousel() {
-        if (slides.length === 0) return;
-        
-        // Show first slide
-        slides[0].style.opacity = '1';
-        
-        carouselInterval = setInterval(() => {
-          // Fade out current slide
-          slides[currentSlide].style.opacity = '0';
-          
-          // Move to next slide
-          currentSlide = (currentSlide + 1) % slides.length;
-          
-          // Fade in next slide
-          slides[currentSlide].style.opacity = '1';
-        }, 4000); // Change slide every 4 seconds
-      }
-      
-      function stopCarousel() {
-        if (carouselInterval) {
-          clearInterval(carouselInterval);
-          carouselInterval = null;
-        }
-      }
-
       // Landing page / Screensaver functionality
       let inactivityTimer = null;
       let warningTimer = null;
@@ -1923,12 +1876,10 @@
 
       function showLandingPage() {
         landingPage.style.display = 'flex';
-        startCarousel();
       }
 
       function hideLandingPage() {
         landingPage.style.display = 'none';
-        stopCarousel();
         resetInactivityTimer();
       }
 
