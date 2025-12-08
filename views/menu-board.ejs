@@ -17,7 +17,7 @@
       font-size: clamp(16px, 1.4vw, 28px);
       margin: clamp(10px, 1vw, 20px) 0;
       padding: clamp(8px, 0.8vw, 16px);
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(50, 50, 50, 0.9);
       border-radius: clamp(6px, 0.6vw, 12px);
       backdrop-filter: blur(10px);
     }
@@ -209,6 +209,9 @@
       color: #000000;
       font-size: clamp(26px, min(2.2vw, 3vh), 52px);
       margin-top: clamp(8px, 0.8vw, 20px);
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      width: 100%;
     }
     .meal-calories {
       color: #555;
@@ -229,6 +232,7 @@
       flex-direction: column;
       align-items: center;
       text-align: center;
+      width: 100%;
     }
     .meal-image {
       width: clamp(150px, 10vw, 250px);
@@ -240,7 +244,7 @@
   </style>
   <% } %>
   <!-- A La Carte Page Style -->
-  <% if (page === "a_la_carte") { %> 
+  <% if (page === "a_la_carte") { %>
   <style>
     .a-la-carte-container{
       margin: clamp(10px, 1vw, 30px);
@@ -258,6 +262,7 @@
       border-radius: clamp(6px, 0.5vw, 15px);
       object-fit: cover;
       margin-right: clamp(8px, 0.8vw, 20px);
+      flex-shrink: 0;
     }
     .meal-option {
       display: flex;
@@ -270,10 +275,14 @@
       display: flex;
       flex-direction: column;
       gap: clamp(5px, 0.5vw, 12px);
+      flex: 1;
+      min-width: 0;
     }
     .meal-name {
       color: black;
       font-size: clamp(26px, min(2.2vw, 3vh), 52px);
+      word-wrap: break-word;
+      overflow-wrap: break-word;
     }
     .meal-calories {
       color: #555;
@@ -295,11 +304,6 @@
       background-color: #ffffff;
       padding: clamp(8px, 0.8vw, 20px);
     }
-    .meal-name {
-      color: #000000;
-      font-size: clamp(26px, min(2.2vw, 3vh), 52px);
-      margin-top: clamp(4px, 0.4vw, 10px);
-    }
     .meal-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr); /* 3 columns */
@@ -310,6 +314,7 @@
       flex-direction: column;
       align-items: center;
       text-align: center;
+      width: 100%;
     }
     .meal-image {
       width: clamp(180px, 12vw, 300px);
@@ -321,6 +326,9 @@
     .meal-name {
       color: black;
       font-size: clamp(26px, min(2.2vw, 3vh), 52px);
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      width: 100%;
     }
     .meal-calories {
       color: #555;
@@ -373,7 +381,7 @@
   }
 
   .nav-buttons a.active {
-    background: #d61927;        /* red background for active page */
+    background: #b91419;        /* darker red background for active page - better WCAG contrast */
     color: #fff;                /* white text for active page */
   }
 
@@ -415,12 +423,12 @@
   }
 
   body.fullscreen #fullscreen-btn {
-    background: #d61927;
+    background: #b91419;
     color: #fff;
   }
 
   #autoscroll-btn.active {
-    background: #d61927;
+    background: #b91419;
     color: #fff;
   }
 
@@ -461,7 +469,7 @@
     top: clamp(20px, 2vh, 40px);
     right: clamp(20px, 2vw, 40px);
     padding: clamp(15px, 1.5vh, 35px) clamp(30px, 3vw, 70px);
-    background: rgba(214, 25, 39, 0.9);
+    background: rgba(185, 20, 25, 0.9);
     color: white;
     border: none;
     border-radius: clamp(8px, 0.8vw, 16px);
@@ -481,7 +489,7 @@
   }
 
   #exit-autoscroll:hover {
-    background: rgba(214, 25, 39, 1);
+    background: rgba(185, 20, 25, 1);
   }
 
   /* Hide cursor when inactive in autoscroll */
@@ -556,25 +564,25 @@
   <!--<button id="fullscreen-btn">Go Fullscreen</button>-->
   <div class="top-container" id="top-container">
     <div style="text-align: right; padding-inline: clamp(10px, 1vw, 30px); padding-top: clamp(5px, 0.5vw, 15px);">
-      <button id="fullscreen-btn" aria-label="Toggle fullscreen mode">
+      <button id="fullscreen-btn">
         Go Fullscreen
       </button>
       <% if (page === "featured") { %>
-      <button id="autoscroll-btn" aria-label="Toggle autoscroll through featured items" aria-pressed="false">
+      <button id="autoscroll-btn" aria-pressed="false">
         Start Autoscroll
       </button>
       <% } %>
-      <button id="back-btn" aria-label="Return to main navigation page">
+      <button id="back-btn">
         Back to Navigation
       </button>
     </div>
 
-  <h1 style="font-size: clamp(24px, min(2vw, 3vh), 48px); letter-spacing: 0.25em; padding-left: clamp(10px, 1vw, 30px);" class="uppercase text-red-500 font-bold">
+  <h1 style="font-size: clamp(24px, min(2vw, 3vh), 48px); letter-spacing: 0.25em; padding-left: clamp(10px, 1vw, 30px); margin-bottom: 0;" class="uppercase text-red-500 font-bold">
     PANDA EXPRESS
   </h1>
-  <p style="font-size: clamp(16px, min(1.3vw, 2vh), 32px); letter-spacing: 0.3em; padding-left: clamp(10px, 1vw, 30px); margin-top: clamp(4px, 0.4vw, 10px);" class="uppercase text-neutral-400">
+  <h2 style="font-size: clamp(16px, min(1.3vw, 2vh), 32px); letter-spacing: 0.3em; padding-left: clamp(10px, 1vw, 30px); margin-top: clamp(4px, 0.4vw, 10px);" class="uppercase text-neutral-400">
           MENU BOARD
-  </p>
+  </h2>
 
   <nav class="nav-buttons">
     <a href="/menu-board?page=featured" class="<%= page==='featured'?'active':'' %>">FEATURED</a>
@@ -589,35 +597,38 @@
   <div class="menu-page-container" style="width: 100%; height:100%;">
     <!-- Page Content -->
     <!-- Featured content -->
-    
+
     <% if (page === "featured") { %>
+      <div style="padding-left: clamp(10px, 1vw, 30px);">
+        <h1 class="title">FEATURED ITEMS</h1>
+      </div>
       <p class="featured-instruction">Click any image to view it in fullscreen</p>
       <div class="featured-images">
         <div class="featured-item">
-          <img src="/images/chili-crisp-shrimp.jpg" class="featured-img" alt="Chili Crisp Shrimp - Click to view fullscreen" tabindex="0" role="button" data-img-src="/images/chili-crisp-shrimp.jpg" />
+          <img src="/images/chili-crisp-shrimp.jpg" class="featured-img" alt="Chili Crisp Shrimp" tabindex="0" role="button" aria-label="View Chili Crisp Shrimp in fullscreen" data-img-src="/images/chili-crisp-shrimp.jpg" />
           <label class="image-selector">
-            <input type="checkbox" class="img-checkbox" checked data-img-src="/images/chili-crisp-shrimp.jpg" />
+            <input type="checkbox" class="img-checkbox" checked data-img-src="/images/chili-crisp-shrimp.jpg" aria-label="Include Chili Crisp Shrimp in autoscroll" />
             <span>Include in autoscroll</span>
           </label>
         </div>
         <div class="featured-item">
-          <img src="/images/hot-orange-chicken.jpg" class="featured-img" alt="Hot Orange Chicken - Click to view fullscreen" tabindex="0" role="button" data-img-src="/images/hot-orange-chicken.jpg" />
+          <img src="/images/hot-orange-chicken.jpg" class="featured-img" alt="Hot Orange Chicken" tabindex="0" role="button" aria-label="View Hot Orange Chicken in fullscreen" data-img-src="/images/hot-orange-chicken.jpg" />
           <label class="image-selector">
-            <input type="checkbox" class="img-checkbox" checked data-img-src="/images/hot-orange-chicken.jpg" />
+            <input type="checkbox" class="img-checkbox" checked data-img-src="/images/hot-orange-chicken.jpg" aria-label="Include Hot Orange Chicken in autoscroll" />
             <span>Include in autoscroll</span>
           </label>
         </div>
         <div class="featured-item">
-          <img src="/images/wok-seared-steak-and-shrimp.jpg" class="featured-img" alt="Wok Seared Steak and Shrimp - Click to view fullscreen" tabindex="0" role="button" data-img-src="/images/wok-seared-steak-and-shrimp.jpg" />
+          <img src="/images/wok-seared-steak-and-shrimp.jpg" class="featured-img" alt="Wok Seared Steak and Shrimp" tabindex="0" role="button" aria-label="View Wok Seared Steak and Shrimp in fullscreen" data-img-src="/images/wok-seared-steak-and-shrimp.jpg" />
           <label class="image-selector">
-            <input type="checkbox" class="img-checkbox" checked data-img-src="/images/wok-seared-steak-and-shrimp.jpg" />
+            <input type="checkbox" class="img-checkbox" checked data-img-src="/images/wok-seared-steak-and-shrimp.jpg" aria-label="Include Wok Seared Steak and Shrimp in autoscroll" />
             <span>Include in autoscroll</span>
           </label>
         </div>
         <div class="featured-item">
-          <img src="/images/orange-chicken-featured.jpg" class="featured-img" alt="The Original Orange Chicken - Click to view fullscreen" tabindex="0" role="button" data-img-src="/images/orange-chicken-featured.jpg" />
+          <img src="/images/orange-chicken-featured.jpg" class="featured-img" alt="The Original Orange Chicken" tabindex="0" role="button" aria-label="View The Original Orange Chicken in fullscreen" data-img-src="/images/orange-chicken-featured.jpg" />
           <label class="image-selector">
-            <input type="checkbox" class="img-checkbox" checked data-img-src="/images/orange-chicken-featured.jpg" />
+            <input type="checkbox" class="img-checkbox" checked data-img-src="/images/orange-chicken-featured.jpg" aria-label="Include The Original Orange Chicken in autoscroll" />
             <span>Include in autoscroll</span>
           </label>
         </div>
@@ -751,7 +762,7 @@
         <% } %>
 
         <!-- Panda Bundles -->
-        <h1 class="title">PANDA BUNDLES</h1>
+        <h2 class="title">PANDA BUNDLES</h2>
         <% pandaBundles.forEach(bundle => { %>
           <div class="meal-option">
             <div class="meal-row">
@@ -796,9 +807,12 @@
           <div class="meal-grid">
             <% items.forEach(item => { %>
               <div class="meal-option">
-                <img src="/images/<%= item.name.toLowerCase().replace(/ /g, '-')%>.jpg" alt="<%= item.name %>" class="meal-image"/>
+                <img src="/images/<%= item.name.toLowerCase().replace(/ /g, '-')%>.jpg"
+                     alt="<%= item.name %>"
+                     class="meal-image"
+                     onerror="this.onerror=null; this.src='/images/placeholder.jpg';"/>
                 <div class="meal-name"><strong><%= item.name %></strong></div>
-                <div class="meal-calories"><%= appetizerCalories[item.name] %></div>
+                <div class="meal-calories"><%= appetizerCalories[item.name] || '' %></div>
                 <div class="meal-price">$<%= item.price.toFixed(2) %></div>
               </div>
             <% }) %>
@@ -807,7 +821,7 @@
 
         <!-- Drinks Section -->
           <div class="drinks-container">
-            <h1 class="title">DRINKS</h1>
+            <h2 class="title">DRINKS</h2>
 
             <!-- Fountain Drink Images Row -->
             <div class="fountain-drinks-row flex mb-4" style="gap: clamp(12px, 1.2vw, 30px);">
@@ -847,20 +861,7 @@
 <div class="a-la-carte-container">
   <% if (page === "a_la_carte") { %>
     <h1 class="title">ENTREE CHOICES</h1>
-    <% 
-      const displayOrder = [
-        "The Original Orange Chicken",
-        "Honey Walnut Shrimp",
-        "Black Pepper Sirloin Steak",
-        "Broccoli Beef",
-        "Kung Pao Chicken",
-        "Honey Sesame Chicken Breast",
-        "Beijing Beef",
-        "String Bean Chicken Breast",
-        "Mushroom Chicken",
-        "Grilled Teriyaki Chicken",
-        "Black Pepper Chicken"
-      ];
+    <%
       const calories = {
         "Orange Chicken": "510 cal",
         "Honey Sesame Chicken Breast": "340 cal",
@@ -875,17 +876,18 @@
         "Black Pepper Chicken": "280 cal",
         "The Original Orange Chicken": "510 cal",
       };
-      const entreesFromDB = menu['a_la_carte'] || [];
-      const filteredEntrees = entreesFromDB.filter(item => displayOrder.includes(item.name));
-      const entrees = displayOrder.map(name => filteredEntrees.find(item => item.name === name)).filter(item => item);
+      const entrees = (menu['a_la_carte'] || []).filter(item => item.name !== 'Super Greens' && item.name !== 'Super Greens (Entree)');
     %>
     <div class ="entree-grid">
       <% entrees.forEach(item => { %>
         <div class="meal-option">
-          <img src="/images/<%= item.name.toLowerCase().replace(/ /g, '-')%>.jpg" alt="<%= item.name %>" class="meal-image"/>
+          <img src="/images/<%= item.name.toLowerCase().replace(/ /g, '-')%>.jpg"
+               alt="<%= item.name %>"
+               class="meal-image"
+               onerror="this.onerror=null; this.src='/images/placeholder.jpg';"/>
           <div class="meal-text">
             <div class="meal-name"><strong><%= item.name %></strong></div>
-            <div class="meal-calories"><%= calories[item.name] %></div>
+            <div class="meal-calories"><%= calories[item.name] || '' %></div>
             <div class="meal-price">$<%= item.price.toFixed(2) %></div>
           </div>
         </div>
@@ -914,15 +916,18 @@
           <div class="meal-grid">
             <% items.forEach(item => { %>
               <div class="meal-option">
-                <img src="/images/<%= item.name.toLowerCase().replace(/ /g, '-')%>.jpg" alt="<%= item.name %>" class="meal-image"/>
+                <img src="/images/<%= item.name.toLowerCase().replace(/ /g, '-')%>.jpg"
+                     alt="<%= item.name %>"
+                     class="meal-image"
+                     onerror="this.onerror=null; this.src='/images/placeholder.jpg';"/>
                 <div class="meal-name"><strong><%= item.name %></strong></div>
-                <div class="meal-calories"><%= calories[item.name] %></div>
+                <div class="meal-calories"><%= calories[item.name] || '' %></div>
                 <div class="meal-price">$<%= item.price.toFixed(2) %></div>
               </div>
             <% }) %>
           </div>
         <% } %>
-          <h1 class="title">A LA CARTE BOXES</h1>
+          <h2 class="title">A LA CARTE BOXES</h2>
           <!-- Sides Page: A La Carte Placeholder -->
             <div class="a-la-carte-sides-container flex" style="margin-top: clamp(12px, 1.2vw, 30px);">
 
