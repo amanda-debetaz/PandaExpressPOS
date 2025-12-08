@@ -833,6 +833,13 @@
           <span class="total-label">Order Total</span>
           <span class="total-value">$0.00</span>
         </div>
+        <button class="clock-btn" id="clock-toggle-btn">
+          Clock In/Out
+        </button>
+        <div class="station-meta" id="clock-status" style="display: none;">
+          <span class="station-label">Clocked:</span>
+          <span class="station-value" id="clocked-employee-name">-</span>
+        </div>
       </div>
     </header>
 
@@ -1338,6 +1345,33 @@
       }
     </style>
 
+    <!-- CLOCK IN/OUT MODAL -->
+    <div id="clock-modal" class="drink-popup-overlay" style="display: none;">
+      <div class="drink-popup-modal" style="width: 400px;">
+        <h3 class="drink-popup-title" id="clock-modal-title">Clock Management</h3>
+        
+        <div id="clock-in-section">
+          <p style="text-align: center; margin-bottom: 1rem; color: var(--text-muted); font-size: 0.85rem;">Enter Employee ID to Clock In</p>
+          <input type="number" id="clock-in-employee-id" placeholder="Employee ID" 
+                 style="width: 100%; padding: 0.7rem; border-radius: 0.5rem; border: 1px solid var(--line-soft); font-size: 0.9rem; margin-bottom: 1rem; text-align: center;" />
+          <button class="btn drink-size-option" id="clock-in-btn" style="width: 100%; background: var(--accent-green); color: white; border-color: var(--accent-green);">
+            Clock In
+          </button>
+        </div>
+        
+        <div id="clock-out-section" style="display: none;">
+          <p style="text-align: center; margin-bottom: 1rem; color: var(--text-muted); font-size: 0.85rem;">
+            Currently clocked in: <strong id="current-clocked-employee">-</strong>
+          </p>
+          <button class="btn drink-size-option" id="clock-out-btn" style="width: 100%; background: var(--accent-red); color: white; border-color: var(--accent-red);">
+            Clock Out
+          </button>
+        </div>
+        
+        <button id="clock-modal-cancel" class="drink-size-cancel" style="margin-top: 0.5rem;">Cancel</button>
+      </div>
+    </div>
+
     <!-- DRINK SIZE POPUP -->
     <div id="drink-size-popup" class="drink-popup-overlay">
       <div class="drink-popup-modal">
@@ -1388,6 +1422,9 @@
     (function () {
       // ===== CONFIG =====
       const TAX_RATE = 0.0825;
+
+      // ===== CLOCK IN/OUT STATE =====
+      let clockedInEmployee = null; // { employee_id, display_name, log_id }
 
       // Meal rules
       const MEAL_CONFIGS = {
@@ -1503,6 +1540,117 @@
           drinkSizePopup.style.display = "none";
           pendingDrinkName = null;
         });
+
+      // ===== CLOCK IN/OUT LOGIC =====
+      const clockModal = document.getElementById('clock-modal');
+      const clockToggleBtn = document.getElementById('clock-toggle-btn');
+      const clockInSection = document.getElementById('clock-in-section');
+      const clockOutSection = document.getElementById('clock-out-section');
+      const clockInBtn = document.getElementById('clock-in-btn');
+      const clockOutBtn = document.getElementById('clock-out-btn');
+      const clockModalCancel = document.getElementById('clock-modal-cancel');
+      const clockedEmployeeNameEl = document.getElementById('clocked-employee-name');
+      const clockStatusEl = document.getElementById('clock-status');
+      const currentClockedEmployeeEl = document.getElementById('current-clocked-employee');
+      const clockInEmployeeIdInput = document.getElementById('clock-in-employee-id');
+
+      function openClockModal() {
+        if (clockedInEmployee) {
+          // Show clock out section
+          clockInSection.style.display = 'none';
+          clockOutSection.style.display = 'block';
+          currentClockedEmployeeEl.textContent = clockedInEmployee.display_name;
+        } else {
+          // Show clock in section
+          clockInSection.style.display = 'block';
+          clockOutSection.style.display = 'none';
+          clockInEmployeeIdInput.value = '';
+        }
+        clockModal.style.display = 'flex';
+      }
+
+      function closeClockModal() {
+        clockModal.style.display = 'none';
+      }
+
+      function updateClockDisplay() {
+        if (clockedInEmployee) {
+          clockStatusEl.style.display = 'inline-flex';
+          clockedEmployeeNameEl.textContent = clockedInEmployee.display_name;
+          clockToggleBtn.textContent = 'Clock Out';
+        } else {
+          clockStatusEl.style.display = 'none';
+          clockToggleBtn.textContent = 'Clock In/Out';
+        }
+      }
+
+      async function handleClockIn() {
+        const employeeId = parseInt(clockInEmployeeIdInput.value);
+        if (!employeeId || isNaN(employeeId)) {
+          alert('Please enter a valid Employee ID');
+          return;
+        }
+
+        try {
+          const response = await fetch('/api/clock/in', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ employee_id: employeeId })
+          });
+
+          const result = await response.json();
+          if (result.success) {
+            clockedInEmployee = {
+              employee_id: result.employee_id,
+              display_name: result.display_name
+            };
+            updateClockDisplay();
+            closeClockModal();
+          } else {
+            alert('Clock in failed: ' + (result.error || 'Unknown error'));
+          }
+        } catch (err) {
+          console.error('Clock in error:', err);
+          alert('Clock in failed. Please try again.');
+        }
+      }
+
+      async function handleClockOut() {
+        if (!clockedInEmployee) return;
+
+        try {
+          const response = await fetch('/api/clock/out', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+          });
+
+          const result = await response.json();
+          if (result.success) {
+            clockedInEmployee = null;
+            updateClockDisplay();
+            closeClockModal();
+          } else {
+            alert('Clock out failed: ' + (result.error || 'Unknown error'));
+          }
+        } catch (err) {
+          console.error('Clock out error:', err);
+          alert('Clock out failed. Please try again.');
+        }
+      }
+
+      clockToggleBtn.addEventListener('click', openClockModal);
+      clockInBtn.addEventListener('click', handleClockIn);
+      clockOutBtn.addEventListener('click', handleClockOut);
+      clockModalCancel.addEventListener('click', closeClockModal);
+      clockModal.addEventListener('click', (e) => {
+        if (e.target === clockModal) closeClockModal();
+      });
+
+      // Enter key in employee ID input triggers clock in
+      clockInEmployeeIdInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleClockIn();
+      });
 
       // ===== ORDER LOGIC =====
 
@@ -1861,6 +2009,74 @@
         });
       }
 
+      // ===== CHECKOUT / PAY =====
+      async function processPayment() {
+        if (orderItems.length === 0) {
+          alert("Cart is empty. Please add items before paying.");
+          return;
+        }
+
+        // Convert cashier orderItems to the format expected by backend
+        const cartForBackend = orderItems.map(item => {
+          // Check if this is a meal (contains sides/entrees)
+          const isMeal = item.name.includes("(") && (item.name.includes("Bowl") || item.name.includes("Plate"));
+          
+          if (isMeal) {
+            // Parse meal format: "Plate (White Steamed Rice; Kung Pao Chicken, Beijing Beef)"
+            const match = item.name.match(/^([^(]+)\(([^;]+);\s*(.+)\)$/);
+            if (match) {
+              const mealType = match[1].trim();
+              const sides = match[2].trim().split(/,\s*/);
+              const entrees = match[3].trim().split(/,\s*/);
+              
+              const options = [
+                ...sides.map(s => ({ name: s, qty: 1 })),
+                ...entrees.map(e => ({ name: e, qty: 1 }))
+              ];
+              
+              return {
+                name: mealType,
+                price: item.price,
+                quantity: item.quantity,
+                options: options
+              };
+            }
+          }
+          
+          // Regular item (a la carte, drinks, appetizers)
+          return {
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity
+          };
+        });
+
+        try {
+          const response = await fetch("/api/cashier/checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              cart: cartForBackend,
+              paymentMethod: "card",
+              dineOption: "dine_in",
+              clockedInEmployeeId: clockedInEmployee ? clockedInEmployee.employee_id : null
+            })
+          });
+
+          const result = await response.json();
+          
+          if (result.success) {
+            alert(`Order #${result.order_id} completed successfully!`);
+            clearOrder();
+          } else {
+            alert("Payment failed: " + (result.error || "Unknown error"));
+          }
+        } catch (err) {
+          console.error("Payment error:", err);
+          alert("Payment failed. Please try again.");
+        }
+      }
+
       function init() {
         orderButtons.forEach((btn) => {
           btn.addEventListener("click", () => handleButtonClick(btn));
@@ -1868,6 +2084,12 @@
 
         voidLastBtn && voidLastBtn.addEventListener("click", removeLastItem);
         clearOrderBtn && clearOrderBtn.addEventListener("click", clearOrder);
+        
+        // Hook up Pay button
+        const payBtn = document.querySelector(".btn-pay");
+        if (payBtn) {
+          payBtn.addEventListener("click", processPayment);
+        }
 
         // hook up search autocomplete
         initSearchAutocomplete();

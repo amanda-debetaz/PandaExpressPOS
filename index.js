@@ -1200,6 +1200,185 @@ app.post("/api/checkout", async (req, res) => {
   }
 });
 
+// ===== CLOCK IN/OUT ENDPOINTS (for tracking employee ID on orders only) =====
+app.post("/api/clock/in", requireAuth('cashier'), async (req, res) => {
+  try {
+    const { employee_id } = req.body;
+
+    if (!employee_id) {
+      return res.status(400).json({ error: "Employee ID is required" });
+    }
+
+    // Verify employee exists
+    const employee = await prisma.employee.findUnique({
+      where: { employee_id: parseInt(employee_id) },
+      select: { employee_id: true, display_name: true, is_active: true }
+    });
+
+    if (!employee) {
+      return res.status(404).json({ error: "Employee not found" });
+    }
+
+    if (!employee.is_active) {
+      return res.status(400).json({ error: "Employee account is inactive" });
+    }
+
+    // Just return employee info - no database tracking
+    res.json({
+      success: true,
+      employee_id: employee.employee_id,
+      display_name: employee.display_name
+    });
+  } catch (err) {
+    console.error("Clock in error:", err);
+    res.status(500).json({ success: false, error: err.message || "Clock in failed" });
+  }
+});
+
+app.post("/api/clock/out", requireAuth('cashier'), async (req, res) => {
+  try {
+    // No database operations needed - just acknowledge the clock out
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Clock out error:", err);
+    res.status(500).json({ success: false, error: err.message || "Clock out failed" });
+  }
+});
+
+// ===== CASHIER CHECKOUT (orders immediately marked as DONE) =====
+app.post("/api/cashier/checkout", requireAuth('cashier'), async (req, res) => {
+  try {
+    const { cart, paymentMethod, dineOption, clockedInEmployeeId } = req.body;
+
+    if (!Array.isArray(cart) || cart.length === 0) {
+      return res.status(400).json({ error: "Cart is empty" });
+    }
+
+    // Validate payment method (must match payment_method_enum in schema)
+    const validPaymentMethods = ['cash', 'card', 'giftcard', 'dining_dollars', 'meal_swipe'];
+    if (!validPaymentMethods.includes(paymentMethod)) {
+      return res.status(400).json({ error: "Invalid payment method" });
+    }
+
+    // Validate dine option
+    const validDineOptions = ['dine_in', 'takeout'];
+    if (!validDineOptions.includes(dineOption)) {
+      return res.status(400).json({ error: "Invalid dine option" });
+    }
+
+    // Calculate total
+    const total = cart.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+
+    // Get menu items from database
+    const itemNames = cart.map((item) => item.baseName || item.name);
+    const menuItems = await prisma.menu_item.findMany({
+      where: { name: { in: itemNames } },
+      select: { menu_item_id: true, name: true },
+    });
+
+    const menuItemByName = {};
+    menuItems.forEach((mi) => {
+      menuItemByName[mi.name] = mi;
+    });
+
+    // Collect option names from all cart items (sides + entrees)
+    const optionNameSet = new Set();
+    cart.forEach((item) => {
+      if (Array.isArray(item.options)) {
+        item.options.forEach((opt) => {
+          if (opt && opt.name) optionNameSet.add(opt.name);
+        });
+      }
+    });
+
+    let optionByName = {};
+    if (optionNameSet.size > 0) {
+      const optionNames = Array.from(optionNameSet);
+      const options = await prisma.option.findMany({
+        where: { name: { in: optionNames } },
+        select: { option_id: true, name: true },
+      });
+      options.forEach((o) => {
+        if (!optionByName[o.name]) {
+          optionByName[o.name] = o;
+        }
+      });
+    }
+
+    // Get employee_id: prioritize clocked-in employee, fall back to logged-in user
+    const employeeId = clockedInEmployeeId || req.session.user?.employee_id || 1;
+
+    // Create order with status "done" (cashier orders skip kitchen queue)
+    const order = await prisma.order.create({
+      data: {
+        employee_id: employeeId,
+        dine_option: dineOption,
+        status: "done", // CASHIER ORDERS ARE IMMEDIATELY DONE
+        order_item: {
+          create: cart.map((item) => {
+            const lookupName = item.baseName || item.name;
+            const mi = menuItemByName[lookupName];
+            if (!mi) {
+              throw new Error(`Unknown menu item: ${lookupName}`);
+            }
+
+            const finalQty = item.multiplier ? (item.quantity * item.multiplier) : item.quantity;
+            
+            const orderItemData = {
+              qty: finalQty,
+              unit_price: item.price,
+              discount_amount: 0,
+              tax_amount: 0,
+              menu_item: {
+                connect: { menu_item_id: mi.menu_item_id },
+              },
+            };
+
+            // Attach options for meals
+            if (Array.isArray(item.options) && item.options.length > 0) {
+              const optionCreates = [];
+              item.options.forEach((opt) => {
+                const row = optionByName[opt.name];
+                if (!row) return;
+                const qty = Number(opt.qty) || 1;
+                optionCreates.push({
+                  qty,
+                  option: { connect: { option_id: row.option_id } },
+                });
+              });
+
+              if (optionCreates.length > 0) {
+                orderItemData.order_item_option = { create: optionCreates };
+              }
+            }
+
+            return orderItemData;
+          }),
+        },
+        payment: {
+          create: {
+            method: paymentMethod,
+            amount: total,
+          },
+        },
+      },
+      include: {
+        order_item: true,
+        payment: true,
+      },
+    });
+
+    // Note: No kitchen broadcast since cashier orders bypass the kitchen queue
+    res.json({ success: true, order_id: order.order_id });
+  } catch (err) {
+    console.error("Cashier checkout error:", err);
+    res.status(500).json({ success: false, error: err.message || "Checkout failed" });
+  }
+});
+
 // ---------- Prepared stock helpers and endpoints (KV via pricing_settings) ----------
 
 // Prepared categories: keep a single source
