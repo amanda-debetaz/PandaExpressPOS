@@ -146,7 +146,7 @@
   </main>
 
   <!-- Still There Modal -->
-  <div id="still-there-modal" class="hidden fixed inset-0 items-center justify-center bg-black/70 backdrop-blur-sm z-90">
+  <div id="still-there-modal" class="hidden fixed inset-0 items-center justify-center bg-black/70 backdrop-blur-sm z-[9999]">
     <div class="bg-white text-black w-full max-w-md rounded-2xl overflow-hidden shadow-2xl">
       <div class="bg-gradient-to-r from-red-700 to-red-600 text-white px-8 py-6 text-center">
         <h3 class="text-2xl font-bold mb-2">Are You Still There?</h3>
@@ -159,7 +159,7 @@
             <svg class="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 160 160">
               <circle cx="80" cy="80" r="72" stroke="#fee2e2" stroke-width="8" fill="none" />
               <circle id="countdown-circle" cx="80" cy="80" r="72" stroke="#dc2626" stroke-width="8" fill="none" 
-                      stroke-dasharray="452" stroke-dashoffset="0" stroke-linecap="round" />
+                      stroke-dasharray="452" stroke-dashoffset="0" stroke-linecap="round" class="transition-all duration-1000 ease-linear" />
             </svg>
             <div class="relative z-10">
               <div id="still-there-countdown" class="text-6xl font-black text-red-700">10</div>
@@ -300,8 +300,10 @@
     }
 
     function clearCartAndReturnToKiosk() {
+      // Clear cart and all kiosk-related data
       localStorage.removeItem('panda_cart');
-      localStorage.setItem('kiosk_from_builder', 'true');
+      localStorage.removeItem('kiosk_from_builder');
+      // Redirect to kiosk, which will show landing page
       window.location.href = '/kiosk';
     }
 

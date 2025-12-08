@@ -21,17 +21,6 @@
       padding: 0.5rem 1rem !important;
       width: fit-content !important;
     }
-    #cart-total,
-    #cart-drawer-total,
-    #success-total {
-      font-size: 3.8rem !important;
-      font-weight: 900 !important;
-    }
-
-    #success-order-number {
-      font-size: 5rem !important;
-      font-weight: 900 !important;
-    }
 
     /* Text classes – all bumped up */
     .text-xs   { font-size: 1.1rem !important; }
@@ -48,16 +37,9 @@
       font-size: 1.8rem !important;
     }
 
-    /* Item Modal – Quantity Selector */
-    #item-qty {
-      font-size: 4.5rem !important;
-      font-weight: 900 !important;
-      min-width: 120px;
-    }
-
     /* Success modal title */
     #order-success-modal h2 {
-      font-size: 4.5rem !important;
+      font-size: 2.5rem !important;
     }
 
     /* Bottom bar total – huge and clear */
@@ -85,8 +67,8 @@
     html.text-size-large .text-base { font-size: 1.6rem !important; }
     html.text-size-large #cart-total,
     html.text-size-large #cart-drawer-total,
-    html.text-size-large #success-total { font-size: 3.8rem !important; }
-    html.text-size-large #success-order-number { font-size: 5rem !important; }
+    html.text-size-large #success-total { font-size: 2rem !important; }
+    html.text-size-large #success-order-number { font-size: 3rem !important; }
     html.text-size-large #item-qty { font-size: 4.5rem !important; }
     html.text-size-large #cart-drawer-items > div,
     html.text-size-large .payment-method-btn,
@@ -114,8 +96,8 @@
     html.text-size-medium .text-base { font-size: 1.3rem !important; }
     html.text-size-medium #cart-total,
     html.text-size-medium #cart-drawer-total,
-    html.text-size-medium #success-total { font-size: 3rem !important; }
-    html.text-size-medium #success-order-number { font-size: 4rem !important; }
+    html.text-size-medium #success-total { font-size: 2rem !important; }
+    html.text-size-medium #success-order-number { font-size: 3rem !important; }
     html.text-size-medium #item-qty { font-size: 3.5rem !important; }
     html.text-size-medium #cart-drawer-items > div,
     html.text-size-medium .payment-method-btn,
@@ -161,25 +143,8 @@
 
     <!-- Landing Page / Screensaver -->
     <div id="landing-page" role="complementary" aria-label="Welcome Screen" class="fixed inset-0 z-[100] flex flex-col items-center justify-center cursor-pointer overflow-hidden">
-      <!-- Background Carousel -->
+      <!-- Background -->
       <div class="absolute inset-0 bg-gradient-to-br from-red-900 via-red-700 to-red-800"></div>
-      <div id="carousel-container" role="region" aria-label="Background carousel" class="absolute inset-0">
-        <div class="carousel-slide absolute inset-0 opacity-0 transition-opacity duration-1000">
-          <img src="/images/the-original-orange-chicken.jpg" alt="Orange Chicken" class="w-full h-full object-cover opacity-30">
-        </div>
-        <div class="carousel-slide absolute inset-0 opacity-0 transition-opacity duration-1000">
-          <img src="/images/beijing-beef.jpg" alt="Beijing Beef" class="w-full h-full object-cover opacity-30">
-        </div>
-        <div class="carousel-slide absolute inset-0 opacity-0 transition-opacity duration-1000">
-          <img src="/images/honey-walnut-shrimp.jpg" alt="Honey Walnut Shrimp" class="w-full h-full object-cover opacity-30">
-        </div>
-        <div class="carousel-slide absolute inset-0 opacity-0 transition-opacity duration-1000">
-          <img src="/images/broccoli-beef.jpg" alt="Broccoli Beef" class="w-full h-full object-cover opacity-30">
-        </div>
-        <div class="carousel-slide absolute inset-0 opacity-0 transition-opacity duration-1000">
-          <img src="/images/kung-pao-chicken.jpg" alt="Kung Pao Chicken" class="w-full h-full object-cover opacity-30">
-        </div>
-      </div>
       
       <!-- Content overlay -->
       <div class="relative z-10 text-center">
@@ -214,6 +179,9 @@
           </li>
           <li>
             <button data-category="appetizers" class="nav-link w-full text-left" data-original="Appetizers">Appetizers</button>
+          </li>
+          <li>
+            <button data-category="drinks" class="nav-link w-full text-left" data-original="Drinks">Drinks</button>
           </li>
         </ul>
       </nav>
@@ -323,6 +291,7 @@
         <div id="a_la_carte" class="category-section hidden"><div class="grid gap-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div></div>
         <div id="sides" class="category-section hidden"><div class="grid gap-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div></div>
         <div id="appetizers" class="category-section hidden"><div class="grid gap-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div></div>
+        <div id="drinks" class="category-section hidden"><div class="grid gap-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div></div>
       </section>
 
       <div class="border-t border-neutral-300 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex-shrink-0">
@@ -817,7 +786,7 @@
       }
       // Populate menu items from server data
       function populateMenu() {
-        const categories = ['entrees', 'a_la_carte', 'sides', 'appetizers'];
+        const categories = ['entrees', 'a_la_carte', 'sides', 'appetizers', "drinks"];
         
         // Map item names to image filenames
         const imageMap = {
@@ -913,6 +882,10 @@
         appetizers: {
           title: "Appetizers",
           description: "Start your meal with delicious appetizers."
+        },
+        drinks: {
+          title: "Drinks",
+          description: "Order a refreshing beverage with your meal."
         }
       };
 
@@ -1908,36 +1881,6 @@
         }
       });
 
-      // Background carousel for landing page
-      let carouselInterval = null;
-      let currentSlide = 0;
-      const slides = document.querySelectorAll('.carousel-slide');
-      
-      function startCarousel() {
-        if (slides.length === 0) return;
-        
-        // Show first slide
-        slides[0].style.opacity = '1';
-        
-        carouselInterval = setInterval(() => {
-          // Fade out current slide
-          slides[currentSlide].style.opacity = '0';
-          
-          // Move to next slide
-          currentSlide = (currentSlide + 1) % slides.length;
-          
-          // Fade in next slide
-          slides[currentSlide].style.opacity = '1';
-        }, 4000); // Change slide every 4 seconds
-      }
-      
-      function stopCarousel() {
-        if (carouselInterval) {
-          clearInterval(carouselInterval);
-          carouselInterval = null;
-        }
-      }
-
       // Landing page / Screensaver functionality
       let inactivityTimer = null;
       let warningTimer = null;
@@ -1951,12 +1894,10 @@
 
       function showLandingPage() {
         landingPage.style.display = 'flex';
-        startCarousel();
       }
 
       function hideLandingPage() {
         landingPage.style.display = 'none';
-        stopCarousel();
         resetInactivityTimer();
       }
 
@@ -2070,6 +2011,7 @@
         { el: document.querySelector('.nav-link[data-category="sides"]'), original: 'Sides' },
         { el: document.querySelector('.nav-link[data-category="a_la_carte"]'), original: 'A La Carte' },
         { el: document.querySelector('.nav-link[data-category="appetizers"]'), original: 'Appetizers' },
+        { el: document.querySelector('.nav-link[data-category="drinks"]'), original: 'Drinks' },
         { el: document.getElementById('cart-open-drawer'), original: 'View Cart' },
         { el: document.getElementById('instruction-text'), original: 'Tap items to add them to your order.' },
         { el: document.getElementById('weather-desc'), original: document.getElementById('weather-desc')?.getAttribute('data-original') },
