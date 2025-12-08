@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Menu Board</title>
@@ -11,22 +11,107 @@
 <!-- Featured Page Styles -->
  <% if (page === "featured") { %>
   <style>
+    .featured-instruction {
+      text-align: center;
+      color: #fff;
+      font-size: clamp(16px, 1.4vw, 28px);
+      margin: clamp(10px, 1vw, 20px) 0;
+      padding: clamp(8px, 0.8vw, 16px);
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: clamp(6px, 0.6vw, 12px);
+      backdrop-filter: blur(10px);
+    }
+
     .featured-images {
       display: flex;
       justify-content: center;
-      align-items: center;
-      gap: 30px;
+      align-items: flex-start;
+      gap: clamp(15px, 1.5vw, 40px);
     }
+
+    .featured-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: clamp(8px, 0.8vw, 15px);
+    }
+
     .featured-img {
       cursor: pointer;
-      border-radius: 8px;
+      border-radius: clamp(4px, 0.4vw, 12px);
       transition: transform 0.2s;
-      width: 15%;
-      height: auto;
+      width: 100%;
+      height: clamp(300px, 35vh, 600px);
+      object-fit: cover;
+    }
+
+    .image-selector {
+      display: flex;
+      align-items: center;
+      gap: clamp(5px, 0.5vw, 10px);
+      color: #fff;
+      font-size: clamp(12px, 1vw, 20px);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .image-selector input[type="checkbox"] {
+      width: clamp(16px, 1.5vw, 24px);
+      height: clamp(16px, 1.5vw, 24px);
+      cursor: pointer;
+    }
+
+    .image-selector span {
+      white-space: nowrap;
     }
 
     .featured-img:hover {
       transform: scale(1.03);
+    }
+
+    /* Fullscreen styling for individual images */
+    .featured-img:fullscreen {
+      width: 60vw !important;
+      height: 60vh !important;
+      object-fit: contain !important;
+      background: black;
+      position: fixed !important;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%) !important;
+    }
+
+    .featured-img:-webkit-full-screen {
+      width: 60vw !important;
+      height: 60vh !important;
+      object-fit: contain !important;
+      background: black;
+      position: fixed !important;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%) !important;
+    }
+
+    .featured-img:-moz-full-screen {
+      width: 60vw !important;
+      height: 60vh !important;
+      object-fit: contain !important;
+      background: black;
+      position: fixed !important;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%) !important;
+    }
+
+    .featured-img:-ms-fullscreen {
+      width: 60vw !important;
+      height: 60vh !important;
+      object-fit: contain !important;
+      background: black;
+      position: fixed !important;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%) !important;
     }
 
 
@@ -36,10 +121,10 @@
   <% if (page === "entrees") { %> 
   <style>
     .pick-a-meal-container{
-      margin: 20px;
+      margin: clamp(10px, 1vw, 30px);
       background-color: #ffffff;
-      padding-left: 20px;
-      padding-right: 20px;
+      padding-left: clamp(10px, 1vw, 30px);
+      padding-right: clamp(10px, 1vw, 30px);
       height: auto;
       width: auto;
     }
@@ -49,24 +134,24 @@
       justify-content: space-between; /* separate left and right */
       align-items: flex-start;        /* top-align everything to the img */
       width: 100%;
-      margin-bottom: 15px;
+      margin-bottom: clamp(8px, 0.8vw, 20px);
     }
 
     .meal-left {
       display: flex;
-      gap: 15px; /* space between image and text stack */
+      gap: clamp(8px, 0.8vw, 20px); /* space between image and text stack */
       align-items: flex-start;
     }
 
     .meal-text {
       display: flex;
       flex-direction: column; /* stack top-text + bottom-text */
-      gap: 5px;
+      gap: clamp(3px, 0.3vw, 8px);
     }
 
     .top-text {
       display: flex;
-      gap: 10px; /* space between bowl and calories */
+      gap: clamp(5px, 0.5vw, 15px); /* space between bowl and calories */
       align-items: baseline;
     }
 
@@ -74,38 +159,38 @@
       display: flex;
       flex-direction: column;
       align-items: flex-end;
-      gap: 5px;
+      gap: clamp(3px, 0.3vw, 8px);
     }
 
     .meal-image {
-      width: 150px;   /* adjust size */
+      width: clamp(150px, 10vw, 250px);
       height: auto;
-      border-radius: 8px;
+      border-radius: clamp(6px, 0.5vw, 15px);
       transform: scale(1.0);
     }
 
     .meal-name {
       color: #D61927;
-      font-size: 35px;
+      font-size: clamp(30px, min(2.5vw, 3.5vh), 60px);
     }
 
     .calories {
       color: #555;
-      font-size: 35px;
+      font-size: clamp(30px, min(2.5vw, 3.5vh), 60px);
     }
 
     .meal-desc {
-      font-size: 30px;
+      font-size: clamp(26px, min(2.2vw, 3vh), 52px);
       color: #333;
     }
 
     .meal-starts-at {
       color: #777;
-      font-size: 30px;
+      font-size: clamp(26px, min(2.2vw, 3vh), 52px);
     }
 
     .meal-price {
-      font-size: 30px;
+      font-size: clamp(26px, min(2.2vw, 3vh), 52px);
       font-weight: bold;
       color: #555;
     }
@@ -116,28 +201,28 @@
   <% if (page === "appetizers") { %>
   <style>
     .appetizers-drinks-container{
-      margin: 20px;
+      margin: clamp(10px, 1vw, 30px);
       background-color: #ffffff;
-      padding: 20px;
+      padding: clamp(10px, 1vw, 30px);
     }
     .meal-name {
       color: #000000;
-      font-size: 30px;
-      margin-top: 10px;
+      font-size: clamp(26px, min(2.2vw, 3vh), 52px);
+      margin-top: clamp(8px, 0.8vw, 20px);
     }
     .meal-calories {
       color: #555;
-      font-size: 25px;
+      font-size: clamp(22px, min(1.8vw, 2.5vh), 44px);
     }
     .meal-price {
-      font-size: 25px;
+      font-size: clamp(22px, min(1.8vw, 2.5vh), 44px);
       font-weight: bold;
       color: #555;
     }
     .meal-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr); /* 3 columns */
-      gap: 20px; /* space between items */
+      gap: clamp(15px, 1.5vw, 40px); /* space between items */
     }
     .meal-option {
       display: flex;
@@ -146,9 +231,9 @@
       text-align: center;
     }
     .meal-image {
-      width: 150px;   /* adjust size */
+      width: clamp(150px, 10vw, 250px);
       height: auto;
-      border-radius: 8px;
+      border-radius: clamp(6px, 0.5vw, 15px);
       transform: scale(1.6);
     }
 
@@ -158,45 +243,44 @@
   <% if (page === "a_la_carte") { %> 
   <style>
     .a-la-carte-container{
-      margin: 20px;
+      margin: clamp(10px, 1vw, 30px);
       background-color: #ffffff;
-      padding: 20px;
+      padding: clamp(10px, 1vw, 30px);
     }
     .entree-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr); /* 2 columns */
-      gap: 5px; /* space between grid items */
+      gap: clamp(3px, 0.3vw, 8px); /* space between grid items */
     }
     .meal-image {
-      width: 150px;   /* adjust as needed */
+      width: clamp(180px, 12vw, 300px);
       height: auto;   /* keeps aspect ratio */
-      border-radius: 8px;
-      transform: scale(1.5);
+      border-radius: clamp(6px, 0.5vw, 15px);
       object-fit: cover;
-      margin-right: 10px;
+      margin-right: clamp(8px, 0.8vw, 20px);
     }
     .meal-option {
       display: flex;
       align-items: center;
-      gap: 15px;
-      padding: 5px;
-      border-radius: 8px;
+      gap: clamp(12px, 1.2vw, 30px);
+      padding: clamp(5px, 0.5vw, 12px);
+      border-radius: clamp(6px, 0.5vw, 15px);
     }
     .meal-text {
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: clamp(5px, 0.5vw, 12px);
     }
     .meal-name {
       color: black;
-      font-size: 30px;
+      font-size: clamp(26px, min(2.2vw, 3vh), 52px);
     }
     .meal-calories {
       color: #555;
-      font-size: 25px;
+      font-size: clamp(22px, min(1.8vw, 2.5vh), 44px);
     }
     .meal-price {
-      font-size: 25px;
+      font-size: clamp(22px, min(1.8vw, 2.5vh), 44px);
       font-weight: bold;
       color: #555;
     }
@@ -204,22 +288,22 @@
   </style>
   <% } %>
   <!-- Sides Page Style -->
-  <% if (page === "sides") { %> 
+  <% if (page === "sides") { %>
   <style>
     .sides-container{
-      margin: 20px;
+      margin: clamp(10px, 1vw, 30px);
       background-color: #ffffff;
-      padding: 15px;
+      padding: clamp(8px, 0.8vw, 20px);
     }
     .meal-name {
       color: #000000;
-      font-size: 30px;
-      margin-top: 10px;
+      font-size: clamp(26px, min(2.2vw, 3vh), 52px);
+      margin-top: clamp(4px, 0.4vw, 10px);
     }
     .meal-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr); /* 3 columns */
-      gap: 20px; /* space between items */
+      gap: clamp(8px, 0.8vw, 20px); /* space between items */
     }
     .meal-option {
       display: flex;
@@ -228,21 +312,22 @@
       text-align: center;
     }
     .meal-image {
-      width: 150px;   /* adjust size */
+      width: clamp(180px, 12vw, 300px);
       height: auto;
-      border-radius: 8px;
-      transform: scale(1.6);
+      border-radius: clamp(6px, 0.5vw, 15px);
+      object-fit: cover;
+      margin-bottom: clamp(3px, 0.3vw, 8px);
     }
     .meal-name {
       color: black;
-      font-size: 30px;
+      font-size: clamp(26px, min(2.2vw, 3vh), 52px);
     }
     .meal-calories {
       color: #555;
-      font-size: 25px;
+      font-size: clamp(22px, min(1.8vw, 2.5vh), 44px);
     }
     .meal-price {
-      font-size: 25px;
+      font-size: clamp(22px, min(1.8vw, 2.5vh), 44px);
       font-weight: bold;
       color: #555;
     }
@@ -264,10 +349,10 @@
   }
   .nav-buttons {
     display: flex;
-    gap: 10px; /* space between buttons */
-    margin: 20px 0;
+    gap: clamp(5px, 0.5vw, 15px); /* space between buttons */
+    margin: clamp(10px, 1vw, 30px) 0;
     font-weight: bold;
-    padding-left: 20px;
+    padding-left: clamp(10px, 1vw, 30px);
   }
 
   .pick-a-meal-container {
@@ -279,11 +364,12 @@
 
   .nav-buttons a {
     text-decoration: none;
-    padding: 8px 12px;
-    border-radius: 6px;
+    padding: clamp(8px, 0.8vw, 40px) clamp(12px, 1.2vw, 60px);
+    border-radius: clamp(5px, 0.5vw, 20px);
     background: #fff;           /* white background for inactive */
     color: black;             /* red text for inactive */
     text-transform: uppercase;
+    font-size: clamp(14px, 1.2vw, 48px);
   }
 
   .nav-buttons a.active {
@@ -295,19 +381,36 @@
     background: #e5e5e5;
   }
 
-  #fullscreen-btn {
+  /* Focus indicators for accessibility */
+  .nav-buttons a:focus {
+    outline: 3px solid #4A90E2;
+    outline-offset: 2px;
+  }
+
+  .featured-img:focus {
+    outline: 4px solid #4A90E2;
+    outline-offset: 4px;
+  }
+
+  button:focus {
+    outline: 3px solid #4A90E2;
+    outline-offset: 2px;
+  }
+
+  #fullscreen-btn, #back-btn, #autoscroll-btn {
   text-decoration: none;
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: clamp(8px, 0.8vw, 40px) clamp(12px, 1.2vw, 60px);
+  border-radius: clamp(5px, 0.5vw, 20px);
   background: #fff;   /* same as inactive nav buttons */
   color: black;
   text-transform: uppercase;
   font-weight: 600;
   border: none;
   cursor: pointer;
+  font-size: clamp(14px, 1.2vw, 48px);
   }
 
-  #fullscreen-btn:hover {
+  #fullscreen-btn:hover, #back-btn:hover, #autoscroll-btn:hover {
     background: #e5e5e5;
   }
 
@@ -315,32 +418,161 @@
     background: #d61927;
     color: #fff;
   }
+
+  #autoscroll-btn.active {
+    background: #d61927;
+    color: #fff;
+  }
+
+  /* Autoscroll fullscreen container */
+  #autoscroll-container {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+  }
+
+  #autoscroll-container.active {
+    display: flex;
+  }
+
+  #autoscroll-container img {
+    height: 100vh;
+    width: auto;
+    max-width: 100vw;
+    object-fit: contain;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+  }
+
+  #autoscroll-container img.visible {
+    opacity: 1;
+  }
+
+  /* Exit button for autoscroll */
+  #exit-autoscroll {
+    position: fixed;
+    top: clamp(20px, 2vh, 40px);
+    right: clamp(20px, 2vw, 40px);
+    padding: clamp(15px, 1.5vh, 35px) clamp(30px, 3vw, 70px);
+    background: rgba(214, 25, 39, 0.9);
+    color: white;
+    border: none;
+    border-radius: clamp(8px, 0.8vw, 16px);
+    cursor: pointer;
+    font-size: clamp(18px, 1.8vw, 42px);
+    font-weight: 600;
+    text-transform: uppercase;
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.3s ease, background 0.2s;
+    pointer-events: none;
+  }
+
+  #exit-autoscroll.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  #exit-autoscroll:hover {
+    background: rgba(214, 25, 39, 1);
+  }
+
+  /* Hide cursor when inactive in autoscroll */
+  #autoscroll-container.hide-cursor {
+    cursor: none;
+  }
   .title{
     color: #D61927;
-    font-size: 50px;
+    font-size: clamp(40px, min(3.5vw, 5vh), 150px);
     margin: 0;
     font-weight: bold;
+  }
+
+  /* Fullscreen mode adjustments - ensure content fits viewport */
+  :fullscreen body,
+  :-webkit-full-screen body,
+  :-moz-full-screen body,
+  :-ms-fullscreen body {
+    max-height: 100vh;
+    overflow-y: auto;
+  }
+
+  :fullscreen .menu-page-container,
+  :-webkit-full-screen .menu-page-container,
+  :-moz-full-screen .menu-page-container,
+  :-ms-fullscreen .menu-page-container {
+    max-height: 95vh;
+    overflow-y: auto;
+  }
+
+  :fullscreen .pick-a-meal-container,
+  :-webkit-full-screen .pick-a-meal-container,
+  :-moz-full-screen .pick-a-meal-container,
+  :-ms-fullscreen .pick-a-meal-container {
+    max-height: 85vh;
+  }
+
+  :fullscreen .appetizers-drinks-container,
+  :-webkit-full-screen .appetizers-drinks-container,
+  :-moz-full-screen .appetizers-drinks-container,
+  :-ms-fullscreen .appetizers-drinks-container {
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
+  :fullscreen .a-la-carte-container,
+  :-webkit-full-screen .a-la-carte-container,
+  :-moz-full-screen .a-la-carte-container,
+  :-ms-fullscreen .a-la-carte-container {
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
+  :fullscreen .sides-container,
+  :-webkit-full-screen .sides-container,
+  :-moz-full-screen .sides-container,
+  :-ms-fullscreen .sides-container {
+    max-height: 85vh;
+    overflow-y: auto;
   }
 </style>
 </head>
 
 <body>
 
+  <!-- Autoscroll fullscreen container -->
+  <div id="autoscroll-container">
+    <button id="exit-autoscroll">Exit Autoscroll</button>
+    <img id="autoscroll-image" src="" alt="Featured Item">
+  </div>
+
   <!--<button id="fullscreen-btn">Go Fullscreen</button>-->
   <div class="top-container" id="top-container">
-    <div style="text-align: right; padding-inline: 20px; padding-top: 10px;">
-      <button id="fullscreen-btn">
+    <div style="text-align: right; padding-inline: clamp(10px, 1vw, 30px); padding-top: clamp(5px, 0.5vw, 15px);">
+      <button id="fullscreen-btn" aria-label="Toggle fullscreen mode">
         Go Fullscreen
       </button>
-      <button id="back-btn">
+      <% if (page === "featured") { %>
+      <button id="autoscroll-btn" aria-label="Toggle autoscroll through featured items" aria-pressed="false">
+        Start Autoscroll
+      </button>
+      <% } %>
+      <button id="back-btn" aria-label="Return to main navigation page">
         Back to Navigation
       </button>
     </div>
 
-  <h1 class="text-xl tracking-[0.25em] pl-5 uppercase text-red-500 font-bold">
+  <h1 style="font-size: clamp(24px, min(2vw, 3vh), 48px); letter-spacing: 0.25em; padding-left: clamp(10px, 1vw, 30px);" class="uppercase text-red-500 font-bold">
     PANDA EXPRESS
   </h1>
-  <p class="mt-1 text-[15px] tracking-[0.3em] pl-5 uppercase text-neutral-400">
+  <p style="font-size: clamp(16px, min(1.3vw, 2vh), 32px); letter-spacing: 0.3em; padding-left: clamp(10px, 1vw, 30px); margin-top: clamp(4px, 0.4vw, 10px);" class="uppercase text-neutral-400">
           MENU BOARD
   </p>
 
@@ -359,11 +591,36 @@
     <!-- Featured content -->
     
     <% if (page === "featured") { %>
+      <p class="featured-instruction">Click any image to view it in fullscreen</p>
       <div class="featured-images">
-        <img src="/images/chili-crisp-shrimp.jpg" class="featured-img" />
-        <img src="/images/hot-orange-chicken.jpg" class="featured-img" />
-        <img src="/images/wok-seared-steak-and-shrimp.jpg" class="featured-img" />
-        <img src="/images/orange-chicken-featured.jpg" class="featured-img" />
+        <div class="featured-item">
+          <img src="/images/chili-crisp-shrimp.jpg" class="featured-img" alt="Chili Crisp Shrimp - Click to view fullscreen" tabindex="0" role="button" data-img-src="/images/chili-crisp-shrimp.jpg" />
+          <label class="image-selector">
+            <input type="checkbox" class="img-checkbox" checked data-img-src="/images/chili-crisp-shrimp.jpg" />
+            <span>Include in autoscroll</span>
+          </label>
+        </div>
+        <div class="featured-item">
+          <img src="/images/hot-orange-chicken.jpg" class="featured-img" alt="Hot Orange Chicken - Click to view fullscreen" tabindex="0" role="button" data-img-src="/images/hot-orange-chicken.jpg" />
+          <label class="image-selector">
+            <input type="checkbox" class="img-checkbox" checked data-img-src="/images/hot-orange-chicken.jpg" />
+            <span>Include in autoscroll</span>
+          </label>
+        </div>
+        <div class="featured-item">
+          <img src="/images/wok-seared-steak-and-shrimp.jpg" class="featured-img" alt="Wok Seared Steak and Shrimp - Click to view fullscreen" tabindex="0" role="button" data-img-src="/images/wok-seared-steak-and-shrimp.jpg" />
+          <label class="image-selector">
+            <input type="checkbox" class="img-checkbox" checked data-img-src="/images/wok-seared-steak-and-shrimp.jpg" />
+            <span>Include in autoscroll</span>
+          </label>
+        </div>
+        <div class="featured-item">
+          <img src="/images/orange-chicken-featured.jpg" class="featured-img" alt="The Original Orange Chicken - Click to view fullscreen" tabindex="0" role="button" data-img-src="/images/orange-chicken-featured.jpg" />
+          <label class="image-selector">
+            <input type="checkbox" class="img-checkbox" checked data-img-src="/images/orange-chicken-featured.jpg" />
+            <span>Include in autoscroll</span>
+          </label>
+        </div>
       </div>
 
     <% } %>
@@ -553,23 +810,31 @@
             <h1 class="title">DRINKS</h1>
 
             <!-- Fountain Drink Images Row -->
-            <div class="fountain-drinks-row flex gap-4 mb-4">
+            <div class="fountain-drinks-row flex mb-4" style="gap: clamp(12px, 1.2vw, 30px);">
               <!-- Placeholder images -->
-              <img src="/images/placeholder-drink.jpg" alt="Drink 1" class="drink-img w-24 h-24 object-cover rounded">
-              <img src="/images/placeholder-drink.jpg" alt="Drink 2" class="drink-img w-24 h-24 object-cover rounded">
-              <img src="/images/placeholder-drink.jpg" alt="Drink 3" class="drink-img w-24 h-24 object-cover rounded">
-              <img src="/images/placeholder-drink.jpg" alt="Drink 4" class="drink-img w-24 h-24 object-cover rounded">
+              <img src="/images/pepsi.png" alt="Pepsi" class="drink-img" style="width: clamp(90px, 8vw, 180px); height: clamp(90px, 8vw, 180px); border-radius: 50%; object-fit: cover;">
+              <img src="/images/tropicana.jpg" alt="Tropicana" class="drink-img" style="width: clamp(90px, 8vw, 180px); height: clamp(90px, 8vw, 180px); border-radius: 50%; object-fit: cover;">
+              <img src="/images/mtn-dew.png" alt="Mountain Dew" class="drink-img" style="width: clamp(90px, 8vw, 180px); height: clamp(90px, 8vw, 180px); border-radius: 50%; object-fit: cover;">
+              <img src="/images/starry.png" alt="Starry" class="drink-img" style="width: clamp(90px, 8vw, 180px); height: clamp(90px, 8vw, 180px); border-radius: 50%; object-fit: cover;">
+              <img src="/images/dr-pepper.png" alt="Dr Pepper" class="drink-img" style="width: clamp(90px, 8vw, 180px); height: clamp(90px, 8vw, 180px); border-radius: 50%; object-fit: cover;">
             </div>
 
             <!-- Drink Labels & Prices -->
-            <div class="fountain-drinks-info flex gap-8 text-[30px] text-gray-700">
+            <div class="fountain-drinks-info flex text-gray-700" style="gap: clamp(20px, 2vw, 50px); font-size: clamp(26px, min(2.2vw, 3vh), 90px);">
               <div class="drink-name">Fountain Drinks</div>
-              <div class="drink-prices flex gap-4">
-                <span>$2.20</span>
-                <span>|</span>
-                <span>$2.40</span>
-                <span>|</span>
-                <span>$2.60</span>
+              <div class="drink-prices flex" style="gap: clamp(15px, 1.5vw, 35px);">
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                  <span style="font-size: clamp(20px, min(1.6vw, 2.3vh), 38px); color: #888;">Small</span>
+                  <span>$2.20</span>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                  <span style="font-size: clamp(20px, min(1.6vw, 2.3vh), 38px); color: #888;">Medium</span>
+                  <span>$2.40</span>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                  <span style="font-size: clamp(20px, min(1.6vw, 2.3vh), 38px); color: #888;">Large</span>
+                  <span>$2.60</span>
+                </div>
               </div>
             </div>
           </div>
@@ -633,7 +898,7 @@
     <div class="sides-container">
       <% if (page === "sides") { %>
         <h1 class="title">SIDE CHOICES</h1>
-        <p class= "italic text-[20px] pb-4" >Choose One or get Half & Half</p>
+        <p style="font-size: clamp(20px, min(1.6vw, 2.3vh), 38px); padding-bottom: clamp(10px, 1vw, 25px);" class="italic">Choose One or get Half & Half</p>
         
        <% const items = menu[page] || []; %>
        <%
@@ -659,43 +924,41 @@
         <% } %>
           <h1 class="title">A LA CARTE BOXES</h1>
           <!-- Sides Page: A La Carte Placeholder -->
-            <div class="a-la-carte-sides-container flex mt-4">
+            <div class="a-la-carte-sides-container flex" style="margin-top: clamp(12px, 1.2vw, 30px);">
 
               <!-- Left Column: Entrees -->
               <div class="entrees-column flex-1">
-                <h2 class="text-[30px] font-bold mb-2">Entrees</h2>
-                <div class="flex justify-start text-[20px] gap-8">
+                <h2 class="font-bold" style="font-size: clamp(26px, min(2.2vw, 3vh), 52px); margin-bottom: clamp(8px, 0.8vw, 20px);">Entrees</h2>
+                <div class="flex justify-start" style="font-size: clamp(20px, min(1.6vw, 2.3vh), 38px); gap: clamp(20px, 2vw, 50px);">
                   <div>
                     <div class="font-semibold">Small</div>
-                    <div>Reg: $5.00</div>
-                    <div>Premium: $6.00</div>
+                    <div>Reg: $5.40</div>
+                    <div>Premium: $6.90</div>
                   </div>
                   <div>
                     <div class="font-semibold">Medium</div>
-                    <div>Reg: $7.00</div>
-                    <div>Premium: $8.00</div>
+                    <div>Reg: $8.70</div>
+                    <div>Premium: $11.70</div>
                   </div>
                   <div>
                     <div class="font-semibold">Large</div>
-                    <div>Reg: $9.00</div>
-                    <div>Premium: $10.00</div>
+                    <div>Reg: $11.40</div>
+                    <div>Premium: $15.90</div>
                   </div>
                 </div>
               </div>
 
               <!-- Right Column: Sides -->
               <div class="sides-column flex-1">
-                <h2 class="text-[30px] font-bold mb-2">Sides</h2>
-                <div class="flex justify-start text-[20px] gap-8">
+                <h2 class="font-bold" style="font-size: clamp(26px, min(2.2vw, 3vh), 52px); margin-bottom: clamp(8px, 0.8vw, 20px);">Sides</h2>
+                <div class="flex justify-start" style="font-size: clamp(20px, min(1.6vw, 2.3vh), 38px); gap: clamp(20px, 2vw, 50px);">
                   <div>
                     <div class="font-semibold">Medium</div>
-                    <div>Reg: $3.50</div>
-                    <div>Premium: $4.50</div>
+                    <div>Reg: $4.60</div>
                   </div>
                   <div>
                     <div class="font-semibold">Large</div>
-                    <div>Reg: $5.50</div>
-                    <div>Premium: $6.50</div>
+                    <div>Reg: $5.60</div>
                   </div>
                 </div>
               </div>
@@ -737,13 +1000,198 @@ document.addEventListener("fullscreenchange", () => {
 /* -------------------------------------
    FEATURED PAGE → CLICK IMAGE TO FULLSCREEN
 -------------------------------------- */
+function requestFullscreenForImage(img) {
+  if (img.requestFullscreen) img.requestFullscreen();
+  else if (img.webkitRequestFullscreen) img.webkitRequestFullscreen();
+  else if (img.msRequestFullscreen) img.msRequestFullscreen();
+}
+
 document.querySelectorAll(".featured-img").forEach(img => {
+  // Click handler
   img.addEventListener("click", () => {
-    // Fullscreen the clicked image
-    if (img.requestFullscreen) img.requestFullscreen();
-    else if (img.webkitRequestFullscreen) img.webkitRequestFullscreen();
-    else if (img.msRequestFullscreen) img.msRequestFullscreen();
+    requestFullscreenForImage(img);
+  });
+
+  // Keyboard handler for accessibility
+  img.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      requestFullscreenForImage(img);
+    }
   });
 });
+
+/* -------------------------------------
+   AUTOSCROLL FEATURE
+-------------------------------------- */
+const autoscrollBtn = document.getElementById("autoscroll-btn");
+const autoscrollContainer = document.getElementById("autoscroll-container");
+const autoscrollImage = document.getElementById("autoscroll-image");
+const exitAutoscrollBtn = document.getElementById("exit-autoscroll");
+
+let autoscrollInterval = null;
+let currentImageIndex = 0;
+let isAutoscrolling = false;
+let mouseTimeout = null;
+let currentAutoscrollImages = []; // Store currently selected images for autoscroll
+
+// Function to get selected images from checkboxes
+function getSelectedImages() {
+  const checkboxes = document.querySelectorAll('.img-checkbox:checked');
+  const selectedImages = Array.from(checkboxes).map(cb => cb.getAttribute('data-img-src'));
+  return selectedImages;
+}
+
+async function startAutoscroll() {
+  // Get currently selected images
+  const selectedImages = getSelectedImages();
+
+  // Validate that at least two images are selected
+  if (selectedImages.length < 2) {
+    alert('Please select at least two images for autoscroll');
+    return;
+  }
+
+  // Store selected images for use during autoscroll
+  currentAutoscrollImages = selectedImages;
+
+  isAutoscrolling = true;
+  autoscrollBtn.classList.add("active");
+  autoscrollBtn.textContent = "Stop Autoscroll";
+  if (autoscrollBtn) autoscrollBtn.setAttribute("aria-pressed", "true");
+
+  // Enter fullscreen mode FIRST
+  const docEl = document.documentElement;
+  try {
+    if (!document.fullscreenElement) {
+      if (docEl.requestFullscreen) {
+        await docEl.requestFullscreen();
+      } else if (docEl.webkitRequestFullscreen) {
+        await docEl.webkitRequestFullscreen();
+      } else if (docEl.msRequestFullscreen) {
+        await docEl.msRequestFullscreen();
+      }
+    }
+  } catch (err) {
+    console.error("Error entering fullscreen:", err);
+  }
+
+  // Then show the autoscroll container
+  autoscrollContainer.classList.add("active");
+  autoscrollContainer.classList.add("hide-cursor");
+  exitAutoscrollBtn.classList.remove("visible");
+
+  // Show first image
+  currentImageIndex = 0;
+  showCurrentImage();
+
+  // Change image every 5 seconds
+  autoscrollInterval = setInterval(() => {
+    currentImageIndex = (currentImageIndex + 1) % currentAutoscrollImages.length;
+    showCurrentImage();
+  }, 5000);
+}
+
+function stopAutoscroll() {
+  isAutoscrolling = false;
+  autoscrollBtn.classList.remove("active");
+  autoscrollBtn.textContent = "Start Autoscroll";
+  if (autoscrollBtn) autoscrollBtn.setAttribute("aria-pressed", "false");
+  autoscrollContainer.classList.remove("active");
+  autoscrollContainer.classList.remove("hide-cursor");
+  exitAutoscrollBtn.classList.remove("visible");
+
+  if (autoscrollInterval) {
+    clearInterval(autoscrollInterval);
+    autoscrollInterval = null;
+  }
+
+  if (mouseTimeout) {
+    clearTimeout(mouseTimeout);
+    mouseTimeout = null;
+  }
+
+  autoscrollImage.classList.remove("visible");
+
+  // Exit fullscreen mode
+  if (document.fullscreenElement) {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    } else if (document.msExitFullscreen) {
+      document.msExitFullscreen();
+    }
+  }
+}
+
+function showCurrentImage() {
+  // Fade out
+  autoscrollImage.classList.remove("visible");
+
+  // Wait for fade out, then change image and fade in
+  setTimeout(() => {
+    autoscrollImage.src = currentAutoscrollImages[currentImageIndex];
+    autoscrollImage.classList.add("visible");
+  }, 500);
+}
+
+// Event listeners
+if (autoscrollBtn) {
+  autoscrollBtn.addEventListener("click", () => {
+    if (isAutoscrolling) {
+      stopAutoscroll();
+    } else {
+      startAutoscroll();
+    }
+  });
+}
+
+if (exitAutoscrollBtn) {
+  exitAutoscrollBtn.addEventListener("click", stopAutoscroll);
+}
+
+// Stop autoscroll when pressing Escape
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && isAutoscrolling) {
+    stopAutoscroll();
+  }
+});
+
+/* -------------------------------------
+   BACK TO NAVIGATION BUTTON
+-------------------------------------- */
+const backBtn = document.getElementById("back-btn");
+if (backBtn) {
+  backBtn.addEventListener("click", () => {
+    window.location.href = "/";
+  });
+}
+
+// Handle mouse movement to show/hide exit button
+function showExitButton() {
+  exitAutoscrollBtn.classList.add("visible");
+  autoscrollContainer.classList.remove("hide-cursor");
+
+  // Clear existing timeout
+  if (mouseTimeout) {
+    clearTimeout(mouseTimeout);
+  }
+
+  // Hide button after 3 seconds of no movement
+  mouseTimeout = setTimeout(() => {
+    exitAutoscrollBtn.classList.remove("visible");
+    autoscrollContainer.classList.add("hide-cursor");
+  }, 3000);
+}
+
+// Add mousemove listener to autoscroll container
+if (autoscrollContainer) {
+  autoscrollContainer.addEventListener("mousemove", () => {
+    if (isAutoscrolling) {
+      showExitButton();
+    }
+  });
+}
 </script>
 </html>

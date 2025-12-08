@@ -57,7 +57,10 @@
     }
     html.text-size-large button {
       font-size: 1.6rem !important;
-      padding: 1rem 1.5rem !important;
+      padding: 2rem 1.5rem !important;
+    }
+    html.text-size-large .nav-link {
+      padding: 2rem 1.5rem !important;
     }
     html.text-size-large .text-xs { font-size: 1.1rem !important; }
     html.text-size-large .text-sm { font-size: 1.4rem !important; }
@@ -71,6 +74,11 @@
     html.text-size-large .payment-method-btn,
     html.text-size-large .dine-option-btn,
     html.text-size-large #success-done-btn { font-size: 1.8rem !important; padding: 1.8rem 1.2rem !important; }
+    html.text-size-large #order-success-modal h2 { font-size: 4.5rem !important; }
+    html.text-size-large #order-success-modal .text-lg { font-size: 2rem !important; }
+    html.text-size-large #order-success-modal .text-sm { font-size: 1.4rem !important; }
+    html.text-size-large #order-success-modal .font-medium { font-size: 1.6rem !important; }
+    html.text-size-large #order-success-modal .font-bold { font-size: 1.8rem !important; }
 
     /* Medium text size */
     html.text-size-medium {
@@ -95,6 +103,11 @@
     html.text-size-medium .payment-method-btn,
     html.text-size-medium .dine-option-btn,
     html.text-size-medium #success-done-btn { font-size: 1.5rem !important; padding: 1.5rem 1rem !important; }
+    html.text-size-medium #order-success-modal h2 { font-size: 3.5rem !important; }
+    html.text-size-medium #order-success-modal .text-lg { font-size: 1.6rem !important; }
+    html.text-size-medium #order-success-modal .text-sm { font-size: 1.1rem !important; }
+    html.text-size-medium #order-success-modal .font-medium { font-size: 1.3rem !important; }
+    html.text-size-medium #order-success-modal .font-bold { font-size: 1.4rem !important; }
 
     /* Small text size */
     html.text-size-small {
@@ -116,6 +129,11 @@
     html.text-size-small .payment-method-btn,
     html.text-size-small .dine-option-btn,
     html.text-size-small #success-done-btn { font-size: 1.3rem !important; padding: 1.2rem 0.8rem !important; }
+    html.text-size-small #order-success-modal h2 { font-size: 2.8rem !important; }
+    html.text-size-small #order-success-modal .text-lg { font-size: 1.3rem !important; }
+    html.text-size-small #order-success-modal .text-sm { font-size: 0.9rem !important; }
+    html.text-size-small #order-success-modal .font-medium { font-size: 1.1rem !important; }
+    html.text-size-small #order-success-modal .font-bold { font-size: 1.2rem !important; }
   </style>
 
 <body class="h-screen flex bg-black text-white overflow-hidden">
@@ -124,26 +142,9 @@
     </script>
 
     <!-- Landing Page / Screensaver -->
-    <div id="landing-page" class="fixed inset-0 z-[100] flex flex-col items-center justify-center cursor-pointer overflow-hidden">
-      <!-- Background Carousel -->
+    <div id="landing-page" role="complementary" aria-label="Welcome Screen" class="fixed inset-0 z-[100] flex flex-col items-center justify-center cursor-pointer overflow-hidden">
+      <!-- Background -->
       <div class="absolute inset-0 bg-gradient-to-br from-red-900 via-red-700 to-red-800"></div>
-      <div id="carousel-container" class="absolute inset-0">
-        <div class="carousel-slide absolute inset-0 opacity-0 transition-opacity duration-1000">
-          <img src="/images/the-original-orange-chicken.jpg" alt="Orange Chicken" class="w-full h-full object-cover opacity-30">
-        </div>
-        <div class="carousel-slide absolute inset-0 opacity-0 transition-opacity duration-1000">
-          <img src="/images/beijing-beef.jpg" alt="Beijing Beef" class="w-full h-full object-cover opacity-30">
-        </div>
-        <div class="carousel-slide absolute inset-0 opacity-0 transition-opacity duration-1000">
-          <img src="/images/honey-walnut-shrimp.jpg" alt="Honey Walnut Shrimp" class="w-full h-full object-cover opacity-30">
-        </div>
-        <div class="carousel-slide absolute inset-0 opacity-0 transition-opacity duration-1000">
-          <img src="/images/broccoli-beef.jpg" alt="Broccoli Beef" class="w-full h-full object-cover opacity-30">
-        </div>
-        <div class="carousel-slide absolute inset-0 opacity-0 transition-opacity duration-1000">
-          <img src="/images/kung-pao-chicken.jpg" alt="Kung Pao Chicken" class="w-full h-full object-cover opacity-30">
-        </div>
-      </div>
       
       <!-- Content overlay -->
       <div class="relative z-10 text-center">
@@ -165,7 +166,7 @@
         <div class="mt-1 text-sm tracking-[0.2em] uppercase text-neutral-300 font-semibold" data-original="Self-Service Kiosk">Self-Service Kiosk</div>
       </div>
 
-      <nav class="flex-shrink-0 flex-grow-0">
+      <nav aria-label="Main navigation" class="flex-shrink-0 flex-grow-0">
         <ul class="flex flex-col text-sm">
           <li>
             <button data-category="entrees" class="nav-link active w-full text-left" data-original="Entrees">Entrees</button>
@@ -235,6 +236,17 @@
               </button>
             </div>
           </div>
+
+          <div class="mt-4">
+            <div class="text-xs uppercase tracking-wide text-neutral-300 font-semibold mb-2" data-original="Screen Reader">Screen Reader</div>
+            <button id="tts-toggle" class="flex items-center gap-3 px-4 py-3 bg-neutral-800 hover:bg-neutral-700 rounded text-white transition-colors w-full">
+              <span class="text-2xl no-translate" id="tts-icon">🔇</span>
+              <div class="text-left flex-1">
+                <div class="text-sm font-semibold" data-original="Text-to-Speech">Text-to-Speech</div>
+                <div class="text-xs text-neutral-400" data-original="Off" id="tts-status">Off</div>
+              </div>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -245,7 +257,7 @@
       </div>
     </aside>
 
-    <main class="flex-1 flex flex-col bg-white text-black h-screen">
+    <main role="main" aria-label="Menu and order area" class="flex-1 flex flex-col bg-white text-black h-screen">
       <header class="flex items-center justify-between px-10 py-6 border-b border-neutral-200 flex-shrink-0">
         <div>
           <h1 id="category-title" class="text-3xl font-semibold tracking-tight" data-original="Entrees">Entrees</h1>
@@ -900,14 +912,19 @@
           // Update header with category info
           const info = categoryInfo[cat];
           if (info) {
-            document.getElementById("category-title").textContent = info.title;
-            document.querySelector("header p").textContent = info.description;
-          }
+            const titleEl = document.getElementById("category-title");
+            const descEl = document.querySelector("header p");
 
-          const currentLang = localStorage.getItem('kiosk_lang') || 'en';
-          if (currentLang !== 'en') {
-            // Small timeout to let the text update to English first (from existing logic), then translate
-            setTimeout(() => changeLanguage(currentLang), 50);
+            titleEl.textContent = info.title;
+            descEl.textContent = info.description;
+
+            titleEl.setAttribute('data-original', info.title);
+            descEl.setAttribute('data-original', info.description);
+          
+            const currentLang = localStorage.getItem('kiosk_lang') || 'en';
+            if (currentLang !== 'en') {
+              setTimeout(() => changeLanguage(currentLang), 20);
+            }
           }
         });
       });
@@ -1108,6 +1125,7 @@
           const mealNames = new Set(['Bowl','Plate','Bigger Plate']);
           if (mealNames.has(name)) {
             const slug = name === 'Bowl' ? 'bowl' : (name === 'Bigger Plate' ? 'bigger-plate' : 'plate');
+            localStorage.setItem('kiosk_from_builder', 'true');
             window.location.href = `/builder/${slug}`;
             return;
           }
@@ -1414,6 +1432,7 @@
             if (it.name === 'Bowl') slug = 'bowl';
             else if (it.name === 'Bigger Plate') slug = 'bigger-plate';
             else if (it.name === 'Plate') slug = 'plate';
+            localStorage.setItem('kiosk_from_builder', 'true');
             window.location.href = `/builder/edit?idx=${i}&type=${slug}`;
           }
           return;
@@ -1718,6 +1737,109 @@
         changeTextSize(savedSize);
       }
 
+      // Text-to-Speech Logic
+      let ttsEnabled = false;
+      let currentUtterance = null;
+      const synth = window.speechSynthesis;
+
+      function initTTS() {
+        const savedTTS = localStorage.getItem('kiosk_tts_enabled');
+        if (savedTTS === 'true') {
+          ttsEnabled = true;
+          updateTTSUI();
+        }
+      }
+
+      function updateTTSUI() {
+        const icon = document.getElementById('tts-icon');
+        const status = document.getElementById('tts-status');
+        const toggle = document.getElementById('tts-toggle');
+        
+        if (ttsEnabled) {
+          icon.textContent = '🔊';
+          status.textContent = 'On';
+          status.setAttribute('data-original', 'On');
+          toggle.classList.remove('bg-neutral-800');
+          toggle.classList.add('bg-green-700');
+        } else {
+          icon.textContent = '🔇';
+          status.textContent = 'Off';
+          status.setAttribute('data-original', 'Off');
+          toggle.classList.remove('bg-green-700');
+          toggle.classList.add('bg-neutral-800');
+        }
+      }
+
+      function speak(text) {
+        if (!ttsEnabled || !text) return;
+        
+        // Cancel any ongoing speech
+        synth.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        const lang = localStorage.getItem('kiosk_lang') || 'en';
+        
+        // Map language codes to speech synthesis language codes
+        const langMap = {
+          'en': 'en-US',
+          'es': 'es-ES',
+          'zh-CN': 'zh-CN',
+          'fr': 'fr-FR',
+          'de': 'de-DE'
+        };
+        
+        utterance.lang = langMap[lang] || 'en-US';
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+        
+        currentUtterance = utterance;
+        synth.speak(utterance);
+      }
+
+      document.getElementById('tts-toggle')?.addEventListener('click', () => {
+        ttsEnabled = !ttsEnabled;
+        localStorage.setItem('kiosk_tts_enabled', ttsEnabled.toString());
+        updateTTSUI();
+        
+        if (ttsEnabled) {
+          speak('Text to speech enabled');
+        } else {
+          synth.cancel();
+        }
+      });
+
+      // Add TTS to navigation buttons
+      document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('mouseenter', () => {
+          const text = link.textContent.trim();
+          speak(text);
+        });
+      });
+
+      // Add TTS to item cards
+      document.addEventListener('mouseenter', (e) => {
+        const card = e.target.closest('.item-card');
+        if (card && ttsEnabled) {
+          const name = card.querySelector('[data-translate-type="item-name"]')?.textContent;
+          const price = card.querySelector('.item-price')?.textContent;
+          if (name) {
+            speak(`${name}. ${price || ''}`);
+          }
+        }
+      }, true);
+
+      // Add TTS to buttons
+      document.addEventListener('mouseenter', (e) => {
+        const button = e.target.closest('button');
+        if (button && ttsEnabled && !button.classList.contains('info-badge')) {
+          const text = button.textContent.trim();
+          if (text && text.length < 100) {
+            speak(text);
+          }
+        }
+      }, true);
+
       // Accessibility panel toggle
       document.getElementById('accessibility-toggle')?.addEventListener('click', () => {
         const panel = document.getElementById('accessibility-panel');
@@ -1730,36 +1852,6 @@
           arrow.style.transform = 'rotate(0deg)';
         }
       });
-
-      // Background carousel for landing page
-      let carouselInterval = null;
-      let currentSlide = 0;
-      const slides = document.querySelectorAll('.carousel-slide');
-      
-      function startCarousel() {
-        if (slides.length === 0) return;
-        
-        // Show first slide
-        slides[0].style.opacity = '1';
-        
-        carouselInterval = setInterval(() => {
-          // Fade out current slide
-          slides[currentSlide].style.opacity = '0';
-          
-          // Move to next slide
-          currentSlide = (currentSlide + 1) % slides.length;
-          
-          // Fade in next slide
-          slides[currentSlide].style.opacity = '1';
-        }, 4000); // Change slide every 4 seconds
-      }
-      
-      function stopCarousel() {
-        if (carouselInterval) {
-          clearInterval(carouselInterval);
-          carouselInterval = null;
-        }
-      }
 
       // Landing page / Screensaver functionality
       let inactivityTimer = null;
@@ -1774,12 +1866,10 @@
 
       function showLandingPage() {
         landingPage.style.display = 'flex';
-        startCarousel();
       }
 
       function hideLandingPage() {
         landingPage.style.display = 'none';
-        stopCarousel();
         resetInactivityTimer();
       }
 
@@ -1872,16 +1962,23 @@
         }
         loadWeather(); // Load weather on startup
         initTextSize(); // Initialize text size
-        // Start with landing page visible
-        showLandingPage();
+        initTTS(); // Initialize text-to-speech
+        
+        // Check if returning from builder - if so, don't show landing page
+        const fromBuilder = localStorage.getItem('kiosk_from_builder');
+        if (fromBuilder === 'true') {
+          localStorage.removeItem('kiosk_from_builder');
+          hideLandingPage();
+        } else {
+          // Start with landing page visible
+          showLandingPage();
+        }
       });
 
     async function changeLanguage(lang) {
       localStorage.setItem('kiosk_lang', lang);
       
       const staticElements = [
-        { el: document.getElementById('category-title'), original: 'Entrees' },
-        { el: document.querySelector('header p'), original: 'Choose your main dish to start your order.' },
         { el: document.querySelector('.nav-link[data-category="entrees"]'), original: 'Entrees' },
         { el: document.querySelector('.nav-link[data-category="sides"]'), original: 'Sides' },
         { el: document.querySelector('.nav-link[data-category="a_la_carte"]'), original: 'A La Carte' },
