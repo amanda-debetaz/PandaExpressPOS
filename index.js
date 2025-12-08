@@ -1091,7 +1091,8 @@ app.post("/api/checkout", async (req, res) => {
     );
 
     // Menu items by name (Bowl / Plate / Bigger Plate / a la carte, etc.)
-    const itemNames = cart.map((item) => item.name);
+    // For sized items, use baseName for database lookup
+    const itemNames = cart.map((item) => item.baseName || item.name);
     const menuItems = await prisma.menu_item.findMany({
       where: { name: { in: itemNames } },
       select: { menu_item_id: true, name: true },
@@ -1134,13 +1135,18 @@ app.post("/api/checkout", async (req, res) => {
         status: "queued",
         order_item: {
           create: cart.map((item) => {
-            const mi = menuItemByName[item.name];
+            // For sized items, use baseName for database lookup
+            const lookupName = item.baseName || item.name;
+            const mi = menuItemByName[lookupName];
             if (!mi) {
-              throw new Error(`Unknown menu item: ${item.name}`);
+              throw new Error(`Unknown menu item: ${lookupName}`);
             }
 
+            // For sized items, multiply quantity by serving multiplier
+            const finalQty = item.multiplier ? (item.quantity * item.multiplier) : item.quantity;
+            
             const orderItemData = {
-              qty: item.quantity,
+              qty: finalQty,
               unit_price: item.price,
               discount_amount: 0,
               tax_amount: 0,

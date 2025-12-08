@@ -438,6 +438,14 @@
             <span class="text-neutral-700" data-original="Allergens:">Allergens:</span>
             <span id="item-modal-allergens" class="font-medium text-red-700">None</span>
           </div>
+          <div id="size-selection" class="hidden">
+            <div class="text-sm text-neutral-700 mb-2" data-original="Size">Size</div>
+            <div class="grid grid-cols-3 gap-2">
+              <button class="size-btn px-4 py-3 border-2 border-neutral-300 rounded-lg font-semibold hover:border-red-600 transition" data-size="small" data-multiplier="1" data-original="Small">Small</button>
+              <button class="size-btn px-4 py-3 border-2 border-neutral-300 rounded-lg font-semibold hover:border-red-600 transition" data-size="medium" data-multiplier="2" data-original="Medium">Medium</button>
+              <button class="size-btn px-4 py-3 border-2 border-neutral-300 rounded-lg font-semibold hover:border-red-600 transition" data-size="large" data-multiplier="3" data-original="Large">Large</button>
+            </div>
+          </div>
           <div class="flex items-center gap-3">
             <span class="text-sm text-neutral-700" data-original="Quantity">Quantity</span>
             <div class="flex items-center gap-2">
@@ -784,6 +792,33 @@
         // Safe to add
         originalAddToCart(name, price, qty);
       }
+      
+      // Add cart item with size information
+      async function addToCartWithSize(itemData) {
+        const existing = cart.find(i => i.name === itemData.name);
+        const newQty = (existing ? existing.quantity : 0) + itemData.quantity;
+
+        if (newQty > 10) {
+          await showTooManyItemsWarning(itemData.name, newQty);
+          return;
+        }
+
+        if (existing) {
+          existing.quantity += itemData.quantity;
+        } else {
+          cart.push({
+            name: itemData.name,
+            baseName: itemData.baseName,
+            price: itemData.price,
+            quantity: itemData.quantity,
+            size: itemData.size,
+            multiplier: itemData.multiplier
+          });
+        }
+        renderCartDrawer();
+        saveCart(cart);
+        openCartDrawer();
+      }
       // Populate menu items from server data
       function populateMenu() {
         const categories = ['entrees', 'a_la_carte', 'sides', 'appetizers', "drinks"];
@@ -841,9 +876,24 @@
             const isMeal = ['Bowl', 'Plate', 'Bigger Plate'].includes(item.name);
             const priceDisplay = isMeal ? `$${item.price.toFixed(2)}+` : `$${item.price.toFixed(2)}`;
             
+            // Meal descriptions and calorie ranges
+            let mealDescription = '';
+            let calorieRange = '';
+            if (item.name === 'Bowl') {
+              mealDescription = '1 Side & 1 Entree';
+              calorieRange = '400-900 cal';
+            } else if (item.name === 'Plate') {
+              mealDescription = '1 Side & 2 Entrees';
+              calorieRange = '600-1400 cal';
+            } else if (item.name === 'Bigger Plate') {
+              mealDescription = '1 Side & 3 Entrees';
+              calorieRange = '800-1900 cal';
+            }
+            
             // Only show info badge for non-meal items
             const nutritionData = item.nutrition ? JSON.stringify(item.nutrition) : '{}';
             const infoBadge = isMeal ? '' : `<div class="absolute top-2 right-2 flex items-center gap-1 z-10"><span class="text-xs font-medium text-neutral-700 bg-white px-2 py-1 rounded shadow" data-original="More Info">More Info</span><button class="info-badge w-6 h-6 rounded-full bg-red-700 text-white text-xs font-bold flex items-center justify-center hover:bg-red-800 transition" aria-label="More info for ${item.name}" data-item-name="${item.name}" data-allergens="${allergensList.join(', ') || 'None'}" data-nutrition='${nutritionData}'>i</button></div>`;
+            const mealInfo = isMeal ? `<div class="text-xs text-neutral-600 leading-tight">${mealDescription}</div><div class="text-xs text-neutral-500">${calorieRange}</div>` : '';
             card.innerHTML = `
               ${infoBadge}
               <div class="item-image">
@@ -854,6 +904,7 @@
                      data-translate-type="item-name" 
                      data-original="${item.name}">${item.name}</div>
                 <div class="text-base font-bold text-red-700">${priceDisplay}</div>
+                ${mealInfo}
               </div>
             `;
             
@@ -1205,6 +1256,7 @@
         if (card) {
           const name = card.dataset.name;
           const price = card.dataset.price;
+          const category = card.dataset.category;
           // If selection is a meal type, open meal builder instead of item modal
           const mealNames = new Set(['Bowl','Plate','Bigger Plate']);
           if (mealNames.has(name)) {
@@ -1217,7 +1269,7 @@
             .split(',')
             .map(t => t.trim())
             .filter(Boolean);
-          openItemModal(name, price, allergens);
+          openItemModal(name, price, allergens, category);
         }
       });
 
@@ -1237,15 +1289,37 @@
       let selectedItemPrice = 0;
       let selectedQty = 1;
       let selectedAllergens = [];
+      let selectedSize = 'medium'; // default
+      let selectedMultiplier = 2; // default medium = x2
+      let selectedCategory = '';
 
-      async function openItemModal(name, price, allergens = []) {
+      async function openItemModal(name, price, allergens = [], category = '') {
         selectedItemName = name;
         selectedItemPrice = parseFloat(price);
         selectedQty = 1;
+        selectedCategory = category;
+        selectedSize = 'medium';
+        selectedMultiplier = 2;
         
         itemModalTitle.textContent = name;
         itemModalPrice.textContent = selectedItemPrice.toFixed(2);
         itemQtyEl.textContent = String(selectedQty);
+        
+        // Show size selection only for a la carte entrees
+        const sizeSelection = document.getElementById('size-selection');
+        if (category === 'a_la_carte') {
+          sizeSelection.classList.remove('hidden');
+          // Reset size buttons
+          document.querySelectorAll('.size-btn').forEach(btn => {
+            btn.classList.remove('bg-red-600', 'text-white', 'border-red-600');
+            btn.classList.add('border-neutral-300');
+            if (btn.dataset.size === 'medium') {
+              btn.classList.add('bg-red-600', 'text-white', 'border-red-600');
+            }
+          });
+        } else {
+          sizeSelection.classList.add('hidden');
+        }
         
         const allergenText = allergens.length ? allergens.join(', ') : 'None';
         itemModalAllergens.textContent = allergenText;
@@ -1300,10 +1374,41 @@
       itemModal.addEventListener('click', (e) => {
         if (e.target === itemModal) closeItemModal();
       });
+      
+      // Size button handlers
+      document.querySelectorAll('.size-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          selectedSize = btn.dataset.size;
+          selectedMultiplier = parseInt(btn.dataset.multiplier);
+          
+          // Update button styles
+          document.querySelectorAll('.size-btn').forEach(b => {
+            b.classList.remove('bg-red-600', 'text-white', 'border-red-600');
+            b.classList.add('border-neutral-300');
+          });
+          btn.classList.remove('border-neutral-300');
+          btn.classList.add('bg-red-600', 'text-white', 'border-red-600');
+        });
+      });
 
       itemAddBtn.addEventListener('click', () => {
         if (selectedItemName) {
-          addToCart(selectedItemName, selectedItemPrice, selectedQty);
+          if (selectedCategory === 'a_la_carte') {
+            // Add with size info
+            const itemWithSize = `${selectedItemName} (${selectedSize.charAt(0).toUpperCase() + selectedSize.slice(1)})`;
+            const itemData = {
+              name: itemWithSize,
+              baseName: selectedItemName,
+              price: selectedItemPrice,
+              quantity: selectedQty,
+              size: selectedSize,
+              multiplier: selectedMultiplier
+            };
+            addToCartWithSize(itemData);
+          } else {
+            addToCart(selectedItemName, selectedItemPrice, selectedQty);
+          }
         }
         closeItemModal();
       });
