@@ -1050,7 +1050,7 @@ async function fetchSalesReport() {
   if (!endDate) return;
 
   try {
-    const res = await fetch(`http://localhost:3000/api/sales-report?start=${startDate}&end=${endDate}`);
+    const res = await fetch(`/api/sales-report?start=${startDate}&end=${endDate}`);
     const data = await res.json();
 
     let html = `<h3>Sales Report (${startDate} to ${endDate})</h3>`;
@@ -1158,7 +1158,7 @@ const generateZBtn = document.getElementById('generateZBtn');
 
 async function fetchRestockReport() {
   const panel = document.getElementById('restockReport');
-  const res = await fetch('http://localhost:3000/api/restock-report');
+  const res = await fetch('/api/restock-report');
   const data = await res.json();
 
   let table = `<h3>Restock Report</h3>
