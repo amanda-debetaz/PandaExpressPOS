@@ -121,6 +121,8 @@
       color: var(--text-main);
     }
 
+    /* ============ SEARCH AUTOCOMPLETE ============ */
+
     .header-center {
       display: flex;
       align-items: center;
@@ -143,12 +145,64 @@
 
     .search-input::placeholder {
       color: var(--text-soft);
+      text-align: center;
     }
 
     .search-input:focus {
       border-color: var(--accent-red-bright);
       background: #ffffff;
       box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25);
+    }
+
+    .search-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    .search-suggestions {
+      position: absolute;
+      top: 110%;
+      left: 0;
+      right: 0;
+      background: var(--bg-panel);
+      border-radius: 0.6rem;
+      border: 1px solid var(--line-soft);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      max-height: 260px;
+      overflow-y: auto;
+      padding: 0.25rem 0;
+      display: none;
+      z-index: 50;
+    }
+
+    .search-suggestions.visible {
+      display: block;
+    }
+
+    .search-suggestion-item {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.85rem;
+      color: var(--text-main);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .search-suggestion-item span {
+      pointer-events: none;
+    }
+
+    .search-suggestion-item-kind {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--text-soft);
+      margin-left: 0.75rem;
+    }
+
+    .search-suggestion-item:hover {
+      background: #fef2f2;
     }
 
     .header-right {
@@ -641,6 +695,14 @@
       border-color: var(--accent-red-bright);
     }
 
+    /* Selected state for meal-building */
+    .btn-selected {
+      background: #fee2e2;
+      border-color: var(--accent-red-bright);
+      box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.35);
+      transform: translateY(-1px);
+    }
+
     /* ============ FOOTER ============ */
 
     .cashier-footer {
@@ -671,6 +733,82 @@
         justify-content: center;
       }
     }
+
+    /* ============ DRINK SIZE POPUP ============ */
+
+    .drink-popup-overlay {
+      position: fixed;
+      inset: 0;
+      display: none; /* JS sets to flex when open */
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 23, 42, 0.45); /* soft dark overlay */
+      backdrop-filter: blur(4px);
+      z-index: 9990;
+    }
+
+    .drink-popup-modal {
+      background: var(--bg-panel);
+      border-radius: 1rem;
+      padding: 1.4rem 1.6rem 1.2rem;
+      width: 320px;
+      max-width: 90vw;
+      box-shadow: 0 18px 35px rgba(0, 0, 0, 0.28);
+      border: 1px solid var(--line-soft);
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+    }
+
+    .drink-popup-title {
+      margin: 0;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--text-soft);
+      text-align: center;
+    }
+
+    .drink-size-options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      margin-top: 0.2rem;
+    }
+
+    /* Use existing .btn styling but tweak for this modal */
+    .drink-size-option {
+      width: 100%;
+      justify-content: center;
+      background: var(--bg-surface);
+      border-color: var(--line-soft);
+      font-size: 0.9rem;
+      letter-spacing: 0.12em;
+    }
+
+    .drink-size-option:hover {
+      background: #fef2f2;
+      border-color: var(--accent-red-bright);
+      box-shadow: 0 1px 6px rgba(248, 113, 113, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .drink-size-cancel {
+      margin-top: 0.2rem;
+      align-self: center;
+      background: transparent;
+      border: none;
+      color: var(--text-soft);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      cursor: pointer;
+      padding: 0.4rem 0.6rem;
+    }
+
+    .drink-size-cancel:hover {
+      color: var(--accent-red);
+    }
   </style>
 
   <body class="cashier-body">
@@ -684,11 +822,10 @@
       </div>
 
       <div class="header-center">
-        <input
-          type="text"
-          class="search-input"
-          placeholder="Search or scan item"
-        />
+        <div class="search-wrapper">
+          <input type="text" class="search-input" placeholder="Search item" />
+          <div class="search-suggestions" id="search-suggestions"></div>
+        </div>
       </div>
 
       <div class="header-right">
@@ -696,7 +833,6 @@
           <span class="total-label">Order Total</span>
           <span class="total-value">$0.00</span>
         </div>
-        <button class="clock-btn">Clock In / Out</button>
       </div>
     </header>
 
@@ -976,10 +1112,19 @@
           <section class="menu-block">
             <h3 class="section-title">Drinks</h3>
             <div class="button-row drink-buttons">
-              <button class="btn btn-drink">Fountain Drink</button>
-              <button class="btn btn-drink">Sweet Tea</button>
-              <button class="btn btn-drink">Unsweet Tea</button>
-              <button class="btn btn-drink">Water</button>
+              <button
+                class="btn btn-drink drink-btn"
+                data-base="Fountain Drink"
+              >
+                Fountain Drink
+              </button>
+              <button
+                class="btn btn-drink drink-btn"
+                data-base="Water"
+                data-free="true"
+              >
+                Water
+              </button>
             </div>
           </section>
         </div>
@@ -989,8 +1134,9 @@
     <!-- Footer -->
     <footer class="cashier-footer">
       <div class="footer-left">
-        <button class="btn btn-outline">Cancel Order</button>
-        <button class="btn btn-outline">Manager</button>
+        <button id="back-nav-btn" class="btn btn-outline">
+          Back to Navigation
+        </button>
       </div>
 
       <div class="footer-center">
@@ -998,17 +1144,28 @@
       </div>
 
       <div class="footer-right">
-        <button class="btn btn-outline-danger">Close</button>
+        <button id="logout-btn" class="btn btn-outline-danger">Logout</button>
       </div>
     </footer>
+
     <!-- STAFF CALL POPUP - Clean, Professional, Touch-Friendly -->
     <div id="staff-call-popup">
       <div class="staff-call-overlay"></div>
-      
+
       <div class="staff-call-modal">
         <div class="staff-call-header">
-          <svg class="staff-call-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 104 0v.341C18.67 6.165 20 8.388 20 11v3.159c0 .538-.214 1.055-.595 1.436L18 17zM9 17H4l1.405-1.405A2.032 2.032 0 016 14.158V11a6.002 6.002 0 014-5.659V5a2 2 0 114 0v.341A6.002 6.002 0 0118 11v3.159c0 .538.214 1.055.595 1.436L20 17h-5m-6 0v1a3 3 0 106 0v-1m-6 0h6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <svg
+            class="staff-call-bell"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
+            <path
+              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 104 0v.341C18.67 6.165 20 8.388 20 11v3.159c0 .538-.214 1.055-.595 1.436L18 17zM9 17H4l1.405-1.405A2.032 2.032 0 016 14.158V11a6.002 6.002 0 014-5.659V5a2 2 0 114 0v.341A6.002 6.002 0 0118 11v3.159c0 .538.214 1.055.595 1.436L20 17h-5m-6 0v1a3 3 0 106 0v-1m-6 0h6"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
           <h2>Customer Needs Help</h2>
         </div>
@@ -1017,9 +1174,7 @@
           A customer at the <strong>KIOSK</strong> is requesting assistance
         </p>
 
-        <button id="staff-call-dismiss" class="staff-call-btn">
-          Dismiss
-        </button>
+        <button id="staff-call-dismiss" class="staff-call-btn">Dismiss</button>
       </div>
     </div>
 
@@ -1041,8 +1196,12 @@
       }
 
       @keyframes fadeIn {
-        from { opacity: 0; }
-        to   { opacity: 1; }
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
       }
 
       .staff-call-overlay {
@@ -1057,14 +1216,20 @@
         width: 90%;
         max-width: 420px;
         text-align: center;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
         animation: slideUp 0.5s ease-out;
         border: 4px solid #ef4444;
       }
 
       @keyframes slideUp {
-        from { transform: translateY(50px); opacity: 0; }
-        to   { transform: translateY(0); opacity: 1; }
+        from {
+          transform: translateY(50px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
       }
       .staff-call-modal {
         position: relative;
@@ -1084,13 +1249,28 @@
       }
 
       @keyframes ring {
-        0%, 100% { transform: rotate(0deg); }
-        10% { transform: rotate(15deg); }
-        20% { transform: rotate(-10deg); }
-        30% { transform: rotate(15deg); }
-        40% { transform: rotate(-10deg); }
-        50% { transform: rotate(10deg); }
-        60% { transform: rotate(0); }
+        0%,
+        100% {
+          transform: rotate(0deg);
+        }
+        10% {
+          transform: rotate(15deg);
+        }
+        20% {
+          transform: rotate(-10deg);
+        }
+        30% {
+          transform: rotate(15deg);
+        }
+        40% {
+          transform: rotate(-10deg);
+        }
+        50% {
+          transform: rotate(10deg);
+        }
+        60% {
+          transform: rotate(0);
+        }
       }
 
       .staff-call-modal h2 {
@@ -1141,15 +1321,70 @@
           margin: 1rem;
           padding: 3rem 2rem;
         }
-        .staff-call-bell { width: 100px; height: 100px; }
-        .staff-call-modal h2 { font-size: 2.3rem; }
-        .staff-call-text { font-size: 1.5rem; }
-        .staff-call-btn { padding: 1.4rem; font-size: 1.6rem; }
+        .staff-call-bell {
+          width: 100px;
+          height: 100px;
+        }
+        .staff-call-modal h2 {
+          font-size: 2.3rem;
+        }
+        .staff-call-text {
+          font-size: 1.5rem;
+        }
+        .staff-call-btn {
+          padding: 1.4rem;
+          font-size: 1.6rem;
+        }
       }
     </style>
+
+    <!-- DRINK SIZE POPUP -->
+    <div id="drink-size-popup" class="drink-popup-overlay">
+      <div class="drink-popup-modal">
+        <h3 class="drink-popup-title">Select Drink Size</h3>
+
+        <div class="drink-size-options">
+          <button
+            class="btn drink-size-btn drink-size-option"
+            data-size="Small"
+            data-price="2.20"
+          >
+            Small – $2.20
+          </button>
+
+          <button
+            class="btn drink-size-btn drink-size-option"
+            data-size="Medium"
+            data-price="2.40"
+          >
+            Medium – $2.40
+          </button>
+
+          <button
+            class="btn drink-size-btn drink-size-option"
+            data-size="Large"
+            data-price="2.60"
+          >
+            Large – $2.60
+          </button>
+        </div>
+
+        <button id="drink-size-cancel" class="drink-size-cancel">Cancel</button>
+      </div>
+    </div>
   </body>
 
   <script>
+    // Back to Navigation button
+    document.getElementById("back-nav-btn")?.addEventListener("click", () => {
+      window.location.href = "/";
+    });
+
+    // Logout button
+    document.getElementById("logout-btn")?.addEventListener("click", () => {
+      window.location.href = "/logout";
+    });
+
     (function () {
       // ===== CONFIG =====
       const TAX_RATE = 0.0825;
@@ -1168,6 +1403,11 @@
 
       // meal-building state
       let activeMeal = null;
+      let selectedBaseButton = null;
+      let selectedEntreeButtons = [];
+
+      // Search autocomplete state
+      let currentSuggestions = [];
 
       // ===== DOM =====
       const orderBody = document.getElementById("order-body");
@@ -1191,6 +1431,78 @@
         if (!mealStatusEl) return;
         mealStatusEl.textContent = text;
       }
+
+      function clearMealSelectionUI() {
+        // remove highlight from any previously selected buttons
+        document.querySelectorAll(".btn-selected").forEach((btn) => {
+          btn.classList.remove("btn-selected");
+        });
+        selectedBaseButton = null;
+        selectedEntreeButtons = [];
+      }
+
+      function getButtonDisplayInfo(btn) {
+        const name =
+          btn.getAttribute("data-name") || btn.getAttribute("data-base") || "";
+        const kind =
+          btn.getAttribute("data-kind") ||
+          (btn.classList.contains("btn-drink") ? "drink" : "item");
+
+        let kindLabel = "";
+        if (kind === "meal") kindLabel = "MEAL";
+        else if (kind === "base") kindLabel = "BASE";
+        else if (kind === "entree") kindLabel = "ENTRÉE";
+        else if (kind === "item") kindLabel = "APP / SIDE";
+        else if (kind === "drink") kindLabel = "DRINK";
+
+        return { name, kindLabel };
+      }
+
+      // ===== DRINK SIZE LOGIC =====
+      const drinkButtons = document.querySelectorAll(".drink-btn");
+      const drinkSizePopup = document.getElementById("drink-size-popup");
+
+      let pendingDrinkName = null;
+
+      drinkButtons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const drinkName = btn.getAttribute("data-base");
+          const isFree = btn.getAttribute("data-free") === "true";
+
+          // Water = free, no popup
+          if (isFree) {
+            addOrderLine(drinkName, 0.0);
+            return;
+          }
+
+          // Otherwise open size popup
+          pendingDrinkName = drinkName;
+          drinkSizePopup.style.display = "flex";
+        });
+      });
+
+      // handle selecting drink size
+      document.querySelectorAll(".drink-size-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const size = btn.getAttribute("data-size");
+          const price = parseFloat(btn.getAttribute("data-price"));
+
+          const finalName = `${size} ${pendingDrinkName}`;
+
+          addOrderLine(finalName, price);
+
+          drinkSizePopup.style.display = "none";
+          pendingDrinkName = null;
+        });
+      });
+
+      // cancel button
+      document
+        .getElementById("drink-size-cancel")
+        .addEventListener("click", () => {
+          drinkSizePopup.style.display = "none";
+          pendingDrinkName = null;
+        });
 
       // ===== ORDER LOGIC =====
 
@@ -1225,6 +1537,7 @@
         orderItems = [];
         activeMeal = null;
         setMealStatus("");
+        clearMealSelectionUI();
 
         currentOrderNumber += 1;
         updateOrderNumber();
@@ -1296,6 +1609,9 @@
           return;
         }
 
+        // reset any previous selection UI
+        clearMealSelectionUI();
+
         activeMeal = {
           mealName,
           mealPrice,
@@ -1310,8 +1626,26 @@
         );
       }
 
-      function chooseBase(baseName) {
+      function chooseBase(baseName, btn) {
         if (!activeMeal) return;
+
+        // If this base is already selected, unselect it
+        if (activeMeal.baseChoice === baseName && selectedBaseButton === btn) {
+          activeMeal.baseChoice = null;
+          btn.classList.remove("btn-selected");
+
+          setMealStatus(
+            `Building ${activeMeal.mealName}: choose ${activeMeal.basesNeeded} base & ${activeMeal.entreesNeeded} entree(s)`
+          );
+          return;
+        }
+
+        // Otherwise, switch selection to this base
+        if (selectedBaseButton) {
+          selectedBaseButton.classList.remove("btn-selected");
+        }
+        selectedBaseButton = btn;
+        btn.classList.add("btn-selected");
 
         activeMeal.baseChoice = baseName;
         setMealStatus(
@@ -1321,14 +1655,37 @@
         tryCompleteMeal();
       }
 
-      function chooseEntree(entreeName) {
+      function chooseEntree(entreeName, btn) {
         if (!activeMeal) return;
 
-        if (activeMeal.entreeChoices.length >= activeMeal.entreesNeeded) {
-          // already full, ignore extra taps
+        // If already selected: unselect / remove
+        const existingBtnIndex = selectedEntreeButtons.indexOf(btn);
+        if (existingBtnIndex !== -1) {
+          selectedEntreeButtons.splice(existingBtnIndex, 1);
+          btn.classList.remove("btn-selected");
+
+          // remove one occurrence of this entree from choices
+          const choiceIndex = activeMeal.entreeChoices.indexOf(entreeName);
+          if (choiceIndex !== -1) {
+            activeMeal.entreeChoices.splice(choiceIndex, 1);
+          }
+
+          const remaining =
+            activeMeal.entreesNeeded - activeMeal.entreeChoices.length;
+          setMealStatus(
+            `Building ${activeMeal.mealName}: ${remaining} entree(s) left`
+          );
           return;
         }
 
+        // Not selected yet; if already at max, ignore extra taps
+        if (activeMeal.entreeChoices.length >= activeMeal.entreesNeeded) {
+          return;
+        }
+
+        // Select this entree
+        selectedEntreeButtons.push(btn);
+        btn.classList.add("btn-selected");
         activeMeal.entreeChoices.push(entreeName);
 
         const remaining =
@@ -1359,6 +1716,7 @@
 
           activeMeal = null;
           setMealStatus("");
+          clearMealSelectionUI();
         }
       }
 
@@ -1381,12 +1739,12 @@
           }
 
           if (kind === "base") {
-            chooseBase(name);
+            chooseBase(name, btn);
             return;
           }
 
           if (kind === "entree") {
-            chooseEntree(name);
+            chooseEntree(name, btn);
             return;
           }
 
@@ -1405,6 +1763,104 @@
         }
       }
 
+      function initSearchAutocomplete() {
+        const searchInput = document.querySelector(".search-input");
+        const suggestionBox = document.getElementById("search-suggestions");
+        if (!searchInput || !suggestionBox) return;
+
+        function hideSuggestions() {
+          suggestionBox.classList.remove("visible");
+          suggestionBox.innerHTML = "";
+          currentSuggestions = [];
+        }
+
+        function showSuggestions(list) {
+          suggestionBox.innerHTML = "";
+          if (!list.length) {
+            hideSuggestions();
+            return;
+          }
+
+          list.forEach((entry) => {
+            const div = document.createElement("div");
+            div.className = "search-suggestion-item";
+
+            const nameSpan = document.createElement("span");
+            nameSpan.textContent = entry.label;
+
+            const kindSpan = document.createElement("span");
+            kindSpan.className = "search-suggestion-item-kind";
+            kindSpan.textContent = entry.kindLabel;
+
+            div.appendChild(nameSpan);
+            div.appendChild(kindSpan);
+
+            div.addEventListener("click", () => {
+              entry.button.click(); // trigger the actual POS button
+              searchInput.value = "";
+              hideSuggestions();
+            });
+
+            suggestionBox.appendChild(div);
+          });
+
+          suggestionBox.classList.add("visible");
+        }
+
+        function updateSuggestions() {
+          const query = searchInput.value.trim().toLowerCase();
+          if (query.length < 2) {
+            hideSuggestions();
+            return;
+          }
+
+          const buttons = document.querySelectorAll(".order-btn, .drink-btn");
+          const suggestions = [];
+
+          buttons.forEach((btn) => {
+            const { name, kindLabel } = getButtonDisplayInfo(btn);
+            const normalized = name.toLowerCase();
+            if (!normalized || !normalized.includes(query)) return;
+
+            suggestions.push({
+              label: name,
+              kindLabel,
+              button: btn,
+            });
+          });
+
+          // Limit to first 8 matches
+          currentSuggestions = suggestions.slice(0, 8);
+          showSuggestions(currentSuggestions);
+        }
+
+        // Input change updates dropdown
+        searchInput.addEventListener("input", updateSuggestions);
+
+        // Keyboard behavior: Enter selects first, Escape closes
+        searchInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            if (currentSuggestions.length > 0) {
+              currentSuggestions[0].button.click();
+              searchInput.value = "";
+              hideSuggestions();
+            } else {
+              hideSuggestions();
+            }
+            e.preventDefault();
+          } else if (e.key === "Escape") {
+            hideSuggestions();
+          }
+        });
+
+        // Click outside closes dropdown
+        document.addEventListener("click", (e) => {
+          if (!suggestionBox.contains(e.target) && e.target !== searchInput) {
+            hideSuggestions();
+          }
+        });
+      }
+
       function init() {
         orderButtons.forEach((btn) => {
           btn.addEventListener("click", () => handleButtonClick(btn));
@@ -1413,6 +1869,9 @@
         voidLastBtn && voidLastBtn.addEventListener("click", removeLastItem);
         clearOrderBtn && clearOrderBtn.addEventListener("click", clearOrder);
 
+        // hook up search autocomplete
+        initSearchAutocomplete();
+
         renderOrder();
       }
 
@@ -1420,34 +1879,37 @@
     })();
   </script>
   <script>
-    if (window.location.pathname.includes('cashier')) {
-      const popup = document.getElementById('staff-call-popup');
-      const dismissBtn = document.getElementById('staff-call-dismiss');
+    if (window.location.pathname.includes("cashier")) {
+      const popup = document.getElementById("staff-call-popup");
+      const dismissBtn = document.getElementById("staff-call-dismiss");
 
       // Start hidden
-      popup.style.display = 'none';
+      popup.style.display = "none";
 
-      const eventSource = new EventSource('/api/call-staff/stream');
+      const eventSource = new EventSource("/api/call-staff/stream");
 
       eventSource.onmessage = () => {
-        popup.style.display = 'flex';   // show it
+        popup.style.display = "flex"; // show it
 
         clearTimeout(window.staffCallTimeout);
         window.staffCallTimeout = setTimeout(() => {
-          popup.style.display = 'none';
+          popup.style.display = "none";
         }, 60000); // auto-hide after 60 sec
       };
 
       // Dismiss button works instantly now
       dismissBtn.onclick = () => {
-        popup.style.display = 'none';
+        popup.style.display = "none";
         clearTimeout(window.staffCallTimeout);
       };
 
       // Click overlay or press Escape also dismisses
-      popup.onclick = (e) => { if (e.target === popup) dismissBtn.click(); };
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && popup.style.display === 'flex') dismissBtn.click();
+      popup.onclick = (e) => {
+        if (e.target === popup) dismissBtn.click();
+      };
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && popup.style.display === "flex")
+          dismissBtn.click();
       });
     }
   </script>
