@@ -823,6 +823,18 @@
           <div class="drinks-container">
             <h2 class="title">DRINKS</h2>
 
+            <%
+              // Get fountain drink price from database
+              const allItems = menu['appetizers'] || [];
+              const fountainDrink = allItems.find(i => i.name === 'Fountain Drink');
+
+              // Use Fountain Drink as base price for all sizes
+              const basePrice = fountainDrink ? fountainDrink.price : 2.20;
+              const smallPrice = basePrice;
+              const mediumPrice = basePrice + 0.20;
+              const largePrice = basePrice + 0.40;
+            %>
+
             <!-- Fountain Drink Images Row -->
             <div class="fountain-drinks-row flex mb-4" style="gap: clamp(12px, 1.2vw, 30px);">
               <!-- Placeholder images -->
@@ -839,15 +851,15 @@
               <div class="drink-prices flex" style="gap: clamp(15px, 1.5vw, 35px);">
                 <div style="display: flex; flex-direction: column; align-items: center;">
                   <span style="font-size: clamp(20px, min(1.6vw, 2.3vh), 38px); color: #888;">Small</span>
-                  <span>$2.20</span>
+                  <span>$<%= smallPrice.toFixed(2) %></span>
                 </div>
                 <div style="display: flex; flex-direction: column; align-items: center;">
                   <span style="font-size: clamp(20px, min(1.6vw, 2.3vh), 38px); color: #888;">Medium</span>
-                  <span>$2.40</span>
+                  <span>$<%= mediumPrice.toFixed(2) %></span>
                 </div>
                 <div style="display: flex; flex-direction: column; align-items: center;">
                   <span style="font-size: clamp(20px, min(1.6vw, 2.3vh), 38px); color: #888;">Large</span>
-                  <span>$2.60</span>
+                  <span>$<%= largePrice.toFixed(2) %></span>
                 </div>
               </div>
             </div>
@@ -928,7 +940,28 @@
           </div>
         <% } %>
           <h2 class="title">A LA CARTE BOXES</h2>
-          <!-- Sides Page: A La Carte Placeholder -->
+          <!-- Sides Page: A La Carte -->
+          <%
+            // Get a la carte prices from database
+            const aLaCarteItems = menu['a_la_carte'] || [];
+
+            // Find regular entree prices (cheapest entree will be the regular price)
+            const regularEntrees = aLaCarteItems.filter(item =>
+              item.name !== 'Honey Walnut Shrimp' &&
+              item.name !== 'Super Greens' &&
+              item.name !== 'Super Greens (Entree)'
+            );
+            const premiumEntrees = aLaCarteItems.filter(item =>
+              item.name === 'Honey Walnut Shrimp'
+            );
+
+            const regularEntreePrice = regularEntrees.length > 0 ? Math.min(...regularEntrees.map(e => e.price)) : 0;
+            const premiumEntreePrice = premiumEntrees.length > 0 ? premiumEntrees[0].price : 0;
+
+            // Find side prices
+            const sideItems = menu['sides'] || [];
+            const sidePrice = sideItems.length > 0 ? Math.min(...sideItems.map(s => s.price)) : 0;
+          %>
             <div class="a-la-carte-sides-container flex" style="margin-top: clamp(12px, 1.2vw, 30px);">
 
               <!-- Left Column: Entrees -->
@@ -937,18 +970,15 @@
                 <div class="flex justify-start" style="font-size: clamp(20px, min(1.6vw, 2.3vh), 38px); gap: clamp(20px, 2vw, 50px);">
                   <div>
                     <div class="font-semibold">Small</div>
-                    <div>Reg: $5.40</div>
-                    <div>Premium: $6.90</div>
+                    <div>starts at $<%= regularEntreePrice.toFixed(2) %></div>
                   </div>
                   <div>
                     <div class="font-semibold">Medium</div>
-                    <div>Reg: $8.70</div>
-                    <div>Premium: $11.70</div>
+                    <div>starts at $<%= regularEntreePrice.toFixed(2) %></div>
                   </div>
                   <div>
                     <div class="font-semibold">Large</div>
-                    <div>Reg: $11.40</div>
-                    <div>Premium: $15.90</div>
+                    <div>starts at $<%= regularEntreePrice.toFixed(2) %></div>
                   </div>
                 </div>
               </div>
@@ -959,11 +989,11 @@
                 <div class="flex justify-start" style="font-size: clamp(20px, min(1.6vw, 2.3vh), 38px); gap: clamp(20px, 2vw, 50px);">
                   <div>
                     <div class="font-semibold">Medium</div>
-                    <div>Reg: $4.60</div>
+                    <div>starts at $<%= sidePrice.toFixed(2) %></div>
                   </div>
                   <div>
                     <div class="font-semibold">Large</div>
-                    <div>Reg: $5.60</div>
+                    <div>starts at $<%= sidePrice.toFixed(2) %></div>
                   </div>
                 </div>
               </div>
