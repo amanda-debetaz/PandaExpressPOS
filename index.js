@@ -1500,20 +1500,44 @@ app.put("/api/employees/:id/role", async (req, res) => {
 
 // Deactivate employee
 app.put('/api/employees/:id/deactivate', async (req, res) => {
-  const updated = await prisma.employee.update({
-    where: { employee_id: parseInt(req.params.id) },
-    data: { is_active: false }
-  });
-  res.json(updated);
+  const id = parseInt(req.params.id);
+
+  try {
+    // Check if employee exists
+    const employee = await prisma.employee.findUnique({ where: { employee_id: id } });
+    if (!employee) return res.status(404).json({ error: "Employee not found" });
+
+    const updated = await prisma.employee.update({
+      where: { employee_id: id },
+      data: { is_active: false }
+    });
+
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to deactivate employee" });
+  }
 });
 
 // Reactivate employee
 app.put('/api/employees/:id/reactivate', async (req, res) => {
-  const updated = await prisma.employee.update({
-    where: { employee_id: parseInt(req.params.id) },
-    data: { is_active: true }
-  });
-  res.json(updated);
+  const id = parseInt(req.params.id);
+
+  try {
+    // Check if employee exists
+    const employee = await prisma.employee.findUnique({ where: { employee_id: id } });
+    if (!employee) return res.status(404).json({ error: "Employee not found" });
+
+    const updated = await prisma.employee.update({
+      where: { employee_id: id },
+      data: { is_active: true }
+    });
+
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to reactivate employee" });
+  }
 });
 
 // Reset password for employee
@@ -1807,6 +1831,36 @@ app.put("/api/menu/:id/recipe", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to update recipe" });
+  }
+});
+
+// Update menu item
+app.put('/api/menu/:id', async (req, res) => {
+  const id = parseInt(req.params.id);
+  const { name, price, category_id, is_active } = req.body;
+
+  if (!id) return res.status(400).json({ error: 'Menu item ID is required' });
+
+  try {
+    // Fetch the item first (optional)
+    const menuItem = await prisma.menu_item.findUnique({ where: { menu_item_id: id } });
+    if (!menuItem) return res.status(404).json({ error: 'Menu item not found' });
+
+    // Update the item
+    const updated = await prisma.menu_item.update({
+      where: { menu_item_id: id },
+      data: {
+        name: name ?? menuItem.name,
+        price: price ?? menuItem.price,
+        category_id: category_id ?? menuItem.category_id,
+        is_active: is_active ?? menuItem.is_active
+      }
+    });
+
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update menu item' });
   }
 });
 
