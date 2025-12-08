@@ -184,7 +184,7 @@
     <div class="bg-white text-black w-full max-w-md border border-neutral-200 rounded-xl overflow-hidden shadow-2xl">
       <div class="bg-red-700 text-white px-6 py-4 flex items-center justify-between">
         <h3 class="text-lg font-bold" id="info-modal-title" data-original="Item Information">Item Information</h3>
-        <button id="info-modal-close" class="text-white hover:text-red-100 text-2xl font-bold">&times;</button>
+        <button id="info-modal-close" aria-label="Close" class="text-white/90 hover:text-white text-3xl font-light leading-none transition-colors"><span aria-hidden="true">&times;</span></button>
       </div>
       <div class="p-6 space-y-4">
         <div class="text-center pb-4 border-b border-neutral-200">
@@ -453,7 +453,7 @@
         
         // Add nutrition data
         const nutritionData = s.nutrition ? JSON.stringify(s.nutrition) : '{}';
-        const allergenBadge = `<div class="flex items-center gap-1"><span class="text-xs font-medium text-neutral-700 bg-white px-2 py-1 rounded shadow" data-original="More Info">More Info</span><button class="info-badge w-6 h-6 rounded-full bg-red-700 text-white text-xs font-bold flex items-center justify-center hover:bg-red-800 transition" data-item-name="${s.name}" data-allergens="${allergenText}" data-nutrition='${nutritionData}'>i</button></div>`;
+        const allergenBadge = `<div class="flex items-center gap-1"><span class="text-xs font-medium text-neutral-700 bg-white px-2 py-1 rounded shadow" data-original="More Info">More Info</span><button class="info-badge w-6 h-6 rounded-full bg-red-700 text-white text-xs font-bold flex items-center justify-center hover:bg-red-800 transition" aria-label="More info for ${s.name}" data-item-name="${s.name}" data-allergens="${allergenText}" data-nutrition='${nutritionData}'>i</button></div>`;
 
         const card = document.createElement('button');
         card.className = `relative w-full bg-white border-2 ${isSelected ? 'border-red-600' : 'border-neutral-300'} rounded-lg text-left hover:border-red-600 transition overflow-hidden`;
@@ -474,6 +474,10 @@
             <div class="text-sm font-semibold" data-original="${s.name}">${displayName}</div>
           </div>
         `;
+
+        card.addEventListener('mouseenter', () => {
+           if (ttsEnabled) speak(displayName);
+        });
         
         card.addEventListener('click', () => {
           if (!cfg.allowHalf) {
@@ -518,7 +522,7 @@
 
         // Add nutrition data
         const nutritionData = p.nutrition ? JSON.stringify(p.nutrition) : '{}';
-        const allergenBadge = `<div class="flex items-center gap-1"><span class="text-xs font-medium text-neutral-700 bg-white px-2 py-1 rounded shadow" data-original="More Info">More Info</span><button class="info-badge w-6 h-6 rounded-full bg-red-700 text-white text-xs font-bold flex items-center justify-center hover:bg-red-800 transition" data-item-name="${p.name}" data-allergens="${allergenText}" data-nutrition='${nutritionData}'>i</button></div>`;
+        const allergenBadge = `<div class="flex items-center gap-1"><span class="text-xs font-medium text-neutral-700 bg-white px-2 py-1 rounded shadow" data-original="More Info">More Info</span><button class="info-badge w-6 h-6 rounded-full bg-red-700 text-white text-xs font-bold flex items-center justify-center hover:bg-red-800 transition" aria-label="More info for ${p.name}" data-item-name="${p.name}" data-allergens="${allergenText}" data-nutrition='${nutritionData}'>i</button></div>`;
           
         const card = document.createElement('button');
         card.className = `relative w-full bg-white border-2 ${isSelected ? 'border-red-600' : 'border-neutral-300'} rounded-lg text-left hover:border-red-600 transition overflow-hidden`;
@@ -541,7 +545,11 @@
               </div>
             </div>
           `;
-        
+          
+        card.addEventListener('mouseenter', () => {
+           if (ttsEnabled) speak(displayName);
+        });
+
         card.addEventListener('click', () => {
           const currentTotal = totalEntrees();
           if (count === 0) {
@@ -665,12 +673,130 @@
         } catch (err) {
           console.error('Failed to parse nutrition data:', err);
         }
+        if (ttsEnabled) {
+            let speakText = `Information for ${itemName}. `;
+            
+            if (allergens && allergens !== 'None' && allergens.trim() !== '') {
+              speakText += `Allergens: ${allergens}. `;
+            } else {
+              speakText += `No allergens listed. `;
+            }
+
+            if (nutrition) {
+              speakText += `Nutrition facts: `;
+              if (nutrition.calories) speakText += `${nutrition.calories} calories, `;
+              if (nutrition.protein) speakText += `${nutrition.protein} grams of protein, `;
+              if (nutrition.fat) speakText += `${nutrition.fat} grams of fat, `;
+              if (nutrition.carbs) speakText += `${nutrition.carbs} grams of carbs.`;
+            }
+            speak(speakText);
+          }
         openInfoModal(itemName, allergens, nutrition);
       }
     });
 
     // Initial render
     update();
+
+    // Text-to-Speech Logic
+      let ttsEnabled = false;
+      let currentUtterance = null;
+      const synth = window.speechSynthesis;
+
+      function initTTS() {
+        const savedTTS = localStorage.getItem('kiosk_tts_enabled');
+        if (savedTTS === 'true') {
+          ttsEnabled = true;
+        }
+        updateTTSUI();
+      }
+
+      function updateTTSUI() {
+        const icon = document.getElementById('tts-icon');
+        const status = document.getElementById('tts-status');
+        const toggle = document.getElementById('tts-toggle');
+        
+        if (ttsEnabled) {
+          icon.textContent = '🔊';
+          status.textContent = 'On';
+          status.setAttribute('data-original', 'On');
+          toggle.classList.remove('bg-neutral-800');
+          toggle.classList.add('bg-green-700');
+        } else {
+          icon.textContent = '🔇';
+          status.textContent = 'Off';
+          status.setAttribute('data-original', 'Off');
+          toggle.classList.remove('bg-green-700');
+          toggle.classList.add('bg-neutral-800');
+        }
+      }
+
+      function speak(text) {
+        if (!ttsEnabled || !text) return;
+        
+        // Cancel any ongoing speech
+        synth.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        const lang = localStorage.getItem('kiosk_lang') || 'en';
+        
+        // Map language codes to speech synthesis language codes
+        const langMap = {
+          'en': 'en-US',
+          'es': 'es-ES',
+          'zh-CN': 'zh-CN',
+          'fr': 'fr-FR',
+          'de': 'de-DE'
+        };
+        
+        utterance.lang = langMap[lang] || 'en-US';
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+        
+        currentUtterance = utterance;
+        synth.speak(utterance);
+      }
+        
+      if (ttsEnabled) {
+        speak('Text to speech enabled');
+      } else {
+        synth.cancel();
+      }
+      
+
+      // Add TTS to navigation buttons
+      document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('mouseenter', () => speak(link.textContent.trim()));
+      });
+
+      document.addEventListener('mouseenter', (e) => {
+        if (!ttsEnabled) return;
+        const target = e.target;
+
+        // Item Cards (Kiosk Grid)
+        if (target.closest('.item-card')) {
+          const card = target.closest('.item-card');
+          const name = card.querySelector('[data-translate-type="item-name"]')?.textContent || card.dataset.name;
+          if (name) speak(name);
+          return;
+        }
+
+        // Cart Items
+        if (target.closest('#cart-drawer-items > div')) {
+          const name = target.querySelector('.font-medium')?.textContent;
+          if (name) speak(name);
+          return;
+        }
+
+        // Generic Buttons (except the TTS toggle itself)
+        if (target.tagName === 'BUTTON' && target.id !== 'tts-toggle') {
+          const text = target.getAttribute('aria-label') || target.textContent.trim();
+          if (text && text.length < 50) speak(text);
+        }
+      }, true);
+
+    document.addEventListener('DOMContentLoaded', initTTS);
 
     // TRANSLATION LOGIC
     document.addEventListener('DOMContentLoaded', () => {

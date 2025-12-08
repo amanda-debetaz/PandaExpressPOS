@@ -20,9 +20,9 @@
     <form method="POST" action="/login">
       <input type="hidden" name="next" value="<%= next %>">
       <label>Employee ID</label>
-      <input type="text" name="employee_id" required placeholder="9999">
+      <input type="text" name="employee_id" required placeholder="1234">
       <label>Password Hash</label>
-      <input type="password" name="password_hash" required placeholder="panda_31">
+      <input type="password" name="password_hash" required placeholder="passwor">
       <% if (error) { %><p class="error-message"><%= error %></p><% } %>
       <button type="submit">Log In</button>
     </form>

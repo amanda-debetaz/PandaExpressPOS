@@ -571,7 +571,7 @@ app.get("/kiosk", requireAuth(), async (req, res) => {
           }
         }
       },
-      orderBy: { name: 'asc' }
+      orderBy: { price: 'asc' }
     });
 
     // Group items by category
