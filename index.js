@@ -1562,16 +1562,16 @@ app.put("/api/employees/:id/reset-password", async (req, res) => {
 });
 
 // --- Shifts ---
-// Create shift
+//Create shifts
 app.post("/api/shifts", async (req, res) => {
-  const { manager_id, shift_date, start_time, end_time } = req.body;
+  const { shift_date, start_time, end_time } = req.body;
 
-  if (!manager_id || !shift_date || !start_time || !end_time) {
+  // Manager ID is always 1
+  const manager_id = 1;
+
+  // Validate required fields
+  if (!shift_date || !start_time || !end_time) {
     return res.status(400).json({ error: "All fields are required" });
-  }
-
-  if (isNaN(manager_id)) {
-    return res.status(400).json({ error: "Manager ID must be a number" });
   }
 
   // Validate shift_date format
@@ -1590,11 +1590,13 @@ app.post("/api/shifts", async (req, res) => {
   }
 
   try {
+    // Check that manager 1 exists
     const manager = await prisma.manager.findUnique({
-      where: { manager_id: Number(manager_id) },
+      where: { manager_id },
     });
+
     if (!manager) {
-      return res.status(400).json({ error: `Manager with ID ${manager_id} does not exist.` });
+      return res.status(400).json({ error: "Manager with ID 1 does not exist." });
     }
 
     // Parse times and add 6-hour offset
@@ -1606,7 +1608,7 @@ app.post("/api/shifts", async (req, res) => {
 
     const shift = await prisma.shift_schedule.create({
       data: {
-        manager_id: Number(manager_id),
+        manager_id,
         shift_date: shiftDateObj,
         start_time: startDateTime,
         end_time: endDateTime,

@@ -520,12 +520,11 @@ async function listShiftsByDate() {
 
 // -------------------- CREATE SHIFT --------------------
 document.getElementById("createShiftBtn").addEventListener("click", async () => {
-  const manager_id = Number(prompt("Enter manager ID:"));
   const shift_date = prompt("Enter shift date (YYYY-MM-DD):");
   const start_time_input = prompt("Enter start time (HH:MM):");
   const end_time_input = prompt("Enter end time (HH:MM):");
 
-  if (!manager_id || !shift_date || !start_time_input || !end_time_input) {
+  if (!shift_date || !start_time_input || !end_time_input) {
     alert("All fields are required!");
     return;
   }
@@ -535,7 +534,6 @@ document.getElementById("createShiftBtn").addEventListener("click", async () => 
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        manager_id,
         shift_date,
         start_time: start_time_input,
         end_time: end_time_input,
@@ -545,7 +543,6 @@ document.getElementById("createShiftBtn").addEventListener("click", async () => 
     const data = await res.json();
 
     if (!res.ok) {
-      // Show server error if status is not 2xx
       alert(`Failed to create shift: ${data.error}`);
       console.error("Server error:", data);
     } else {
