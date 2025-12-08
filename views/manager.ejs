@@ -412,15 +412,39 @@ async function addEmployee() {
 async function deactivateEmployee() {
   const id = prompt("Enter Employee ID to deactivate:");
   if (!id) return;
-  await fetch(`/api/employees/${id}/deactivate`, { method: "PUT" });
-  alert("Employee deactivated.");
+
+  try {
+    const res = await fetch(`/api/employees/${id}/deactivate`, { method: "PUT" });
+    
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || "Employee not found or could not be deactivated");
+    }
+
+    alert("Employee deactivated.");
+    listEmployees(); // refresh employee list
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
 }
 
 async function reactivateEmployee() {
   const id = prompt("Enter Employee ID to reactivate:");
   if (!id) return;
-  await fetch(`/api/employees/${id}/reactivate`, { method: "PUT" });
-  alert("Employee reactivated.");
+
+  try {
+    const res = await fetch(`/api/employees/${id}/reactivate`, { method: "PUT" });
+    
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || "Employee not found or could not be reactivated");
+    }
+
+    alert("Employee reactivated.");
+    listEmployees(); // refresh employee list
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
 }
 
 async function resetPassword() {

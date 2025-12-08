@@ -1500,20 +1500,44 @@ app.put("/api/employees/:id/role", async (req, res) => {
 
 // Deactivate employee
 app.put('/api/employees/:id/deactivate', async (req, res) => {
-  const updated = await prisma.employee.update({
-    where: { employee_id: parseInt(req.params.id) },
-    data: { is_active: false }
-  });
-  res.json(updated);
+  const id = parseInt(req.params.id);
+
+  try {
+    // Check if employee exists
+    const employee = await prisma.employee.findUnique({ where: { employee_id: id } });
+    if (!employee) return res.status(404).json({ error: "Employee not found" });
+
+    const updated = await prisma.employee.update({
+      where: { employee_id: id },
+      data: { is_active: false }
+    });
+
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to deactivate employee" });
+  }
 });
 
 // Reactivate employee
 app.put('/api/employees/:id/reactivate', async (req, res) => {
-  const updated = await prisma.employee.update({
-    where: { employee_id: parseInt(req.params.id) },
-    data: { is_active: true }
-  });
-  res.json(updated);
+  const id = parseInt(req.params.id);
+
+  try {
+    // Check if employee exists
+    const employee = await prisma.employee.findUnique({ where: { employee_id: id } });
+    if (!employee) return res.status(404).json({ error: "Employee not found" });
+
+    const updated = await prisma.employee.update({
+      where: { employee_id: id },
+      data: { is_active: true }
+    });
+
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to reactivate employee" });
+  }
 });
 
 // Reset password for employee
