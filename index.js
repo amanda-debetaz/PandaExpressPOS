@@ -532,7 +532,7 @@ app.get("/menu-board", async (req, res) => {
 });
 
 // ---------- 1. KIOSK MENU ----------
-let menuCache = { entrees: [], a_la_carte: [], sides: [], appetizers: [] };
+let menuCache = { entrees: [], a_la_carte: [], sides: [], appetizers: [] , drinks: []};
 
 app.get("/kiosk", async (req, res) => {
   try {
@@ -555,7 +555,8 @@ app.get("/kiosk", async (req, res) => {
       entrees: [],
       appetizers: [],
       a_la_carte: [],
-      sides: []
+      sides: [],
+      drinks: []
     };
 
     // Normalization helpers for allergen strings from inventory
@@ -666,9 +667,11 @@ app.get("/kiosk", async (req, res) => {
         case 4:
           menu.sides.push(itemData);
           break;
+        case 5:
+          menu.drinks.push(itemData);
+          break;
       }
     });
-
     res.render("kiosk", { menu });
   } catch (err) {
     console.error("Kiosk query error:", err);
