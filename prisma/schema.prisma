@@ -118,6 +118,7 @@ model order {
   created_at   DateTime         @default(now()) @db.Timestamptz(6)
   status       kitchen_status   @default(queued)
   completed_at DateTime?        @db.Timestamptz(6)
+  z_reported   Boolean          @default(false)
   employee     employee         @relation(fields: [employee_id], references: [employee_id], onUpdate: NoAction)
   order_item   order_item[]
   payment      payment[]

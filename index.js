@@ -2274,19 +2274,26 @@ app.get("/api/x-report", async (req, res) => {
 //Z Report
 app.get("/api/z-report", async (req, res) => {
   try {
-    // Fetch all orders that haven't been included in a Z report yet
+    // Fetch only orders not yet included in a Z report
     const orders = await prisma.order.findMany({
-      where: { status: "done" }, // maybe you want a "z_reported: false" flag in production
-      include: { order_item: { include: { menu_item: true } } },
+      where: {
+        status: "done",
+        z_reported: false
+      },
+      include: {
+        order_item: {
+          include: { menu_item: true }
+        }
+      }
     });
 
-    // Aggregate sales per menu item
     const salesMap = {};
     let totalOrders = 0;
     let totalRevenue = 0;
 
     for (const order of orders) {
-      totalOrders += 1;
+      totalOrders++;
+
       for (const item of order.order_item) {
         const key = item.menu_item.name;
         const revenue = parseFloat(item.unit_price) * item.qty;
@@ -2295,6 +2302,7 @@ app.get("/api/z-report", async (req, res) => {
         if (!salesMap[key]) {
           salesMap[key] = { name: key, quantitySold: 0, revenue: 0 };
         }
+
         salesMap[key].quantitySold += item.qty;
         salesMap[key].revenue += revenue;
       }
@@ -2302,10 +2310,10 @@ app.get("/api/z-report", async (req, res) => {
 
     const items = Object.values(salesMap);
 
-    // Mark these orders as "counted in Z report" by setting a timestamp field
+    // Mark these orders as included in Z report
     await prisma.order.updateMany({
       where: { order_id: { in: orders.map(o => o.order_id) } },
-      data: { status: "queued" } // or add a boolean like z_reported = true in a real system
+      data: { z_reported: true }
     });
 
     res.json({
