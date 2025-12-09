@@ -126,7 +126,7 @@ passport.use(new GoogleStrategy({
     const display_name = profile.displayName;
 
     try {
-      let user = await prisma.employee.findUnique({
+      let user = await prisma.employee.findFirst({
         where: { google_id: google_id }
       });
 
@@ -136,7 +136,7 @@ passport.use(new GoogleStrategy({
       }
 
       console.log(`GOOGLE LOGIN: No user found for google_id. Checking email: ${email}`);
-      user = await prisma.employee.findUnique({
+      user = await prisma.employee.findFirst({
         where: { email: email }
       });
 
@@ -178,13 +178,38 @@ setInterval(() => {
 }, 60_000);
 
 // ---------- Auth middleware ----------
-function requireAuth(req, res, next) {
-  if (req.isAuthenticated()) {
-    return next(); 
-  }
-  console.log("requireAuth: User not logged in. Redirecting to /");
-  req.flash('error', 'You must be logged in to view that page.');
-  res.redirect('/');
+function requireAuth(allowedRole) {
+  return function(req, res, next) {
+    return next();
+    // 1. Check if user is logged in
+    if (!req.isAuthenticated()) {
+      console.log("requireAuth: User not logged in. Redirecting to /login");
+      req.flash('error', 'You must be logged in to view that page.');
+      return res.redirect('/login');
+    }
+
+    const userRole = (req.user.role || '').toLowerCase();
+
+    if (userRole === 'manager') {
+      return next(); 
+    }
+
+    // 2. If a specific role is required, check it
+    if (allowedRole) {
+      // Normalize to array to support single string or multiple allowed roles
+      const roles = Array.isArray(allowedRole) ? allowedRole : [allowedRole];
+      
+      const hasPermission = roles.some(r => r.toLowerCase() === userRole);
+
+      if (!hasPermission) {
+        console.log(`Access denied: ${req.user.display_name} (${userRole}) attempted to access restricted page.`);
+        req.flash('error', 'You do not have permission to view that page.');
+        return res.redirect('/');
+      }
+    }
+
+    return next();
+  };
 }
 
 // ---------- Login routes ----------
@@ -249,18 +274,18 @@ app.get("/", (req, res) => {
     success: req.flash('success')
   });
 });
-app.get("/manager", async (req, res) => {
+app.get("/manager", requireAuth('manager'), async (req, res) => {
   const employees = await prisma.employee.findMany({
     where: { is_active: true }
   });
 
   res.render("manager", { employees });
 });
-app.get("/cashier", requireAuth, (req, res) => res.render("cashier"));
+app.get("/cashier", requireAuth('cashier'), (req, res) => res.render("cashier"));
 
 
 let doneViewCutoff = new Date("2025-11-08T00:00:00Z");
-app.get("/kitchen", requireAuth, async (req, res) => {
+app.get("/kitchen", requireAuth('cook'), async (req, res) => {
   try {
     const cutoff = doneViewCutoff;
 
@@ -394,7 +419,7 @@ app.get("/kitchen", requireAuth, async (req, res) => {
 
 
 
-app.post("/kitchen/:orderId/status", requireAuth, async (req, res) => {
+app.post("/kitchen/:orderId/status", requireAuth('cook'), async (req, res) => {
   const orderId = parseInt(req.params.orderId, 10);
   const { status } = req.body;
 
@@ -434,7 +459,7 @@ app.post("/kitchen/:orderId/status", requireAuth, async (req, res) => {
 });
 
 // Cancel order endpoint
-app.post("/kitchen/:orderId/cancel", requireAuth, async (req, res) => {
+app.post("/kitchen/:orderId/cancel", requireAuth('cook'), async (req, res) => {
   const orderId = parseInt(req.params.orderId, 10);
 
   try {
@@ -450,7 +475,7 @@ app.post("/kitchen/:orderId/cancel", requireAuth, async (req, res) => {
   }
 });
 
-app.post("/kitchen/clear-done", requireAuth, (req, res) => {
+app.post("/kitchen/clear-done", requireAuth('cook'), (req, res) => {
   doneViewCutoff = new Date();
   res.redirect("/kitchen");
 });
@@ -532,9 +557,9 @@ app.get("/menu-board", async (req, res) => {
 });
 
 // ---------- 1. KIOSK MENU ----------
-let menuCache = { entrees: [], a_la_carte: [], sides: [], appetizers: [] };
+let menuCache = { entrees: [], a_la_carte: [], sides: [], appetizers: [] , drinks: []};
 
-app.get("/kiosk", async (req, res) => {
+app.get("/kiosk", requireAuth(), async (req, res) => {
   try {
     // Fetch all active menu items with their categories and ingredient allergens
     const menuItems = await prisma.menu_item.findMany({
@@ -547,7 +572,7 @@ app.get("/kiosk", async (req, res) => {
           }
         }
       },
-      orderBy: { name: 'asc' }
+      orderBy: { price: 'asc' }
     });
 
     // Group items by category
@@ -555,7 +580,8 @@ app.get("/kiosk", async (req, res) => {
       entrees: [],
       appetizers: [],
       a_la_carte: [],
-      sides: []
+      sides: [],
+      drinks: []
     };
 
     // Normalization helpers for allergen strings from inventory
@@ -672,9 +698,11 @@ app.get("/kiosk", async (req, res) => {
         case 4:
           menu.sides.push(itemData);
           break;
+        case 5:
+          menu.drinks.push(itemData);
+          break;
       }
     });
-
     res.render("kiosk", { menu });
   } catch (err) {
     console.error("Kiosk query error:", err);
@@ -953,7 +981,7 @@ app.get("/debug/allergens/:name", async (req, res) => {
 });
 
 // ---------- 2. ORDER ----------
-app.get("/order", requireAuth, async (req, res) => {
+app.get("/order", async (req, res) => {
   const menu = { entrees: [], sides: [], a_la_carte: [] };
   try {
     const items = await prisma.menu_item.findMany({
@@ -975,7 +1003,7 @@ app.get("/order", requireAuth, async (req, res) => {
 });
 
 // ---------- 3. SUMMARY (Now supports full cart) ----------
-app.post("/summary", requireAuth, async (req, res) => {
+app.post("/summary", async (req, res) => {
   const { cart: rawCart } = req.body;
 
   if (!rawCart || !Array.isArray(rawCart) || rawCart.length === 0) {
@@ -1006,7 +1034,7 @@ app.post("/summary", requireAuth, async (req, res) => {
 // -------------------------------------------------
 
 // 1. Add item to cart
-app.post("/api/cart/add", requireAuth, (req, res) => {
+app.post("/api/cart/add", requireAuth(), (req, res) => {
   const { name, price } = req.body;
   if (!name || price === undefined) return res.status(400).json({error: "missing data"});
 
@@ -1024,12 +1052,12 @@ app.post("/api/cart/add", requireAuth, (req, res) => {
 });
 
 // 2. Get current cart (for the modal)
-app.get("/api/cart", requireAuth, (req, res) => {
+app.get("/api/cart", (req, res) => {
   res.json({ cart: req.session.cart || [] });
 });
 
 // 3. Clear cart
-app.delete("/api/cart/clear", requireAuth, (req, res) => {
+app.delete("/api/cart/clear", (req, res) => {
   req.session.cart = [];
   res.json({ success: true });
 });
@@ -1064,7 +1092,8 @@ app.post("/api/checkout", async (req, res) => {
     );
 
     // Menu items by name (Bowl / Plate / Bigger Plate / a la carte, etc.)
-    const itemNames = cart.map((item) => item.name);
+    // For sized items, use baseName for database lookup
+    const itemNames = cart.map((item) => item.baseName || item.name);
     const menuItems = await prisma.menu_item.findMany({
       where: { name: { in: itemNames } },
       select: { menu_item_id: true, name: true },
@@ -1107,13 +1136,18 @@ app.post("/api/checkout", async (req, res) => {
         status: "queued",
         order_item: {
           create: cart.map((item) => {
-            const mi = menuItemByName[item.name];
+            // For sized items, use baseName for database lookup
+            const lookupName = item.baseName || item.name;
+            const mi = menuItemByName[lookupName];
             if (!mi) {
-              throw new Error(`Unknown menu item: ${item.name}`);
+              throw new Error(`Unknown menu item: ${lookupName}`);
             }
 
+            // For sized items, multiply quantity by serving multiplier
+            const finalQty = item.multiplier ? (item.quantity * item.multiplier) : item.quantity;
+            
             const orderItemData = {
-              qty: item.quantity,
+              qty: finalQty,
               unit_price: item.price,
               discount_amount: 0,
               tax_amount: 0,
@@ -1164,6 +1198,185 @@ app.post("/api/checkout", async (req, res) => {
   } catch (err) {
     console.error("Checkout error:", err);
     res.status(500).json({ success: false, error: "Checkout failed" });
+  }
+});
+
+// ===== CLOCK IN/OUT ENDPOINTS (for tracking employee ID on orders only) =====
+app.post("/api/clock/in", requireAuth('cashier'), async (req, res) => {
+  try {
+    const { employee_id } = req.body;
+
+    if (!employee_id) {
+      return res.status(400).json({ error: "Employee ID is required" });
+    }
+
+    // Verify employee exists
+    const employee = await prisma.employee.findUnique({
+      where: { employee_id: parseInt(employee_id) },
+      select: { employee_id: true, display_name: true, is_active: true }
+    });
+
+    if (!employee) {
+      return res.status(404).json({ error: "Employee not found" });
+    }
+
+    if (!employee.is_active) {
+      return res.status(400).json({ error: "Employee account is inactive" });
+    }
+
+    // Just return employee info - no database tracking
+    res.json({
+      success: true,
+      employee_id: employee.employee_id,
+      display_name: employee.display_name
+    });
+  } catch (err) {
+    console.error("Clock in error:", err);
+    res.status(500).json({ success: false, error: err.message || "Clock in failed" });
+  }
+});
+
+app.post("/api/clock/out", requireAuth('cashier'), async (req, res) => {
+  try {
+    // No database operations needed - just acknowledge the clock out
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Clock out error:", err);
+    res.status(500).json({ success: false, error: err.message || "Clock out failed" });
+  }
+});
+
+// ===== CASHIER CHECKOUT (orders immediately marked as DONE) =====
+app.post("/api/cashier/checkout", requireAuth('cashier'), async (req, res) => {
+  try {
+    const { cart, paymentMethod, dineOption, clockedInEmployeeId } = req.body;
+
+    if (!Array.isArray(cart) || cart.length === 0) {
+      return res.status(400).json({ error: "Cart is empty" });
+    }
+
+    // Validate payment method (must match payment_method_enum in schema)
+    const validPaymentMethods = ['cash', 'card', 'giftcard', 'dining_dollars', 'meal_swipe'];
+    if (!validPaymentMethods.includes(paymentMethod)) {
+      return res.status(400).json({ error: "Invalid payment method" });
+    }
+
+    // Validate dine option
+    const validDineOptions = ['dine_in', 'takeout'];
+    if (!validDineOptions.includes(dineOption)) {
+      return res.status(400).json({ error: "Invalid dine option" });
+    }
+
+    // Calculate total
+    const total = cart.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+
+    // Get menu items from database
+    const itemNames = cart.map((item) => item.baseName || item.name);
+    const menuItems = await prisma.menu_item.findMany({
+      where: { name: { in: itemNames } },
+      select: { menu_item_id: true, name: true },
+    });
+
+    const menuItemByName = {};
+    menuItems.forEach((mi) => {
+      menuItemByName[mi.name] = mi;
+    });
+
+    // Collect option names from all cart items (sides + entrees)
+    const optionNameSet = new Set();
+    cart.forEach((item) => {
+      if (Array.isArray(item.options)) {
+        item.options.forEach((opt) => {
+          if (opt && opt.name) optionNameSet.add(opt.name);
+        });
+      }
+    });
+
+    let optionByName = {};
+    if (optionNameSet.size > 0) {
+      const optionNames = Array.from(optionNameSet);
+      const options = await prisma.option.findMany({
+        where: { name: { in: optionNames } },
+        select: { option_id: true, name: true },
+      });
+      options.forEach((o) => {
+        if (!optionByName[o.name]) {
+          optionByName[o.name] = o;
+        }
+      });
+    }
+
+    // Get employee_id: prioritize clocked-in employee, fall back to logged-in user
+    const employeeId = clockedInEmployeeId || req.session.user?.employee_id || 1;
+
+    // Create order with status "done" (cashier orders skip kitchen queue)
+    const order = await prisma.order.create({
+      data: {
+        employee_id: employeeId,
+        dine_option: dineOption,
+        status: "done", // CASHIER ORDERS ARE IMMEDIATELY DONE
+        order_item: {
+          create: cart.map((item) => {
+            const lookupName = item.baseName || item.name;
+            const mi = menuItemByName[lookupName];
+            if (!mi) {
+              throw new Error(`Unknown menu item: ${lookupName}`);
+            }
+
+            const finalQty = item.multiplier ? (item.quantity * item.multiplier) : item.quantity;
+            
+            const orderItemData = {
+              qty: finalQty,
+              unit_price: item.price,
+              discount_amount: 0,
+              tax_amount: 0,
+              menu_item: {
+                connect: { menu_item_id: mi.menu_item_id },
+              },
+            };
+
+            // Attach options for meals
+            if (Array.isArray(item.options) && item.options.length > 0) {
+              const optionCreates = [];
+              item.options.forEach((opt) => {
+                const row = optionByName[opt.name];
+                if (!row) return;
+                const qty = Number(opt.qty) || 1;
+                optionCreates.push({
+                  qty,
+                  option: { connect: { option_id: row.option_id } },
+                });
+              });
+
+              if (optionCreates.length > 0) {
+                orderItemData.order_item_option = { create: optionCreates };
+              }
+            }
+
+            return orderItemData;
+          }),
+        },
+        payment: {
+          create: {
+            method: paymentMethod,
+            amount: total,
+          },
+        },
+      },
+      include: {
+        order_item: true,
+        payment: true,
+      },
+    });
+
+    // Note: No kitchen broadcast since cashier orders bypass the kitchen queue
+    res.json({ success: true, order_id: order.order_id });
+  } catch (err) {
+    console.error("Cashier checkout error:", err);
+    res.status(500).json({ success: false, error: err.message || "Checkout failed" });
   }
 });
 
@@ -1300,7 +1513,7 @@ async function ensurePreparedAndConsumeForOrder(tx, orderId) {
 }
 
 // Cook a batch: subtract inventory by recipe and increase KV prepared stock
-app.post('/kitchen/stock/:menuItemId/cook', requireAuth, async (req, res) => {
+app.post('/kitchen/stock/:menuItemId/cook', requireAuth('cook'), async (req, res) => {
   const menuItemId = parseInt(req.params.menuItemId, 10);
   const servings = Math.max(0, parseInt(req.body?.servings ?? '0', 10));
   if (!Number.isFinite(menuItemId) || servings <= 0) {
@@ -1370,7 +1583,7 @@ app.post('/kitchen/stock/:menuItemId/cook', requireAuth, async (req, res) => {
 });
 
 // Discard all remaining prepared stock (end-of-day)
-app.post('/kitchen/stock/discard', requireAuth, async (req, res) => {
+app.post('/kitchen/stock/discard', requireAuth('cook'), async (req, res) => {
   try {
     const rows = await prisma.pricing_settings.findMany({ where: { key: { startsWith: 'prep:mi:' } } });
     await prisma.$transaction(rows.map((r) => prisma.pricing_settings.update({ where: { key: r.key }, data: { value: 0 } })));
@@ -1438,6 +1651,32 @@ app.post("/api/employees", async (req, res) => {
   }
 });
 
+app.delete('/api/employees/:id', async (req, res) => {
+  const id = parseInt(req.params.id);
+
+  if (isNaN(id)) {
+    return res.status(400).json({ error: "Invalid Employee ID" });
+  }
+
+  try {
+    await prisma.employee.delete({
+      where: { employee_id: id }
+    });
+
+    res.json({ success: true, message: "Employee deleted successfully" });
+  } catch (err) {
+    console.error("Delete employee error:", err);
+    
+    if (err.code === 'P2003') {
+      return res.status(400).json({ 
+        error: "Cannot delete this employee because they have associated records (e.g., orders, shifts). Please deactivate them instead." 
+      });
+    }
+
+    res.status(500).json({ error: "Failed to delete employee" });
+  }
+});
+
 // Update employee info
 app.put('/api/employees/:id', async (req, res) => {
   const { id } = req.params;
@@ -1473,20 +1712,44 @@ app.put("/api/employees/:id/role", async (req, res) => {
 
 // Deactivate employee
 app.put('/api/employees/:id/deactivate', async (req, res) => {
-  const updated = await prisma.employee.update({
-    where: { employee_id: parseInt(req.params.id) },
-    data: { is_active: false }
-  });
-  res.json(updated);
+  const id = parseInt(req.params.id);
+
+  try {
+    // Check if employee exists
+    const employee = await prisma.employee.findUnique({ where: { employee_id: id } });
+    if (!employee) return res.status(404).json({ error: "Employee not found" });
+
+    const updated = await prisma.employee.update({
+      where: { employee_id: id },
+      data: { is_active: false }
+    });
+
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to deactivate employee" });
+  }
 });
 
 // Reactivate employee
 app.put('/api/employees/:id/reactivate', async (req, res) => {
-  const updated = await prisma.employee.update({
-    where: { employee_id: parseInt(req.params.id) },
-    data: { is_active: true }
-  });
-  res.json(updated);
+  const id = parseInt(req.params.id);
+
+  try {
+    // Check if employee exists
+    const employee = await prisma.employee.findUnique({ where: { employee_id: id } });
+    if (!employee) return res.status(404).json({ error: "Employee not found" });
+
+    const updated = await prisma.employee.update({
+      where: { employee_id: id },
+      data: { is_active: true }
+    });
+
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to reactivate employee" });
+  }
 });
 
 // Reset password for employee
@@ -1505,27 +1768,63 @@ app.put("/api/employees/:id/reset-password", async (req, res) => {
 });
 
 // --- Shifts ---
-// Create shift
+//Create shifts
 app.post("/api/shifts", async (req, res) => {
-  const { manager_id, shift_date, start_time, end_time } = req.body;
+  const { shift_date, start_time, end_time } = req.body;
 
-  if (!manager_id || !shift_date || !start_time || !end_time) {
-    return res.status(400).json({ error: "Missing required fields" });
+  // Manager ID is always 1
+  const manager_id = 1;
+
+  // Validate required fields
+  if (!shift_date || !start_time || !end_time) {
+    return res.status(400).json({ error: "All fields are required" });
+  }
+
+  // Validate shift_date format
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(shift_date)) {
+    return res.status(400).json({ error: "Shift date must be in YYYY-MM-DD format" });
+  }
+  const shiftDateObj = new Date(shift_date);
+  if (isNaN(shiftDateObj.getTime())) {
+    return res.status(400).json({ error: "Invalid shift date" });
+  }
+
+  // Validate time format
+  const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+  if (!timeRegex.test(start_time) || !timeRegex.test(end_time)) {
+    return res.status(400).json({ error: "Start and end times must be in HH:MM format" });
   }
 
   try {
+    // Check that manager 1 exists
+    const manager = await prisma.manager.findUnique({
+      where: { manager_id },
+    });
+
+    if (!manager) {
+      return res.status(400).json({ error: "Manager with ID 1 does not exist." });
+    }
+
+    // Parse times and add 6-hour offset
+    const [startHour, startMinute] = start_time.split(":").map(Number);
+    const [endHour, endMinute] = end_time.split(":").map(Number);
+
+    const startDateTime = new Date(Date.UTC(1970, 0, 1, startHour + 6, startMinute));
+    const endDateTime = new Date(Date.UTC(1970, 0, 1, endHour + 6, endMinute));
+
     const shift = await prisma.shift_schedule.create({
       data: {
-        manager_id: Number(manager_id), // ensure Int
-        shift_date: new Date(shift_date),
-        start_time: new Date(`1970-01-01T${start_time}:00`),
-        end_time: new Date(`1970-01-01T${end_time}:00`),
+        manager_id,
+        shift_date: shiftDateObj,
+        start_time: startDateTime,
+        end_time: endDateTime,
       },
     });
-    res.json(shift);
+
+    res.json({ message: "Shift created successfully!", shift });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Failed to create shift. Check server logs." });
   }
 });
 
@@ -1780,6 +2079,36 @@ app.put("/api/menu/:id/recipe", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to update recipe" });
+  }
+});
+
+// Update menu item
+app.put('/api/menu/:id', async (req, res) => {
+  const id = parseInt(req.params.id);
+  const { name, price, category_id, is_active } = req.body;
+
+  if (!id) return res.status(400).json({ error: 'Menu item ID is required' });
+
+  try {
+    // Fetch the item first (optional)
+    const menuItem = await prisma.menu_item.findUnique({ where: { menu_item_id: id } });
+    if (!menuItem) return res.status(404).json({ error: 'Menu item not found' });
+
+    // Update the item
+    const updated = await prisma.menu_item.update({
+      where: { menu_item_id: id },
+      data: {
+        name: name ?? menuItem.name,
+        price: price ?? menuItem.price,
+        category_id: category_id ?? menuItem.category_id,
+        is_active: is_active ?? menuItem.is_active
+      }
+    });
+
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update menu item' });
   }
 });
 

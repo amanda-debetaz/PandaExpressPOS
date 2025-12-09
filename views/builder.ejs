@@ -105,7 +105,7 @@
         </h1>
         </div>
       </div>
-      <a href="#" onclick="localStorage.setItem('kiosk_from_builder', 'true'); window.location.href='/kiosk'; return false;" class="text-sm text-red-100 hover:text-white" data-original="Back to Menu">Back to Menu</a>
+      <a href="#" onclick="localStorage.setItem('kiosk_from_builder', 'true'); window.location.href='/kiosk'; return false;" class="text-sm text-red-100 hover:text-white border-2 border-red-300 hover:border-white px-4 py-2 rounded-lg transition" data-original="Back to Menu">Back to Menu</a>
     </div>
   </header>
 
@@ -146,7 +146,7 @@
   </main>
 
   <!-- Still There Modal -->
-  <div id="still-there-modal" class="hidden fixed inset-0 items-center justify-center bg-black/70 backdrop-blur-sm z-90">
+  <div id="still-there-modal" class="hidden fixed inset-0 items-center justify-center bg-black/70 backdrop-blur-sm z-[9999]">
     <div class="bg-white text-black w-full max-w-md rounded-2xl overflow-hidden shadow-2xl">
       <div class="bg-gradient-to-r from-red-700 to-red-600 text-white px-8 py-6 text-center">
         <h3 class="text-2xl font-bold mb-2">Are You Still There?</h3>
@@ -159,7 +159,7 @@
             <svg class="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 160 160">
               <circle cx="80" cy="80" r="72" stroke="#fee2e2" stroke-width="8" fill="none" />
               <circle id="countdown-circle" cx="80" cy="80" r="72" stroke="#dc2626" stroke-width="8" fill="none" 
-                      stroke-dasharray="452" stroke-dashoffset="0" stroke-linecap="round" />
+                      stroke-dasharray="452" stroke-dashoffset="0" stroke-linecap="round" class="transition-all duration-1000 ease-linear" />
             </svg>
             <div class="relative z-10">
               <div id="still-there-countdown" class="text-6xl font-black text-red-700">10</div>
@@ -184,7 +184,7 @@
     <div class="bg-white text-black w-full max-w-md border border-neutral-200 rounded-xl overflow-hidden shadow-2xl">
       <div class="bg-red-700 text-white px-6 py-4 flex items-center justify-between">
         <h3 class="text-lg font-bold" id="info-modal-title" data-original="Item Information">Item Information</h3>
-        <button id="info-modal-close" class="text-white hover:text-red-100 text-2xl font-bold">&times;</button>
+        <button id="info-modal-close" aria-label="Close" class="text-white/90 hover:text-white text-3xl font-light leading-none transition-colors"><span aria-hidden="true">&times;</span></button>
       </div>
       <div class="p-6 space-y-4">
         <div class="text-center pb-4 border-b border-neutral-200">
@@ -300,8 +300,10 @@
     }
 
     function clearCartAndReturnToKiosk() {
+      // Clear cart and all kiosk-related data
       localStorage.removeItem('panda_cart');
-      localStorage.setItem('kiosk_from_builder', 'true');
+      localStorage.removeItem('kiosk_from_builder');
+      // Redirect to kiosk, which will show landing page
       window.location.href = '/kiosk';
     }
 
@@ -453,7 +455,7 @@
         
         // Add nutrition data
         const nutritionData = s.nutrition ? JSON.stringify(s.nutrition) : '{}';
-        const allergenBadge = `<div class="flex items-center gap-1"><span class="text-xs font-medium text-neutral-700 bg-white px-2 py-1 rounded shadow" data-original="More Info">More Info</span><button class="info-badge w-6 h-6 rounded-full bg-red-700 text-white text-xs font-bold flex items-center justify-center hover:bg-red-800 transition" data-item-name="${s.name}" data-allergens="${allergenText}" data-nutrition='${nutritionData}'>i</button></div>`;
+        const allergenBadge = `<div class="flex items-center gap-1"><span class="text-xs font-medium text-neutral-700 bg-white px-2 py-1 rounded shadow" data-original="More Info">More Info</span><button class="info-badge w-6 h-6 rounded-full bg-red-700 text-white text-xs font-bold flex items-center justify-center hover:bg-red-800 transition" aria-label="More info for ${s.name}" data-item-name="${displayName}" data-allergens="${allergenText}" data-nutrition='${nutritionData}'>i</button></div>`;
 
         const card = document.createElement('button');
         card.className = `relative w-full bg-white border-2 ${isSelected ? 'border-red-600' : 'border-neutral-300'} rounded-lg text-left hover:border-red-600 transition overflow-hidden`;
@@ -474,6 +476,10 @@
             <div class="text-sm font-semibold" data-original="${s.name}">${displayName}</div>
           </div>
         `;
+
+        card.addEventListener('mouseenter', () => {
+           if (ttsEnabled) speak(displayName);
+        });
         
         card.addEventListener('click', () => {
           if (!cfg.allowHalf) {
@@ -518,7 +524,7 @@
 
         // Add nutrition data
         const nutritionData = p.nutrition ? JSON.stringify(p.nutrition) : '{}';
-        const allergenBadge = `<div class="flex items-center gap-1"><span class="text-xs font-medium text-neutral-700 bg-white px-2 py-1 rounded shadow" data-original="More Info">More Info</span><button class="info-badge w-6 h-6 rounded-full bg-red-700 text-white text-xs font-bold flex items-center justify-center hover:bg-red-800 transition" data-item-name="${p.name}" data-allergens="${allergenText}" data-nutrition='${nutritionData}'>i</button></div>`;
+        const allergenBadge = `<div class="flex items-center gap-1"><span class="text-xs font-medium text-neutral-700 bg-white px-2 py-1 rounded shadow" data-original="More Info">More Info</span><button class="info-badge w-6 h-6 rounded-full bg-red-700 text-white text-xs font-bold flex items-center justify-center hover:bg-red-800 transition" aria-label="More info for ${p.name}" data-item-name="${displayName}" data-allergens="${allergenText}" data-nutrition='${nutritionData}'>i</button></div>`;
           
         const card = document.createElement('button');
         card.className = `relative w-full bg-white border-2 ${isSelected ? 'border-red-600' : 'border-neutral-300'} rounded-lg text-left hover:border-red-600 transition overflow-hidden`;
@@ -541,7 +547,11 @@
               </div>
             </div>
           `;
-        
+          
+        card.addEventListener('mouseenter', () => {
+           if (ttsEnabled) speak(displayName);
+        });
+
         card.addEventListener('click', () => {
           const currentTotal = totalEntrees();
           if (count === 0) {
@@ -665,12 +675,141 @@
         } catch (err) {
           console.error('Failed to parse nutrition data:', err);
         }
+        if (ttsEnabled) {
+            const lang = localStorage.getItem('kiosk_lang') || 'en';
+            const vocab = ttsLexicon[lang] || ttsLexicon['en'];
+
+            let speakText = `${vocab.info} ${itemName}. `;
+            
+            if (allergens && allergens !== 'None' && allergens.trim() !== '') {
+              speakText += `${vocab.allergens}: ${allergens}. `;
+            } else {
+              speakText += `${vocab.none}. `;
+            }
+
+            if (nutrition) {
+              speakText += `${vocab.nutrition}: `;
+              if (nutrition.calories) speakText += `${nutrition.calories} ${vocab.cal}, `;
+              if (nutrition.protein) speakText += `${nutrition.protein} ${vocab.pro}, `;
+              if (nutrition.fat) speakText += `${nutrition.fat} ${vocab.fat}, `;
+              if (nutrition.carbs) speakText += `${nutrition.carbs} ${vocab.carb}.`;
+            }
+            speak(speakText);
+        }
         openInfoModal(itemName, allergens, nutrition);
       }
     });
 
     // Initial render
     update();
+
+    // Text-to-Speech Logic
+
+    const ttsLexicon = {
+        'en': { info: "Information for", allergens: "Allergens", none: "No allergens listed", nutrition: "Nutrition facts", cal: "calories", pro: "grams of protein", fat: "grams of fat", carb: "grams of carbs" },
+        'es': { info: "Información para", allergens: "Alérgenos", none: "No hay alérgenos listados", nutrition: "Información nutricional", cal: "calorías", pro: "gramos de proteína", fat: "gramos de grasa", carb: "gramos de carbohidratos" },
+        'zh': { info: "信息", allergens: "过敏原", none: "未列出过敏原", nutrition: "营养成分", cal: "卡路里", pro: "克蛋白质", fat: "克脂肪", carb: "克碳水化合物" },
+        'fr': { info: "Informations pour", allergens: "Allergènes", none: "Aucun allergène répertorié", nutrition: "Valeurs nutritionnelles", cal: "calories", pro: "grammes de protéines", fat: "grammes de lipides", carb: "grammes de glucides" },
+        'de': { info: "Informationen für", allergens: "Allergene", none: "Keine Allergene aufgeführt", nutrition: "Nährwerte", cal: "Kalorien", pro: "Gramm Protein", fat: "Gramm Fett", carb: "Gramm Kohlenhydrate" }
+    };
+    let ttsEnabled = false;
+    let currentUtterance = null;
+    const synth = window.speechSynthesis;
+
+    function initTTS() {
+      const savedTTS = localStorage.getItem('kiosk_tts_enabled');
+      if (savedTTS === 'true') {
+        ttsEnabled = true;
+      }
+      updateTTSUI();
+    }
+
+    function updateTTSUI() {
+      const icon = document.getElementById('tts-icon');
+      const status = document.getElementById('tts-status');
+      const toggle = document.getElementById('tts-toggle');
+        
+      if (ttsEnabled) {
+        icon.textContent = '🔊';
+        status.textContent = 'On';
+        status.setAttribute('data-original', 'On');
+        toggle.classList.remove('bg-neutral-800');
+        toggle.classList.add('bg-green-700');
+      } else {
+        icon.textContent = '🔇';
+        status.textContent = 'Off';
+        status.setAttribute('data-original', 'Off');
+        toggle.classList.remove('bg-green-700');
+        toggle.classList.add('bg-neutral-800');
+      }
+    }
+
+      function speak(text) {
+        if (!ttsEnabled || !text) return;
+        
+        // Cancel any ongoing speech
+        synth.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        const lang = localStorage.getItem('kiosk_lang') || 'en';
+        
+        // Map language codes to speech synthesis language codes
+        const langMap = {
+          'en': 'en-US',
+          'es': 'es-ES',
+          'zh': 'zh-CN',
+          'fr': 'fr-FR',
+          'de': 'de-DE'
+        };
+        
+        utterance.lang = langMap[lang] || 'en-US';
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+        
+        currentUtterance = utterance;
+        synth.speak(utterance);
+      }
+        
+      if (ttsEnabled) {
+        speak('Text to speech enabled');
+      } else {
+        synth.cancel();
+      }
+      
+
+      // Add TTS to navigation buttons
+      document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('mouseenter', () => speak(link.textContent.trim()));
+      });
+
+      document.addEventListener('mouseenter', (e) => {
+        if (!ttsEnabled) return;
+        const target = e.target;
+
+        // Item Cards (Kiosk Grid)
+        if (target.closest('.item-card')) {
+          const card = target.closest('.item-card');
+          const name = card.querySelector('[data-translate-type="item-name"]')?.textContent || card.dataset.name;
+          if (name) speak(name);
+          return;
+        }
+
+        // Cart Items
+        if (target.closest('#cart-drawer-items > div')) {
+          const name = target.querySelector('.font-medium')?.textContent;
+          if (name) speak(name);
+          return;
+        }
+
+        // Generic Buttons (except the TTS toggle itself)
+        if (target.tagName === 'BUTTON' && target.id !== 'tts-toggle') {
+          const text = target.getAttribute('aria-label') || target.textContent.trim();
+          if (text && text.length < 50) speak(text);
+        }
+      }, true);
+
+    document.addEventListener('DOMContentLoaded', initTTS);
 
     // TRANSLATION LOGIC
     document.addEventListener('DOMContentLoaded', () => {
@@ -688,14 +827,14 @@
 
     async function initTranslation(lang) {
       if (lang === 'en') return;
-
-      const namesToTranslate = [...new Set([...sides.map(s=>s.name), ...proteins.map(p=>p.name)])];
-      const allergensToTranslate = [...new Set([...sides.map(s=>(s.allergens||[]).join(', ')), ...proteins.map(p=>(p.allergens||[]).join(', '))])].filter(Boolean);
+      
+      const namesToTranslate = [...new Set([...sides.map(s => s.name), ...proteins.map(p => p.name)])];
+      const allergensToTranslate = [...new Set([...sides.map(s => (s.allergens||[]).join(', ')), ...proteins.map(p => (p.allergens||[]).join(', '))])].filter(Boolean);
       
       const staticElements = Array.from(document.querySelectorAll('[data-original]'));
       const staticTexts = staticElements.map(el => el.getAttribute('data-original'));
 
-      const allTexts = [...namesToTranslate, ...allergensToTranslate, ...staticTexts];
+      const allTexts = [...new Set([...namesToTranslate, ...allergensToTranslate, ...staticTexts])];
       
       if (allTexts.length === 0) return;
 
@@ -708,18 +847,24 @@
         const data = await res.json();
         
         if (data.success && Array.isArray(data.translatedText)) {
-          let cursor = 0;
-          
-          namesToTranslate.forEach(original => {
-            translationMap.names[original] = data.translatedText[cursor++];
+          const dictionary = {};
+          allTexts.forEach((original, index) => {
+             dictionary[original] = data.translatedText[index];
           });
-          
+
+          namesToTranslate.forEach(original => {
+            if (dictionary[original]) translationMap.names[original] = dictionary[original];
+          });
+
           allergensToTranslate.forEach(original => {
-            translationMap.allergens[original] = data.translatedText[cursor++];
+            if (dictionary[original]) translationMap.allergens[original] = dictionary[original];
           });
 
           staticElements.forEach(el => {
-            el.textContent = data.translatedText[cursor++];
+            const original = el.getAttribute('data-original');
+            if (original && dictionary[original]) {
+               el.textContent = dictionary[original];
+            }
           });
 
           update();

@@ -303,19 +303,33 @@
       
       const items = queuedColumn.querySelectorAll('.line-item');
       items.forEach(item => {
-        const text = item.textContent;
-        const itemNameMatch = text.match(/\d+\s+x\s+(.+?)(?:\s+\(|$)/);
+        // Get just the main text before any nested elements
+        const firstTextNode = Array.from(item.childNodes).find(n => n.nodeType === Node.TEXT_NODE);
+        if (!firstTextNode) return;
+        
+        const text = firstTextNode.textContent.trim();
+        // Extract quantity and item name
+        const itemNameMatch = text.match(/(\d+)\s+x\s+(.+?)$/);
         if (!itemNameMatch) return;
         
-        const itemName = itemNameMatch[1].trim();
+        const quantity = parseInt(itemNameMatch[1], 10);
+        let itemName = itemNameMatch[2].trim();
+        
+        // Strip size suffix so lookup matches base menu item
+        const sizeMatch = itemName.match(/\((Small|Medium|Large)\)$/);
+        if (sizeMatch) {
+          itemName = itemName.replace(/\s*\((Small|Medium|Large)\)$/, '');
+        }
+
         const menuItemId = nameToMenuItemId.get(itemName);
         
-        if (!menuItemId) return; // Not a prepared item
+        if (!menuItemId) return; // Not a prepared item (like Bowl/Plate)
         
         const stock = stockByMenuItemId.get(menuItemId) || 0;
         
         item.classList.remove('item-out-of-stock','item-low-stock','item-in-stock');
-        if (stock === 0) {
+        // Check if there's enough stock for the quantity needed
+        if (stock < quantity) {
           item.classList.add('item-out-of-stock');
         } else {
           item.classList.add('item-in-stock');
@@ -334,14 +348,34 @@
         // Rebuild options HTML with per-option chips colored independently
         const parts = [];
         rawOptions.forEach(opt => {
-          let cleanName = opt.replace(/\s+x\d+$/, '').replace(/\s+\(1\/2\)$/, '');
+          // Extract quantity if present (e.g., "Beijing Beef x2" or "2 x Beijing Beef")
+          let quantity = 1;
+          let cleanName = opt;
+          
+          // Handle "Name x2" format
+          const xMatch = opt.match(/^(.*?)\s+x(\d+)$/);
+          if (xMatch) {
+            cleanName = xMatch[1].trim();
+            quantity = parseInt(xMatch[2], 10);
+          }
+
+          // Strip size suffix in options as well
+          const optSize = cleanName.match(/\((Small|Medium|Large)\)$/);
+          if (optSize) {
+            cleanName = cleanName.replace(/\s*\((Small|Medium|Large)\)$/, '');
+          }
+          
+          // Remove half-side notation
+          cleanName = cleanName.replace(/\s+\(1\/2\)$/, '');
           cleanName = cleanName.replace(/[\s,]+$/, '').replace(/^\s+/, '');
           cleanName = cleanName.replace(/\s{2,}/g, ' ').trim();
+          
           const menuItemId = nameToMenuItemId.get(cleanName);
           let cls = '';
           if (menuItemId) {
             const stock = stockByMenuItemId.get(menuItemId) || 0;
-            cls = stock === 0 ? 'item-out-of-stock' : 'item-in-stock';
+            // Check if there's enough stock for the quantity
+            cls = stock < quantity ? 'item-out-of-stock' : 'item-in-stock';
           }
           parts.push(`<span class="${cls}">${opt}</span>`);
         });
