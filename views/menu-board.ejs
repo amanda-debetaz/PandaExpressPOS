@@ -564,9 +564,11 @@
   <!--<button id="fullscreen-btn">Go Fullscreen</button>-->
   <div class="top-container" id="top-container">
     <div style="text-align: right; padding-inline: clamp(10px, 1vw, 30px); padding-top: clamp(5px, 0.5vw, 15px);">
+      <% if (page !== "featured") { %>
       <button id="fullscreen-btn">
         Go Fullscreen
       </button>
+      <% } %>
       <% if (page === "featured") { %>
       <button id="autoscroll-btn" aria-pressed="false">
         Start Autoscroll
@@ -1013,17 +1015,19 @@
 const fullscreenBtn = document.getElementById("fullscreen-btn");
 const topContainer = document.getElementById("top-container");
 
-fullscreenBtn.addEventListener("click", () => {
-  const docEl = document.documentElement;
+if (fullscreenBtn) {
+  fullscreenBtn.addEventListener("click", () => {
+    const docEl = document.documentElement;
 
-  if (!document.fullscreenElement) {
-    // ENTER FULLSCREEN
-    if (docEl.requestFullscreen) docEl.requestFullscreen();
-  } else {
-    // EXIT FULLSCREEN
-    if (document.exitFullscreen) document.exitFullscreen();
-  }
-});
+    if (!document.fullscreenElement) {
+      // ENTER FULLSCREEN
+      if (docEl.requestFullscreen) docEl.requestFullscreen();
+    } else {
+      // EXIT FULLSCREEN
+      if (document.exitFullscreen) document.exitFullscreen();
+    }
+  });
+}
 
 /* Hide or show top bar when fullscreen */
 document.addEventListener("fullscreenchange", () => {
