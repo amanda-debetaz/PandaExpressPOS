@@ -140,6 +140,7 @@
     <script>
       const menuData = JSON.parse('<%- JSON.stringify(menu || {}) %>');
     </script>
+    
 
     <!-- Landing Page / Screensaver -->
     <div id="landing-page" role="complementary" aria-label="Welcome Screen" class="fixed inset-0 z-[100] flex flex-col items-center justify-center cursor-pointer overflow-hidden">
@@ -329,7 +330,7 @@
 
     <div class="p-5 border-t border-neutral-200">
       <div class="flex items-center justify-between mb-3">
-        <div id="cart-total-display" class="text-lg font-bold"><span data-original="Total:">Total:</span> $<span id="cart-drawer-total">0.00</span></div>
+        <div id="cart-total-display" class="text-lg font-bold"><span data-original="Total:">Total With Tax:</span> $<span id="cart-drawer-total">0.00</span></div>
       </div>
       
       <div class="flex gap-2">
@@ -1019,7 +1020,7 @@
 
       function renderCartDrawer() {
         const count = cart.reduce((s, i) => s + i.quantity, 0);
-        const total = cart.reduce((s, i) => s + (i.price * i.quantity), 0).toFixed(2);
+        const total = (cart.reduce((s, i) => s + (i.price * i.quantity), 0) * 1.08).toFixed(2);
         
         document.getElementById("cart-count").textContent = count;
         document.getElementById("cart-total").textContent = total;
@@ -1597,6 +1598,7 @@
       mealCancel.addEventListener('click', closeMealModal);
       mealModal.addEventListener('click', (e) => { if (e.target === mealModal) closeMealModal(); });
 
+
       // Drawer events
       document.getElementById('cart-open-drawer').addEventListener('click', openCartDrawer);
       document.getElementById('cart-drawer-close').addEventListener('click', closeCartDrawer);
@@ -1669,8 +1671,10 @@
           dineOptionModal.classList.add('hidden');
           dineOptionModal.classList.remove('flex');
           
-          const total = cart.reduce((s, i) => s + (i.price * i.quantity), 0).toFixed(2);
-          document.getElementById('payment-total').textContent = total;
+          const subtotal = cart.reduce((s, i) => s + (i.price * i.quantity), 0);
+          const tax = subtotal * 0.08;
+          const grandTotal = subtotal + tax;
+          document.getElementById('payment-total').textContent = grandTotal.toFixed(2);
           document.getElementById('payment-modal').classList.remove('hidden');
           document.getElementById('payment-modal').classList.add('flex');
         });
@@ -1738,11 +1742,14 @@
             const data = await response.json();
 
             if (data.success) {
-              const total = checkoutCart.reduce((s, i) => s + i.price * i.quantity, 0).toFixed(2);
 
               // Fill success modal
               document.getElementById('success-order-number').textContent = `#${data.order_id}`;
-              document.getElementById('success-total').textContent = `$${total}`;
+              const subtotal = checkoutCart.reduce((s, i) => s + i.price * i.quantity, 0);
+              const tax = subtotal * 0.08;
+              const grandTotal = subtotal + tax;
+              // → Used for success screen
+              document.getElementById('success-total').textContent = `$${grandTotal.toFixed(2)}`;
               document.getElementById('success-dine-option').textContent = 
                 selectedDineOption === 'dine_in' ? 'Dine In' : 'Takeout';
 
