@@ -2466,3 +2466,6 @@ app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
   console.log("Login → /login (Google OAuth)");
 });
+
+
+module.exports = app;
