@@ -180,7 +180,6 @@ setInterval(() => {
 // ---------- Auth middleware ----------
 function requireAuth(allowedRole) {
   return function(req, res, next) {
-    return next();
     // 1. Check if user is logged in
     if (!req.isAuthenticated()) {
       console.log("requireAuth: User not logged in. Redirecting to /login");
