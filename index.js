@@ -703,7 +703,7 @@ let menuCache = { entrees: [], a_la_carte: [], sides: [], appetizers: [] , drink
 
 app.get("/kiosk", requireAuth(), async (req, res) => {
   try {
-    // Fetch all active menu items with their categories, ingredient allergens, and size pricing
+    // Fetch all active menu items with their categories, ingredient allergens, size pricing, and nutrition
     const menuItems = await prisma.menu_item.findMany({
       where: { is_active: true },
       include: {
@@ -713,7 +713,8 @@ app.get("/kiosk", requireAuth(), async (req, res) => {
             inventory: { select: { name: true, allergen_info: true } }
           }
         },
-        size_pricing: true
+        size_pricing: true,
+        nutrition: true
       },
       orderBy: { price: 'asc' }
     });
@@ -764,48 +765,6 @@ app.get("/kiosk", requireAuth(), async (req, res) => {
         'Cream Cheese Rangoon': ['Wheat', 'Milk', 'Egg', 'Soy']
       };
 
-      // Nutritional information (per serving)
-      const nutritionData = {
-        // Sides
-        'Chow Mein': { calories: 600, protein: 15, fat: 23, carbs: 94 },
-        'Fried Rice': { calories: 620, protein: 13, fat: 19, carbs: 101 },
-        'White Steamed Rice': { calories: 520, protein: 10, fat: 0, carbs: 118 },
-        'Super Greens': { calories: 130, protein: 9, fat: 4, carbs: 14 },
-        'Chow Fun': { calories: 410, protein: 9, fat: 9, carbs: 73 },
-        // Veggies
-        'Eggplant & Tofu': { calories: 340, protein: 7, fat: 24, carbs: 23 },
-        'Super Greens Entree': { calories: 90, protein: 6, fat: 3, carbs: 10 },
-        // Chicken
-        'Black Pepper Chicken': { calories: 280, protein: 13, fat: 19, carbs: 15 },
-        'Kung Pao Chicken': { calories: 320, protein: 17, fat: 21, carbs: 15 },
-        'Grilled Teriyaki Chicken': { calories: 275, protein: 33, fat: 10, carbs: 14 },
-        'Teriyaki Chicken': { calories: 340, protein: 41, fat: 13, carbs: 14 },
-        'Mushroom Chicken': { calories: 220, protein: 13, fat: 14, carbs: 10 },
-        'The Original Orange Chicken': { calories: 510, protein: 26, fat: 24, carbs: 53 },
-        'Orange Chicken': { calories: 510, protein: 26, fat: 24, carbs: 53 },
-        'Potato Chicken': { calories: 190, protein: 8, fat: 10, carbs: 18 },
-        // Chicken Breast
-        'Honey Sesame Chicken Breast': { calories: 340, protein: 16, fat: 15, carbs: 35 },
-        'String Bean Chicken Breast': { calories: 210, protein: 12, fat: 12, carbs: 13 },
-        'SweetFire Chicken Breast': { calories: 360, protein: 15, fat: 15, carbs: 40 },
-        'Sweet & Sour Chicken Breast': { calories: 300, protein: 10, fat: 12, carbs: 40 },
-        // Beef
-        'Beijing Beef': { calories: 480, protein: 14, fat: 27, carbs: 46 },
-        'Broccoli Beef': { calories: 150, protein: 9, fat: 7, carbs: 13 },
-        'Black Pepper Sirloin Steak': { calories: 210, protein: 19, fat: 10, carbs: 13 },
-        // Seafood
-        'Chili Crisp Shrimp': { calories: 210, protein: 13, fat: 10, carbs: 19 },
-        'Honey Walnut Shrimp': { calories: 430, protein: 13, fat: 28, carbs: 32 },
-        'Wok Fired Shrimp': { calories: 190, protein: 17, fat: 5, carbs: 19 },
-        'Golden Treasure Shrimp': { calories: 360, protein: 14, fat: 18, carbs: 35 },
-        'Steamed Ginger Fish': { calories: 200, protein: 15, fat: 12, carbs: 8 },
-        // Appetizers
-        'Chicken Egg Roll': { calories: 200, protein: 6, fat: 10, carbs: 20 },
-        'Chicken Potsticker': { calories: 160, protein: 6, fat: 6, carbs: 20 },
-        'Cream Cheese Rangoon': { calories: 190, protein: 5, fat: 8, carbs: 24 },
-        'Vegetable Spring Roll': { calories: 240, protein: 4, fat: 14, carbs: 24 }
-      };
-
       let finalAllergens = Array.from(allergenSet).map(titleCase);
       
       // Override with manual allergens for appetizers if available
@@ -813,8 +772,13 @@ app.get("/kiosk", requireAuth(), async (req, res) => {
         finalAllergens = appetizerAllergens[item.name];
       }
 
-      // Get nutrition data if available
-      const nutrition = nutritionData[item.name] || null;
+      // Get nutrition data from database if available
+      const nutrition = item.nutrition ? {
+        calories: item.nutrition.calories,
+        protein: item.nutrition.protein,
+        fat: item.nutrition.fat,
+        carbs: item.nutrition.carbs
+      } : null;
 
       // Build size pricing object
       const sizePricing = {};

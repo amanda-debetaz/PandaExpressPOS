@@ -891,8 +891,7 @@
             
             // Check if item is premium
             const isPremiumItem = item.name.toLowerCase().includes('honey walnut') || 
-                                  item.name.toLowerCase().includes('black pepper sirloin') ||
-                                  item.name.toLowerCase().includes('black pepper chicken');
+                                  item.name.toLowerCase().includes('black pepper sirloin');
             
             // Meal descriptions and calorie ranges
             let mealDescription = '';
@@ -1346,8 +1345,7 @@
         // Show size selection for a la carte items (entrees and sides)
         const sizeSelection = document.getElementById('size-selection');
         const isPremium = name.toLowerCase().includes('honey walnut') || 
-                         name.toLowerCase().includes('black pepper sirloin') ||
-                         name.toLowerCase().includes('black pepper chicken');
+                         name.toLowerCase().includes('black pepper sirloin');
         
         // Check if this item has any size pricing
         const hasSizePricing = sizePricing && Object.keys(sizePricing).length > 0;
@@ -1468,8 +1466,7 @@
           
           // Update price based on size
           const isPremium = selectedBaseName.toLowerCase().includes('honey walnut') || 
-                           selectedBaseName.toLowerCase().includes('black pepper sirloin') ||
-                           selectedBaseName.toLowerCase().includes('black pepper chicken');
+                           selectedBaseName.toLowerCase().includes('black pepper sirloin');
           
           let sizePrice = null;
           if (size === 'medium') {

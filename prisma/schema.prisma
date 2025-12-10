@@ -70,12 +70,25 @@ model menu_item {
   is_active              Boolean                  @default(true)
   category               category                 @relation(fields: [category_id], references: [category_id], onUpdate: NoAction)
   menu_item_option_group menu_item_option_group[]
+  nutrition              nutrition?
   option                 option[]
   order_item             order_item[]
   recipe                 recipe[]
   size_pricing           size_pricing[]
 
   @@index([category_id], map: "idx_menu_item_category")
+}
+
+model nutrition {
+  nutrition_id Int       @id @default(autoincrement())
+  menu_item_id Int       @unique
+  calories     Int
+  protein      Int
+  fat          Int
+  carbs        Int
+  menu_item    menu_item @relation(fields: [menu_item_id], references: [menu_item_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_nutrition_menu_item")
+
+  @@index([menu_item_id], map: "idx_nutrition_menu_item")
 }
 
 model size_pricing {
