@@ -666,7 +666,9 @@ app.get("/menu-board", async (req, res) => {
   try {
     const items = await prisma.menu_item.findMany({
       where: { is_active: true },
-      select: { name: true, price: true, category_id: true },
+      include: {
+        size_pricing: true
+      },
       orderBy: { name: 'asc' },
     });
 
@@ -674,10 +676,21 @@ app.get("/menu-board", async (req, res) => {
 
     items.forEach(row => {
       const price = Number(row.price);
-      if (row.category_id === 1) grouped.entrees.push({ name: row.name, price });
-      else if (row.category_id === 3) grouped.a_la_carte.push({ name: row.name, price });
-      else if (row.category_id === 4) grouped.sides.push({ name: row.name, price });
-      else if (row.category_id === 2) grouped.appetizers.push({ name: row.name, price });
+
+      // Build size pricing object
+      const sizePricing = {};
+      if (row.size_pricing && row.size_pricing.length > 0) {
+        row.size_pricing.forEach(sp => {
+          sizePricing[sp.size] = parseFloat(sp.price);
+        });
+      }
+
+      const itemData = { name: row.name, price, sizePricing };
+
+      if (row.category_id === 1) grouped.entrees.push(itemData);
+      else if (row.category_id === 3) grouped.a_la_carte.push(itemData);
+      else if (row.category_id === 4) grouped.sides.push(itemData);
+      else if (row.category_id === 2) grouped.appetizers.push(itemData);
     });
 
     // Simple featured list: first 5 entrees (fallback to any items if fewer)
