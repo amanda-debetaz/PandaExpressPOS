@@ -1093,7 +1093,6 @@ async function fetchSalesReport() {
     let html = `<h3>Sales Report (${startDate} to ${endDate})</h3>`;
     html += `<p>Total Orders: ${data.totalOrders}</p>`;
     html += `<p>Revenue: $${data.revenue.toFixed(2)}</p>`;
-    panel.innerHTML = html + `<button>Download PDF</button>`;
   } catch (err) {
     console.error(err);
     panel.innerHTML = `<p style="color:red;">Failed to fetch sales report.</p>`;
