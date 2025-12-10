@@ -364,6 +364,11 @@
         </div>
         
         <div class="form-group">
+          <% if (error && error.length > 0) { %>
+  <div class="error-message" style="color: red; background: #fee; padding: 10px; margin-bottom: 10px;">
+    <%= error %>
+  </div>
+<% } %>
           <label for="password_hash">Password</label>
           <div class="input-wrapper">
             <span class="input-icon">🔒</span>

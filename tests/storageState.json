@@ -1,0 +1,15 @@
+{
+  "cookies": [
+    {
+      "name": "connect.sid",
+      "value": "s%3A91CV2sO9sPx8p7YJyPHK6BVFutCHrOuQ.ywTqhYypodWbTM1cNk5xJGB2%2BvdrA%2F242o01b18seAM",
+      "domain": "team-31-project-3.onrender.com",
+      "path": "/",
+      "expires": 1765325888.419835,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": []
+}

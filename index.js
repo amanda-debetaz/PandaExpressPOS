@@ -182,9 +182,9 @@ function requireAuth(allowedRole) {
   return function(req, res, next) {
     // 1. Check if user is logged in
     if (!req.isAuthenticated()) {
-      console.log("requireAuth: User not logged in. Redirecting to /");
+      console.log("requireAuth: User not logged in. Redirecting to /login");
       req.flash('error', 'You must be logged in to view that page.');
-      return res.redirect('/');
+      return res.redirect('/login');
     }
 
     const userRole = (req.user.role || '').toLowerCase();
@@ -1837,6 +1837,32 @@ app.post("/api/employees", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to add employee" });
+  }
+});
+
+app.delete('/api/employees/:id', async (req, res) => {
+  const id = parseInt(req.params.id);
+
+  if (isNaN(id)) {
+    return res.status(400).json({ error: "Invalid Employee ID" });
+  }
+
+  try {
+    await prisma.employee.delete({
+      where: { employee_id: id }
+    });
+
+    res.json({ success: true, message: "Employee deleted successfully" });
+  } catch (err) {
+    console.error("Delete employee error:", err);
+    
+    if (err.code === 'P2003') {
+      return res.status(400).json({ 
+        error: "Cannot delete this employee because they have associated records (e.g., orders, shifts). Please deactivate them instead." 
+      });
+    }
+
+    res.status(500).json({ error: "Failed to delete employee" });
   }
 });
 

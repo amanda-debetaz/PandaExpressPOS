@@ -186,6 +186,7 @@
     <div class="button-group">
       <button class="btn-list-employees">List Employees</button>
       <button class="btn-add-employee">Add Employee</button>
+      <button class="btn-delete-employee">Delete Employee</button>
     </div>
     <div class="employee-table-container" style="margin-top:10px;"></div>
   </div>
@@ -405,8 +406,29 @@ async function addEmployee() {
 
   if (!res.ok) return alert("Failed to add employee");
   alert("Employee added successfully!");
+  listEmployees();
 }
 
+async function deleteEmployee() {
+  const id = prompt("Enter Employee ID to permanently delete:");
+  if (!id) return;
+
+  if (!confirm("Are you sure you want to permanently delete this employee? This action cannot be undone.")) return;
+
+  try {
+    const res = await fetch(`/api/employees/${id}`, { method: "DELETE" });
+    
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || "Failed to delete employee");
+    }
+
+    alert("Employee deleted.");
+    listEmployees();
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
+}
 
 
 async function deactivateEmployee() {
@@ -613,6 +635,7 @@ document.getElementById("removeEmployeeBtn").addEventListener("click", async () 
 // --- Attach Event Listeners ---
 document.querySelector(".btn-list-employees").addEventListener("click", listEmployees);
 document.querySelector(".btn-add-employee").addEventListener("click", addEmployee);
+document.querySelector(".btn-delete-employee").addEventListener("click", deleteEmployee);
 document.querySelector(".btn-deactivate-employee").addEventListener("click", deactivateEmployee);
 document.querySelector(".btn-reactivate-employee").addEventListener("click", reactivateEmployee);
 document.querySelector(".btn-reset-password").addEventListener("click", resetPassword);
