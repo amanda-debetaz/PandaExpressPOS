@@ -329,8 +329,19 @@
     </div>
 
     <div class="p-5 border-t border-neutral-200">
-      <div class="flex items-center justify-between mb-3">
-        <div id="cart-total-display" class="text-lg font-bold"><span data-original="Total:">Total With Tax:</span> $<span id="cart-drawer-total">0.00</span></div>
+      <div class="mb-3 space-y-1">
+        <div class="flex items-center justify-between text-sm">
+          <span data-original="Subtotal:">Subtotal:</span>
+          <span id="cart-subtotal">$0.00</span>
+        </div>
+        <div class="flex items-center justify-between text-sm">
+          <span data-original="Tax:">Tax:</span>
+          <span id="cart-tax">$0.00</span>
+        </div>
+        <div class="flex items-center justify-between text-lg font-bold border-t pt-2">
+          <span data-original="Total:">Total:</span>
+          <span id="cart-drawer-total">$0.00</span>
+        </div>
       </div>
       
       <div class="flex gap-2">
@@ -976,6 +987,16 @@
         });
       });
 
+      // Tax rate (fetch from server)
+      let TAX_RATE = 0.0825; // Default 8.25%
+      fetch('/api/tax-rate')
+        .then(res => res.json())
+        .then(data => {
+          TAX_RATE = data.rate;
+          renderCartDrawer(); // Update cart display with correct tax
+        })
+        .catch(err => console.error('Failed to fetch tax rate:', err));
+
       // Cart state (persist across pages)
       const CART_KEY = 'kiosk_cart';
       function loadCart() { try { return JSON.parse(localStorage.getItem(CART_KEY)) || []; } catch { return []; } }
@@ -1020,14 +1041,17 @@
 
       function renderCartDrawer() {
         const count = cart.reduce((s, i) => s + i.quantity, 0);
-        const total = (cart.reduce((s, i) => s + (i.price * i.quantity), 0) * 1.08).toFixed(2);
+        const subtotal = cart.reduce((s, i) => s + (i.price * i.quantity), 0);
+        const tax = subtotal * TAX_RATE;
+        const total = subtotal + tax;
         
         document.getElementById("cart-count").textContent = count;
-        document.getElementById("cart-total").textContent = total;
+        document.getElementById("cart-total").textContent = total.toFixed(2);
         
         const itemsEl = document.getElementById('cart-drawer-items');
-        const totalEl = document.getElementById('cart-drawer-total');
-        totalEl.textContent = total;
+        document.getElementById('cart-subtotal').textContent = '$' + subtotal.toFixed(2);
+        document.getElementById('cart-tax').textContent = '$' + tax.toFixed(2);
+        document.getElementById('cart-drawer-total').textContent = '$' + total.toFixed(2);
 
         if (cart.length === 0) {
           itemsEl.innerHTML = '<div class="text-neutral-700 italic" data-original="No items yet">No items yet</div>';
