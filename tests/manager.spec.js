@@ -4,8 +4,8 @@ test.describe('Manager Dashboard', () => {
   test.beforeEach(async ({ page }) => {
     // Mock login or use session storage if possible, otherwise login manually
     await page.goto('/login');
-    await page.fill('#employee_id', '1');
-    await page.fill('#password_hash', 'password');
+    await page.fill('#employee_id', '1002'); // USE VALID RENDER ID
+    await page.fill('#password_hash', 'panda'); // USE VALID RENDER PASSWORD
     await page.click('button[type="submit"]');
     await page.goto('/manager');
   });

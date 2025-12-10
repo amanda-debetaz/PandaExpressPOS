@@ -2,6 +2,10 @@ const { test, expect } = require('@playwright/test');
 
 test.describe('Cashier Interface', () => {
   test.beforeEach(async ({ page }) => {
+    await page.goto('/login');
+    await page.fill('#employee_id', '1002'); // USE VALID RENDER ID
+    await page.fill('#password_hash', 'panda'); // USE VALID RENDER PASSWORD
+    await page.click('button[type="submit"]');
     // Login flow if cashier view is protected
     await page.goto('/cashier'); 
   });

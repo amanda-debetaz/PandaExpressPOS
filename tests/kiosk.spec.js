@@ -2,6 +2,10 @@ const { test, expect } = require('@playwright/test');
 
 test.describe('Self-Service Kiosk', () => {
   test.beforeEach(async ({ page }) => {
+    await page.goto('/login');
+    await page.fill('#employee_id', '1002'); // USE VALID RENDER ID
+    await page.fill('#password_hash', 'panda'); // USE VALID RENDER PASSWORD
+    await page.click('button[type="submit"]');
     await page.goto('/kiosk');
     // Dismiss landing page if present
     if (await page.isVisible('#landing-page')) {

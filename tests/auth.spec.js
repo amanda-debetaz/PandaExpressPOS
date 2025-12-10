@@ -2,6 +2,7 @@ const { test, expect } = require('@playwright/test');
 
 test.describe('Login View', () => {
   test.beforeEach(async ({ page }) => {
+    await page.goto('/logout');
     await page.goto('/login');
   });
 
