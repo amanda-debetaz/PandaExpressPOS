@@ -893,7 +893,26 @@
       const entrees = (menu['a_la_carte'] || []).filter(item => item.name !== 'Super Greens' && item.name !== 'Super Greens (Entree)');
     %>
     <div class ="entree-grid">
-      <% entrees.forEach(item => { %>
+      <% entrees.forEach(item => {
+        // Check if this is a premium item (uses capitalized size keys)
+        const premiumItemNames = ['Honey Walnut Shrimp', 'Black Pepper Sirloin Steak'];
+        const isPremium = premiumItemNames.includes(item.name);
+
+        // Get small price only
+        let smallPrice;
+        if (item.sizePricing && Object.keys(item.sizePricing).length > 0) {
+          if (isPremium) {
+            // Premium items use capitalized keys
+            smallPrice = item.sizePricing['Small'] || item.price;
+          } else {
+            // Regular items use lowercase keys
+            smallPrice = item.sizePricing['small'] || item.price;
+          }
+        } else {
+          // No size pricing available, use base price
+          smallPrice = item.price;
+        }
+      %>
         <div class="meal-option">
           <img src="/images/<%= item.name.toLowerCase().replace(/ /g, '-')%>.jpg"
                alt="<%= item.name %>"
@@ -902,7 +921,7 @@
           <div class="meal-text">
             <div class="meal-name"><strong><%= item.name %></strong></div>
             <div class="meal-calories"><%= calories[item.name] || '' %></div>
-            <div class="meal-price">$<%= item.price.toFixed(2) %></div>
+            <div class="meal-price">$<%= smallPrice.toFixed(2) %></div>
           </div>
         </div>
       <% }) %>
@@ -947,59 +966,137 @@
             // Get a la carte prices from database
             const aLaCarteItems = menu['a_la_carte'] || [];
 
-            // Find regular entree prices (cheapest entree will be the regular price)
+            // Find regular entrees and premium entrees
+            // Premium items use capitalized size keys (Small/Large) in database
+            const premiumItemNames = ['Honey Walnut Shrimp', 'Black Pepper Sirloin Steak'];
             const regularEntrees = aLaCarteItems.filter(item =>
-              item.name !== 'Honey Walnut Shrimp' &&
+              !premiumItemNames.includes(item.name) &&
               item.name !== 'Super Greens' &&
               item.name !== 'Super Greens (Entree)'
             );
             const premiumEntrees = aLaCarteItems.filter(item =>
-              item.name === 'Honey Walnut Shrimp'
+              premiumItemNames.includes(item.name)
             );
 
-            const regularEntreePrice = regularEntrees.length > 0 ? Math.min(...regularEntrees.map(e => e.price)) : 0;
-            const premiumEntreePrice = premiumEntrees.length > 0 ? premiumEntrees[0].price : 0;
+            // Get size pricing for regular entrees
+            let regularSmallPrice = 0;
+            let regularMediumPrice = 0;
+            let regularLargePrice = 0;
+
+            if (regularEntrees.length > 0) {
+              // Find the first regular entree with size pricing
+              const regularWithSizes = regularEntrees.find(e => e.sizePricing && Object.keys(e.sizePricing).length > 0);
+              if (regularWithSizes) {
+                // Use lowercase keys for regular items
+                regularSmallPrice = regularWithSizes.sizePricing['small'] !== undefined ? regularWithSizes.sizePricing['small'] : regularWithSizes.price;
+                regularMediumPrice = regularWithSizes.price; // Medium is the base price
+                regularLargePrice = regularWithSizes.sizePricing['large'] !== undefined ? regularWithSizes.sizePricing['large'] : regularWithSizes.price;
+              } else {
+                // Fallback to base price if no size pricing
+                regularMediumPrice = regularEntrees[0].price;
+                regularSmallPrice = regularMediumPrice;
+                regularLargePrice = regularMediumPrice;
+              }
+            }
+
+            // Get size pricing for premium entrees
+            let premiumSmallPrice = 0;
+            let premiumMediumPrice = 0;
+            let premiumLargePrice = 0;
+
+            if (premiumEntrees.length > 0) {
+              // Find the first premium entree with size pricing
+              const premiumWithSizes = premiumEntrees.find(e => e.sizePricing && Object.keys(e.sizePricing).length > 0);
+              if (premiumWithSizes) {
+                // Premium items use capitalized keys (Small/Large) in database
+                premiumSmallPrice = premiumWithSizes.sizePricing['Small'] !== undefined ? premiumWithSizes.sizePricing['Small'] : premiumWithSizes.price;
+                premiumMediumPrice = premiumWithSizes.price; // Medium is the base price
+                premiumLargePrice = premiumWithSizes.sizePricing['Large'] !== undefined ? premiumWithSizes.sizePricing['Large'] : premiumWithSizes.price;
+              } else {
+                // Fallback to base price if no size pricing
+                const premium = premiumEntrees[0];
+                premiumSmallPrice = premium.price;
+                premiumMediumPrice = premium.price;
+                premiumLargePrice = premium.price;
+              }
+            }
 
             // Find side prices
             const sideItems = menu['sides'] || [];
-            const sidePrice = sideItems.length > 0 ? Math.min(...sideItems.map(s => s.price)) : 0;
+            let sideSmallPrice = 0;
+            let sideMediumPrice = 0;
+            let sideLargePrice = 0;
+
+            if (sideItems.length > 0) {
+              const sideWithSizes = sideItems.find(s => s.sizePricing && Object.keys(s.sizePricing).length > 0);
+              if (sideWithSizes) {
+                sideSmallPrice = sideWithSizes.sizePricing['small'] !== undefined ? sideWithSizes.sizePricing['small'] : sideWithSizes.price;
+                sideMediumPrice = sideWithSizes.price; // Medium is the base price
+                sideLargePrice = sideWithSizes.sizePricing['large'] !== undefined ? sideWithSizes.sizePricing['large'] : sideWithSizes.price;
+              } else {
+                // Fallback to base price if no size pricing
+                sideMediumPrice = sideItems[0].price;
+                sideSmallPrice = sideMediumPrice;
+                sideLargePrice = sideMediumPrice;
+              }
+            }
           %>
-            <div class="a-la-carte-sides-container flex" style="margin-top: clamp(12px, 1.2vw, 30px);">
-
-              <!-- Left Column: Entrees -->
-              <div class="entrees-column flex-1">
-                <h2 class="font-bold" style="font-size: clamp(26px, min(2.2vw, 3vh), 52px); margin-bottom: clamp(8px, 0.8vw, 20px);">Entrees</h2>
-                <div class="flex justify-start" style="font-size: clamp(20px, min(1.6vw, 2.3vh), 38px); gap: clamp(20px, 2vw, 50px);">
-                  <div>
-                    <div class="font-semibold">Small</div>
-                    <div>starts at $<%= regularEntreePrice.toFixed(2) %></div>
+            <div class="a-la-carte-sides-container" style="margin-top: clamp(12px, 1.2vw, 30px);">
+              <h2 class="font-bold" style="font-size: clamp(26px, min(2.2vw, 3vh), 52px); margin-bottom: clamp(8px, 0.8vw, 20px);">A La Carte Pricing</h2>
+              <div class="flex justify-start" style="font-size: clamp(20px, min(1.6vw, 2.3vh), 38px); gap: clamp(40px, 4vw, 80px);">
+                <!-- Regular Entrees -->
+                <div>
+                  <div class="font-semibold" style="margin-bottom: clamp(8px, 0.8vw, 16px);">Regular</div>
+                  <div class="flex justify-start" style="gap: clamp(20px, 2vw, 50px);">
+                    <div>
+                      <div class="font-semibold">Small</div>
+                      <div>$<%= regularSmallPrice.toFixed(2) %></div>
+                    </div>
+                    <div>
+                      <div class="font-semibold">Medium</div>
+                      <div>$<%= regularMediumPrice.toFixed(2) %></div>
+                    </div>
+                    <div>
+                      <div class="font-semibold">Large</div>
+                      <div>$<%= regularLargePrice.toFixed(2) %></div>
+                    </div>
                   </div>
-                  <div>
-                    <div class="font-semibold">Medium</div>
-                    <div>starts at $<%= regularEntreePrice.toFixed(2) %></div>
+                </div>
+                <!-- Premium Entrees -->
+                <% if (premiumEntrees.length > 0) { %>
+                <div>
+                  <div class="font-semibold" style="margin-bottom: clamp(8px, 0.8vw, 16px);">Premium</div>
+                  <div class="flex justify-start" style="gap: clamp(20px, 2vw, 50px);">
+                    <div>
+                      <div class="font-semibold">Small</div>
+                      <div>$<%= premiumSmallPrice.toFixed(2) %></div>
+                    </div>
+                    <div>
+                      <div class="font-semibold">Medium</div>
+                      <div>$<%= premiumMediumPrice.toFixed(2) %></div>
+                    </div>
+                    <div>
+                      <div class="font-semibold">Large</div>
+                      <div>$<%= premiumLargePrice.toFixed(2) %></div>
+                    </div>
                   </div>
-                  <div>
-                    <div class="font-semibold">Large</div>
-                    <div>starts at $<%= regularEntreePrice.toFixed(2) %></div>
+                </div>
+                <% } %>
+                <!-- Sides -->
+                <div>
+                  <div class="font-semibold" style="margin-bottom: clamp(8px, 0.8vw, 16px);">Sides</div>
+                  <div class="flex justify-start" style="gap: clamp(20px, 2vw, 50px);">
+                    <div>
+                      <div class="font-semibold">Medium</div>
+                      <div>$<%= sideMediumPrice.toFixed(2) %></div>
+                    </div>
+                    <div>
+                      <div class="font-semibold">Large</div>
+                      <div>$<%= sideLargePrice.toFixed(2) %></div>
+                    </div>
                   </div>
                 </div>
               </div>
-
-              <!-- Right Column: Sides -->
-              <div class="sides-column flex-1">
-                <h2 class="font-bold" style="font-size: clamp(26px, min(2.2vw, 3vh), 52px); margin-bottom: clamp(8px, 0.8vw, 20px);">Sides</h2>
-                <div class="flex justify-start" style="font-size: clamp(20px, min(1.6vw, 2.3vh), 38px); gap: clamp(20px, 2vw, 50px);">
-                  <div>
-                    <div class="font-semibold">Medium</div>
-                    <div>starts at $<%= sidePrice.toFixed(2) %></div>
-                  </div>
-                  <div>
-                    <div class="font-semibold">Large</div>
-                    <div>starts at $<%= sidePrice.toFixed(2) %></div>
-                  </div>
-                </div>
-              </div>
-
             </div>
 
       <% } %>
