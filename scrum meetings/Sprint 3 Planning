@@ -1,0 +1,8 @@
+Agenda:
+  - Plan sprint goal
+  - Discuss tasks the nedd to be completed for our sprint goal
+  - Discuss our sprint test plan
+
+Minutes:
+  - Sprint Goal: Fix bugs, polish views, add accessibility accommodations
+  - Sprint Test Plan: Make all changes for this sprint in a seperate branch, test locally, then test with sprint 3 branch, and finally merge with main branch.
