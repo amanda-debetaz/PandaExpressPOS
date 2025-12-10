@@ -437,7 +437,7 @@
       <div class="bg-white text-black w-full max-w-md border border-neutral-200 rounded-lg overflow-hidden shadow-xl">
         <div class="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
           <div class="text-lg font-semibold" id="item-modal-title">Item</div>
-          <button id="item-modal-close" class="text-sm text-neutral-700 hover:text-black" data-original="Close">Close</button>
+          <button id="item-modal-close" class="text-neutral-500 hover:text-neutral-700 border-2 border-neutral-300 rounded-full w-8 h-8 flex items-center justify-center hover:border-red-600" data-original="Close">✕</button>
         </div>
         <div class="px-6 py-5 space-y-4">
           <div class="text-5xl font-bold text-neutral-700 mb-4"><span data-original="Price:">Price:</span> $<span id="item-modal-price">0.00</span></div>
@@ -880,9 +880,19 @@
               card.dataset.nutrition = JSON.stringify(item.nutrition);
             }
             
+            // Store size pricing data
+            if (item.sizePricing) {
+              card.dataset.sizePricing = JSON.stringify(item.sizePricing);
+            }
+            
             const imageSrc = imageMap[item.name] ? `/images/${imageMap[item.name]}` : '/images/placeholder.jpg';
             const isMeal = ['Bowl', 'Plate', 'Bigger Plate'].includes(item.name);
             const priceDisplay = isMeal ? `$${item.price.toFixed(2)}+` : `$${item.price.toFixed(2)}`;
+            
+            // Check if item is premium
+            const isPremiumItem = item.name.toLowerCase().includes('honey walnut') || 
+                                  item.name.toLowerCase().includes('black pepper sirloin') ||
+                                  item.name.toLowerCase().includes('black pepper chicken');
             
             // Meal descriptions and calorie ranges
             let mealDescription = '';
@@ -900,9 +910,11 @@
             
             // Only show info badge for non-meal items
             const nutritionData = item.nutrition ? JSON.stringify(item.nutrition) : '{}';
+            const premiumBadge = isPremiumItem ? `<div class="absolute top-2 left-2 z-10"><span class="text-xs font-bold bg-yellow-500 text-black px-2 py-1 rounded shadow">PREMIUM</span></div>` : '';
             const infoBadge = isMeal ? '' : `<div class="absolute top-2 right-2 flex items-center gap-1 z-10"><span class="text-xs font-medium text-neutral-700 bg-white px-2 py-1 rounded shadow" data-original="More Info">More Info</span><button class="info-badge w-6 h-6 rounded-full bg-red-700 text-white text-xs font-bold flex items-center justify-center hover:bg-red-800 transition" aria-label="More info for ${item.name}" data-item-name="${item.name}" data-allergens="${allergensList.join(', ') || 'None'}" data-nutrition='${nutritionData}'>i</button></div>`;
             const mealInfo = isMeal ? `<div class="text-xs text-neutral-600 leading-tight">${mealDescription}</div><div class="text-xs text-neutral-500">${calorieRange}</div>` : '';
             card.innerHTML = `
+              ${premiumBadge}
               ${infoBadge}
               <div class="item-image">
                 <img src="${imageSrc}" alt="${item.name}" class="item-img" />
@@ -1290,7 +1302,8 @@
             .split(',')
             .map(t => t.trim())
             .filter(Boolean);
-          openItemModal(name, price, allergens, category);
+          const sizePricing = card.dataset.sizePricing ? JSON.parse(card.dataset.sizePricing) : {};
+          openItemModal(name, price, allergens, category, sizePricing);
         }
       });
 
@@ -1313,33 +1326,82 @@
       let selectedSize = 'medium'; // default
       let selectedMultiplier = 2; // default medium = x2
       let selectedCategory = '';
+      let selectedSizePricing = {}; // size pricing from database
+      let selectedBaseName = ''; // for checking premium status
 
-      async function openItemModal(name, price, allergens = [], category = '') {
+      async function openItemModal(name, price, allergens = [], category = '', sizePricing = {}) {
         selectedItemName = name;
         selectedItemPrice = parseFloat(price);
         selectedQty = 1;
         selectedCategory = category;
         selectedSize = 'medium';
         selectedMultiplier = 2;
+        selectedSizePricing = sizePricing;
+        selectedBaseName = name;
         
         itemModalTitle.textContent = name;
         itemModalPrice.textContent = selectedItemPrice.toFixed(2);
         itemQtyEl.textContent = String(selectedQty);
         
-        // Show size selection only for a la carte entrees
+        // Show size selection for a la carte items (entrees and sides)
         const sizeSelection = document.getElementById('size-selection');
-        if (category === 'a_la_carte') {
+        const isPremium = name.toLowerCase().includes('honey walnut') || 
+                         name.toLowerCase().includes('black pepper sirloin') ||
+                         name.toLowerCase().includes('black pepper chicken');
+        
+        // Check if this item has any size pricing
+        const hasSizePricing = sizePricing && Object.keys(sizePricing).length > 0;
+        
+        if ((category === 'a_la_carte' || category === 'sides') && hasSizePricing) {
           sizeSelection.classList.remove('hidden');
-          // Reset size buttons
+          
+          // Add premium badge if applicable
+          if (isPremium && !itemModalTitle.querySelector('.premium-badge')) {
+            const badge = document.createElement('span');
+            badge.className = 'premium-badge text-xs bg-yellow-500 text-black px-2 py-0.5 rounded ml-2 font-bold';
+            badge.textContent = 'PREMIUM';
+            itemModalTitle.appendChild(badge);
+          }
+          
+          // Update size button prices and visibility
           document.querySelectorAll('.size-btn').forEach(btn => {
+            const size = btn.dataset.size.toLowerCase();
+            // Check both regular and premium (capitalized) keys
+            let sizePrice = null;
+            if (size === 'medium') {
+              // For medium, use base price
+              sizePrice = parseFloat(price);
+            } else if (isPremium) {
+              // For premium items, use capitalized keys for small/large
+              const capitalizedSize = size.charAt(0).toUpperCase() + size.slice(1);
+              sizePrice = sizePricing[capitalizedSize];
+            } else {
+              // For regular items, use lowercase keys
+              sizePrice = sizePricing[size];
+            }
+            
+            // Hide buttons without pricing
+            if (!sizePrice) {
+              btn.classList.add('hidden');
+            } else {
+              btn.classList.remove('hidden');
+              // Update button text with price
+              const sizeLabel = size.charAt(0).toUpperCase() + size.slice(1);
+              btn.innerHTML = `${sizeLabel}<br><span class="text-xs">$${sizePrice.toFixed(2)}</span>`;
+            }
+            
+            // Reset styles
             btn.classList.remove('bg-red-600', 'text-white', 'border-red-600');
             btn.classList.add('border-neutral-300');
-            if (btn.dataset.size === 'medium') {
+            if (size === 'medium') {
               btn.classList.add('bg-red-600', 'text-white', 'border-red-600');
             }
           });
         } else {
           sizeSelection.classList.add('hidden');
+          // Remove premium badge if present
+          const badge = itemModalTitle.querySelector('.premium-badge');
+          if (badge) badge.remove();
         }
         
         const allergenText = allergens.length ? allergens.join(', ') : 'None';
@@ -1400,8 +1462,33 @@
       document.querySelectorAll('.size-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
-          selectedSize = btn.dataset.size;
+          const size = btn.dataset.size;
+          selectedSize = size;
           selectedMultiplier = parseInt(btn.dataset.multiplier);
+          
+          // Update price based on size
+          const isPremium = selectedBaseName.toLowerCase().includes('honey walnut') || 
+                           selectedBaseName.toLowerCase().includes('black pepper sirloin') ||
+                           selectedBaseName.toLowerCase().includes('black pepper chicken');
+          
+          let sizePrice = null;
+          if (size === 'medium') {
+            // Medium uses the base price from menu_item
+            const basePrice = parseFloat(document.querySelector('.item-card[data-name="' + selectedBaseName + '"]')?.dataset.price || selectedItemPrice);
+            sizePrice = basePrice;
+          } else if (isPremium) {
+            // For premium items, use capitalized keys for small/large
+            const capitalizedSize = size.charAt(0).toUpperCase() + size.slice(1);
+            sizePrice = selectedSizePricing[capitalizedSize];
+          } else {
+            // For regular items, use lowercase keys
+            sizePrice = selectedSizePricing[size];
+          }
+          
+          if (sizePrice) {
+            selectedItemPrice = sizePrice;
+            itemModalPrice.textContent = selectedItemPrice.toFixed(2);
+          }
           
           // Update button styles
           document.querySelectorAll('.size-btn').forEach(b => {
@@ -1415,7 +1502,7 @@
 
       itemAddBtn.addEventListener('click', () => {
         if (selectedItemName) {
-          if (selectedCategory === 'a_la_carte') {
+          if ((selectedCategory === 'a_la_carte' || selectedCategory === 'sides') && selectedSizePricing && Object.keys(selectedSizePricing).length > 0) {
             // Add with size info
             const itemWithSize = `${selectedItemName} (${selectedSize.charAt(0).toUpperCase() + selectedSize.slice(1)})`;
             const itemData = {

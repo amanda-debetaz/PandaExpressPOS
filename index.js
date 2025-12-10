@@ -703,7 +703,7 @@ let menuCache = { entrees: [], a_la_carte: [], sides: [], appetizers: [] , drink
 
 app.get("/kiosk", requireAuth(), async (req, res) => {
   try {
-    // Fetch all active menu items with their categories and ingredient allergens
+    // Fetch all active menu items with their categories, ingredient allergens, and size pricing
     const menuItems = await prisma.menu_item.findMany({
       where: { is_active: true },
       include: {
@@ -712,7 +712,8 @@ app.get("/kiosk", requireAuth(), async (req, res) => {
           include: {
             inventory: { select: { name: true, allergen_info: true } }
           }
-        }
+        },
+        size_pricing: true
       },
       orderBy: { price: 'asc' }
     });
@@ -815,11 +816,21 @@ app.get("/kiosk", requireAuth(), async (req, res) => {
       // Get nutrition data if available
       const nutrition = nutritionData[item.name] || null;
 
+      // Build size pricing object
+      const sizePricing = {};
+      if (item.size_pricing && item.size_pricing.length > 0) {
+        item.size_pricing.forEach(sp => {
+          // Use the size as-is from database (capitalized for premium, lowercase for regular)
+          sizePricing[sp.size] = parseFloat(sp.price);
+        });
+      }
+
       const itemData = {
         name: item.name,
         price: parseFloat(item.price),
         allergens: finalAllergens,
-        nutrition: nutrition
+        nutrition: nutrition,
+        sizePricing: sizePricing
       };
 
       // Category IDs from your schema:
