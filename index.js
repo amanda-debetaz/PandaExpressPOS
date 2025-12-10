@@ -126,7 +126,7 @@ passport.use(new GoogleStrategy({
     const display_name = profile.displayName;
 
     try {
-      let user = await prisma.employee.findUnique({
+      let user = await prisma.employee.findFirst({
         where: { google_id: google_id }
       });
 
@@ -136,7 +136,7 @@ passport.use(new GoogleStrategy({
       }
 
       console.log(`GOOGLE LOGIN: No user found for google_id. Checking email: ${email}`);
-      user = await prisma.employee.findUnique({
+      user = await prisma.employee.findFirst({
         where: { email: email }
       });
 
@@ -178,13 +178,37 @@ setInterval(() => {
 }, 60_000);
 
 // ---------- Auth middleware ----------
-function requireAuth(req, res, next) {
-  if (req.isAuthenticated()) {
-    return next(); 
-  }
-  console.log("requireAuth: User not logged in. Redirecting to /");
-  req.flash('error', 'You must be logged in to view that page.');
-  res.redirect('/');
+function requireAuth(allowedRole) {
+  return function(req, res, next) {
+    // 1. Check if user is logged in
+    if (!req.isAuthenticated()) {
+      console.log("requireAuth: User not logged in. Redirecting to /login");
+      req.flash('error', 'You must be logged in to view that page.');
+      return res.redirect('/login');
+    }
+
+    const userRole = (req.user.role || '').toLowerCase();
+
+    if (userRole === 'manager') {
+      return next(); 
+    }
+
+    // 2. If a specific role is required, check it
+    if (allowedRole) {
+      // Normalize to array to support single string or multiple allowed roles
+      const roles = Array.isArray(allowedRole) ? allowedRole : [allowedRole];
+      
+      const hasPermission = roles.some(r => r.toLowerCase() === userRole);
+
+      if (!hasPermission) {
+        console.log(`Access denied: ${req.user.display_name} (${userRole}) attempted to access restricted page.`);
+        req.flash('error', 'You do not have permission to view that page.');
+        return res.redirect('/');
+      }
+    }
+
+    return next();
+  };
 }
 
 // ---------- Login routes ----------
@@ -249,17 +273,18 @@ app.get("/", (req, res) => {
     success: req.flash('success')
   });
 });
-app.get("/manager", requireAuth, async (req, res) => {
+app.get("/manager", requireAuth('manager'), async (req, res) => {
   const employees = await prisma.employee.findMany({
     where: { is_active: true }
   });
 
   res.render("manager", { employees });
 });
-app.get("/cashier", requireAuth, (req, res) => res.render("cashier"));
+app.get("/cashier", requireAuth('cashier'), (req, res) => res.render("cashier"));
+
 
 let doneViewCutoff = new Date("2025-11-08T00:00:00Z");
-app.get("/kitchen", requireAuth, async (req, res) => {
+app.get("/kitchen", requireAuth('cook'), async (req, res) => {
   try {
     const cutoff = doneViewCutoff;
 
@@ -352,6 +377,28 @@ app.get("/kitchen", requireAuth, async (req, res) => {
       }),
     }));
 
+    // Fetch current prepared stock for color coding
+    const stockRows = await prisma.pricing_settings.findMany({ 
+      where: { key: { startsWith: 'prep:mi:' } }
+    });
+    const stockByMenuItemId = new Map();
+    stockRows.forEach(r => {
+      const id = parseInt(r.key.split(':')[2], 10);
+      if (Number.isFinite(id)) {
+        stockByMenuItemId.set(id, Number(r.value));
+      }
+    });
+
+    // Get menu item IDs and names for prepared items (category 3 & 4)
+    const allPrepItems = await prisma.menu_item.findMany({
+      where: { category_id: { in: PREPARED_CATEGORY_IDS } },
+      select: { menu_item_id: true, name: true }
+    });
+    const nameToMenuItemId = new Map();
+    allPrepItems.forEach(item => {
+      nameToMenuItemId.set(item.name, item.menu_item_id);
+    });
+
     const queued = [];
     const cooking = [];
     const done = [];
@@ -362,7 +409,7 @@ app.get("/kitchen", requireAuth, async (req, res) => {
       else if (o.status === 'done') done.push(o);
     }
 
-    res.render("kitchen", { queued, cooking, done, prepItems });
+    res.render("kitchen", { queued, cooking, done, prepItems, stockByMenuItemId, nameToMenuItemId });
   } catch (err) {
     console.error("Error fetching kitchen orders via Prisma:", err);
     res.status(500).send("Error loading kitchen queue");
@@ -371,7 +418,7 @@ app.get("/kitchen", requireAuth, async (req, res) => {
 
 
 
-app.post("/kitchen/:orderId/status", requireAuth, async (req, res) => {
+app.post("/kitchen/:orderId/status", requireAuth('cook'), async (req, res) => {
   const orderId = parseInt(req.params.orderId, 10);
   const { status } = req.body;
 
@@ -385,21 +432,164 @@ app.post("/kitchen/:orderId/status", requireAuth, async (req, res) => {
     if (status === 'prepping' || status === 'done') {
       await prisma.$transaction(async (tx) => {
         await ensurePreparedAndConsumeForOrder(tx, orderId);
+        
+        // Get current order to check previous status
+        const currentOrder = await tx.order.findUnique({
+          where: { order_id: orderId },
+          include: {
+            order_item: true,
+            payment: true,
+          },
+        });
+
+        const wasCompleted = currentOrder?.status === 'done';
+        const completedTime = status === 'done' ? new Date() : null;
+        
         await tx.order.update({
           where: { order_id: orderId },
           data: {
             status,
-            completed_at: status === 'done' ? new Date() : null,
+            completed_at: completedTime,
           },
         });
+
+        // If moving FROM done to another status, subtract from statistics
+        if (wasCompleted && status !== 'done' && currentOrder) {
+          const orderSubtotal = currentOrder.order_item.reduce(
+            (sum, item) => sum + Number(item.unit_price) * item.qty,
+            0
+          );
+          const orderDiscounts = currentOrder.order_item.reduce(
+            (sum, item) => sum + Number(item.discount_amount),
+            0
+          );
+          const orderTax = currentOrder.order_item.reduce(
+            (sum, item) => sum + Number(item.tax_amount),
+            0
+          );
+          const orderRevenue = currentOrder.payment[0]?.amount || 0;
+
+          const statsDate = new Date(currentOrder.completed_at || currentOrder.created_at);
+          statsDate.setHours(0, 0, 0, 0);
+
+          // Subtract from statistics
+          await tx.store_statistics.update({
+            where: { stats_date: statsDate },
+            data: {
+              total_orders: { decrement: 1 },
+              subtotal: { decrement: orderSubtotal },
+              discounts: { decrement: orderDiscounts },
+              tax: { decrement: orderTax },
+              revenue: { decrement: Number(orderRevenue) },
+            },
+          });
+        }
+
+        // Update store_statistics when order is marked as done
+        if (status === 'done' && !wasCompleted) {
+          // Get order details with items and payment
+          const orderWithDetails = await tx.order.findUnique({
+            where: { order_id: orderId },
+            include: {
+              order_item: true,
+              payment: true,
+            },
+          });
+
+          if (orderWithDetails) {
+            // Calculate totals from order items
+            const orderSubtotal = orderWithDetails.order_item.reduce(
+              (sum, item) => sum + Number(item.unit_price) * item.qty,
+              0
+            );
+            const orderDiscounts = orderWithDetails.order_item.reduce(
+              (sum, item) => sum + Number(item.discount_amount),
+              0
+            );
+            const orderTax = orderWithDetails.order_item.reduce(
+              (sum, item) => sum + Number(item.tax_amount),
+              0
+            );
+            const orderRevenue = orderWithDetails.payment[0]?.amount || 0;
+
+            // Get the date for this order (use completed_at or created_at)
+            const statsDate = new Date(completedTime || orderWithDetails.created_at);
+            statsDate.setHours(0, 0, 0, 0); // Start of day
+
+            // Upsert store_statistics
+            await tx.store_statistics.upsert({
+              where: { stats_date: statsDate },
+              update: {
+                total_orders: { increment: 1 },
+                subtotal: { increment: orderSubtotal },
+                discounts: { increment: orderDiscounts },
+                tax: { increment: orderTax },
+                revenue: { increment: Number(orderRevenue) },
+              },
+              create: {
+                stats_date: statsDate,
+                total_orders: 1,
+                subtotal: orderSubtotal,
+                discounts: orderDiscounts,
+                tax: orderTax,
+                revenue: Number(orderRevenue),
+              },
+            });
+          }
+        }
       });
     } else {
-      await prisma.order.update({
-        where: { order_id: orderId },
-        data: { status, completed_at: null },
+      // For status 'queued', check if we need to subtract from statistics
+      await prisma.$transaction(async (tx) => {
+        const currentOrder = await tx.order.findUnique({
+          where: { order_id: orderId },
+          include: {
+            order_item: true,
+            payment: true,
+          },
+        });
+
+        const wasCompleted = currentOrder?.status === 'done';
+        
+        await tx.order.update({
+          where: { order_id: orderId },
+          data: { status, completed_at: null },
+        });
+
+        // If moving FROM done to queued, subtract from statistics
+        if (wasCompleted && currentOrder) {
+          const orderSubtotal = currentOrder.order_item.reduce(
+            (sum, item) => sum + Number(item.unit_price) * item.qty,
+            0
+          );
+          const orderDiscounts = currentOrder.order_item.reduce(
+            (sum, item) => sum + Number(item.discount_amount),
+            0
+          );
+          const orderTax = currentOrder.order_item.reduce(
+            (sum, item) => sum + Number(item.tax_amount),
+            0
+          );
+          const orderRevenue = currentOrder.payment[0]?.amount || 0;
+
+          const statsDate = new Date(currentOrder.completed_at || currentOrder.created_at);
+          statsDate.setHours(0, 0, 0, 0);
+
+          // Subtract from statistics
+          await tx.store_statistics.update({
+            where: { stats_date: statsDate },
+            data: {
+              total_orders: { decrement: 1 },
+              subtotal: { decrement: orderSubtotal },
+              discounts: { decrement: orderDiscounts },
+              tax: { decrement: orderTax },
+              revenue: { decrement: Number(orderRevenue) },
+            },
+          });
+        }
       });
     }
-
+    try { kitchenBroadcast('queued-changed', { orderId }); } catch {}
     res.redirect("/kitchen");
   } catch (err) {
     if (err && err.__insufficientStock) {
@@ -411,7 +601,7 @@ app.post("/kitchen/:orderId/status", requireAuth, async (req, res) => {
 });
 
 // Cancel order endpoint
-app.post("/kitchen/:orderId/cancel", requireAuth, async (req, res) => {
+app.post("/kitchen/:orderId/cancel", requireAuth('cook'), async (req, res) => {
   const orderId = parseInt(req.params.orderId, 10);
 
   try {
@@ -419,7 +609,7 @@ app.post("/kitchen/:orderId/cancel", requireAuth, async (req, res) => {
     await prisma.order.delete({
       where: { order_id: orderId }
     });
-
+    try { kitchenBroadcast('queued-changed', { orderId }); } catch {}
     res.redirect("/kitchen");
   } catch (err) {
     console.error("Error cancelling order:", err);
@@ -427,9 +617,49 @@ app.post("/kitchen/:orderId/cancel", requireAuth, async (req, res) => {
   }
 });
 
-app.post("/kitchen/clear-done", requireAuth, (req, res) => {
+app.post("/kitchen/clear-done", requireAuth('cook'), (req, res) => {
   doneViewCutoff = new Date();
   res.redirect("/kitchen");
+});
+
+// Simple Server-Sent Events stream for kitchen updates
+const kitchenClients = new Set();
+function kitchenBroadcast(event, data) {
+  console.log(`[SSE] Broadcasting ${event} to ${kitchenClients.size} clients:`, data);
+  const payload = `event: ${event}\ndata: ${JSON.stringify(data || {})}\n\n`;
+  for (const res of kitchenClients) {
+    try { res.write(payload); } catch (e) { console.warn('[SSE] Write failed:', e.message); }
+  }
+}
+
+app.get('/kitchen/events', (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+  });
+  res.write('\n'); // kick things off
+  kitchenClients.add(res);
+
+  const keepalive = setInterval(() => {
+    try { res.write(': keep-alive\n\n'); } catch {}
+  }, 15000);
+
+  req.on('close', () => {
+    clearInterval(keepalive);
+    kitchenClients.delete(res);
+  });
+});
+
+// Lightweight queued count endpoint used by kitchen auto-refresh
+app.get('/kitchen/queued-count', async (req, res) => {
+  try {
+    const count = await prisma.order.count({ where: { status: 'queued' } });
+    res.json({ count });
+  } catch (err) {
+    console.error('queued-count error', err);
+    res.status(500).json({ error: 'failed' });
+  }
 });
 
 app.get("/menu-board", async (req, res) => {
@@ -469,11 +699,11 @@ app.get("/menu-board", async (req, res) => {
 });
 
 // ---------- 1. KIOSK MENU ----------
-let menuCache = { entrees: [], a_la_carte: [], sides: [], appetizers: [] };
+let menuCache = { entrees: [], a_la_carte: [], sides: [], appetizers: [] , drinks: []};
 
-app.get("/kiosk", async (req, res) => {
+app.get("/kiosk", requireAuth(), async (req, res) => {
   try {
-    // Fetch all active menu items with their categories and ingredient allergens
+    // Fetch all active menu items with their categories, ingredient allergens, and size pricing
     const menuItems = await prisma.menu_item.findMany({
       where: { is_active: true },
       include: {
@@ -482,9 +712,10 @@ app.get("/kiosk", async (req, res) => {
           include: {
             inventory: { select: { name: true, allergen_info: true } }
           }
-        }
+        },
+        size_pricing: true
       },
-      orderBy: { name: 'asc' }
+      orderBy: { price: 'asc' }
     });
 
     // Group items by category
@@ -492,7 +723,8 @@ app.get("/kiosk", async (req, res) => {
       entrees: [],
       appetizers: [],
       a_la_carte: [],
-      sides: []
+      sides: [],
+      drinks: []
     };
 
     // Normalization helpers for allergen strings from inventory
@@ -525,10 +757,80 @@ app.get("/kiosk", async (req, res) => {
         toks.forEach(a => allergenSet.add(a));
       });
 
+      // Manual allergen data for appetizers (based on recipes)
+      const appetizerAllergens = {
+        'Chicken Egg Roll': ['Wheat', 'Soy', 'Egg'],
+        'Veggie Spring Roll': ['Wheat', 'Soy'],
+        'Cream Cheese Rangoon': ['Wheat', 'Milk', 'Egg', 'Soy']
+      };
+
+      // Nutritional information (per serving)
+      const nutritionData = {
+        // Sides
+        'Chow Mein': { calories: 600, protein: 15, fat: 23, carbs: 94 },
+        'Fried Rice': { calories: 620, protein: 13, fat: 19, carbs: 101 },
+        'White Steamed Rice': { calories: 520, protein: 10, fat: 0, carbs: 118 },
+        'Super Greens': { calories: 130, protein: 9, fat: 4, carbs: 14 },
+        'Chow Fun': { calories: 410, protein: 9, fat: 9, carbs: 73 },
+        // Veggies
+        'Eggplant & Tofu': { calories: 340, protein: 7, fat: 24, carbs: 23 },
+        'Super Greens Entree': { calories: 90, protein: 6, fat: 3, carbs: 10 },
+        // Chicken
+        'Black Pepper Chicken': { calories: 280, protein: 13, fat: 19, carbs: 15 },
+        'Kung Pao Chicken': { calories: 320, protein: 17, fat: 21, carbs: 15 },
+        'Grilled Teriyaki Chicken': { calories: 275, protein: 33, fat: 10, carbs: 14 },
+        'Teriyaki Chicken': { calories: 340, protein: 41, fat: 13, carbs: 14 },
+        'Mushroom Chicken': { calories: 220, protein: 13, fat: 14, carbs: 10 },
+        'The Original Orange Chicken': { calories: 510, protein: 26, fat: 24, carbs: 53 },
+        'Orange Chicken': { calories: 510, protein: 26, fat: 24, carbs: 53 },
+        'Potato Chicken': { calories: 190, protein: 8, fat: 10, carbs: 18 },
+        // Chicken Breast
+        'Honey Sesame Chicken Breast': { calories: 340, protein: 16, fat: 15, carbs: 35 },
+        'String Bean Chicken Breast': { calories: 210, protein: 12, fat: 12, carbs: 13 },
+        'SweetFire Chicken Breast': { calories: 360, protein: 15, fat: 15, carbs: 40 },
+        'Sweet & Sour Chicken Breast': { calories: 300, protein: 10, fat: 12, carbs: 40 },
+        // Beef
+        'Beijing Beef': { calories: 480, protein: 14, fat: 27, carbs: 46 },
+        'Broccoli Beef': { calories: 150, protein: 9, fat: 7, carbs: 13 },
+        'Black Pepper Sirloin Steak': { calories: 210, protein: 19, fat: 10, carbs: 13 },
+        // Seafood
+        'Chili Crisp Shrimp': { calories: 210, protein: 13, fat: 10, carbs: 19 },
+        'Honey Walnut Shrimp': { calories: 430, protein: 13, fat: 28, carbs: 32 },
+        'Wok Fired Shrimp': { calories: 190, protein: 17, fat: 5, carbs: 19 },
+        'Golden Treasure Shrimp': { calories: 360, protein: 14, fat: 18, carbs: 35 },
+        'Steamed Ginger Fish': { calories: 200, protein: 15, fat: 12, carbs: 8 },
+        // Appetizers
+        'Chicken Egg Roll': { calories: 200, protein: 6, fat: 10, carbs: 20 },
+        'Chicken Potsticker': { calories: 160, protein: 6, fat: 6, carbs: 20 },
+        'Cream Cheese Rangoon': { calories: 190, protein: 5, fat: 8, carbs: 24 },
+        'Vegetable Spring Roll': { calories: 240, protein: 4, fat: 14, carbs: 24 }
+      };
+
+      let finalAllergens = Array.from(allergenSet).map(titleCase);
+      
+      // Override with manual allergens for appetizers if available
+      if (appetizerAllergens[item.name]) {
+        finalAllergens = appetizerAllergens[item.name];
+      }
+
+      // Get nutrition data if available
+      const nutrition = nutritionData[item.name] || null;
+
+      // Build size pricing object
+      const sizePricing = {};
+      if (item.size_pricing && item.size_pricing.length > 0) {
+        item.size_pricing.forEach(sp => {
+          // Use the size as-is from database (capitalized for premium, lowercase for regular)
+          sizePricing[sp.size] = parseFloat(sp.price);
+        });
+      }
+
       const itemData = {
         name: item.name,
         price: parseFloat(item.price),
-        allergens: Array.from(allergenSet).map(titleCase)
+        allergens: finalAllergens,
+        nutrition: nutrition,
+        sizePricing: sizePricing
       };
 
       // Category IDs from your schema:
@@ -549,9 +851,11 @@ app.get("/kiosk", async (req, res) => {
         case 4:
           menu.sides.push(itemData);
           break;
+        case 5:
+          menu.drinks.push(itemData);
+          break;
       }
     });
-
     res.render("kiosk", { menu });
   } catch (err) {
     console.error("Kiosk query error:", err);
@@ -566,6 +870,114 @@ function findMealPrice(allEntrees, type) {
   const found = allEntrees.find(e => e.name === name);
   return found ? found.price : 0;
 }
+
+// IMPORTANT: /builder/edit must come BEFORE /builder/:type to avoid route conflicts
+app.get('/builder/edit', async (req, res) => {
+  try {
+    const type = (req.query.type || 'plate').toLowerCase();
+    const editIdx = req.query.idx ? Number(req.query.idx) : null;
+    const items = await prisma.menu_item.findMany({
+      where: { is_active: true },
+      include: {
+        category: true,
+        recipe: {
+          include: {
+            inventory: { select: { name: true, allergen_info: true } }
+          }
+        }
+      },
+      orderBy: { name: 'asc' }
+    });
+
+    // Allergen helpers
+    const stopWords = new Set(['none', 'no', 'n/a', 'na', 'null', '-', '']);
+    const stripPhrases = [/^contains\s*:?/i, /^may\s*contain\s*:?/i, /^traces\s*of\s*:?/i];
+    const splitRegex = /[,/;&]|\band\b/i;
+    function normalizeTokens(text) {
+      if (!text) return [];
+      let t = String(text).trim();
+      for (const rx of stripPhrases) t = t.replace(rx, '').trim();
+      return t.split(splitRegex).map(s => s.trim().toLowerCase()).filter(s => s && !stopWords.has(s));
+    }
+    function titleCase(s) { return s.replace(/\w+/g, w => w.charAt(0).toUpperCase() + w.slice(1)); }
+
+    const nutritionData = {
+      // Sides
+      'Chow Mein': { calories: 600, protein: 15, fat: 23, carbs: 94 },
+      'Fried Rice': { calories: 620, protein: 13, fat: 19, carbs: 101 },
+      'White Steamed Rice': { calories: 520, protein: 10, fat: 0, carbs: 118 },
+      'Super Greens': { calories: 130, protein: 9, fat: 4, carbs: 14 },
+      'Chow Fun': { calories: 410, protein: 9, fat: 9, carbs: 73 },
+      // Veggies
+      'Eggplant & Tofu': { calories: 340, protein: 7, fat: 24, carbs: 23 },
+      'Super Greens Entree': { calories: 90, protein: 6, fat: 3, carbs: 10 },
+      // Chicken
+      'Black Pepper Chicken': { calories: 280, protein: 13, fat: 19, carbs: 15 },
+      'Kung Pao Chicken': { calories: 320, protein: 17, fat: 21, carbs: 15 },
+      'Grilled Teriyaki Chicken': { calories: 275, protein: 33, fat: 10, carbs: 14 },
+      'Teriyaki Chicken': { calories: 340, protein: 41, fat: 13, carbs: 14 },
+      'Mushroom Chicken': { calories: 220, protein: 13, fat: 14, carbs: 10 },
+      'The Original Orange Chicken': { calories: 510, protein: 26, fat: 24, carbs: 53 },
+      'Orange Chicken': { calories: 510, protein: 26, fat: 24, carbs: 53 },
+      'Potato Chicken': { calories: 190, protein: 8, fat: 10, carbs: 18 },
+      // Chicken Breast
+      'Honey Sesame Chicken Breast': { calories: 340, protein: 16, fat: 15, carbs: 35 },
+      'String Bean Chicken Breast': { calories: 210, protein: 12, fat: 12, carbs: 13 },
+      'SweetFire Chicken Breast': { calories: 360, protein: 15, fat: 15, carbs: 40 },
+      'Sweet & Sour Chicken Breast': { calories: 300, protein: 10, fat: 12, carbs: 40 },
+      // Beef
+      'Beijing Beef': { calories: 480, protein: 14, fat: 27, carbs: 46 },
+      'Broccoli Beef': { calories: 150, protein: 9, fat: 7, carbs: 13 },
+      'Black Pepper Sirloin Steak': { calories: 210, protein: 19, fat: 10, carbs: 13 },
+      // Seafood
+      'Chili Crisp Shrimp': { calories: 210, protein: 13, fat: 10, carbs: 19 },
+      'Honey Walnut Shrimp': { calories: 430, protein: 13, fat: 28, carbs: 32 },
+      'Wok Fired Shrimp': { calories: 190, protein: 17, fat: 5, carbs: 19 },
+      'Golden Treasure Shrimp': { calories: 360, protein: 14, fat: 18, carbs: 35 },
+      'Steamed Ginger Fish': { calories: 200, protein: 15, fat: 12, carbs: 8 }
+    };
+
+    const menu = { entrees: [], sides: [] };
+    const premiumEntrees = new Set(['Honey Walnut Shrimp', 'Black Pepper Sirloin Steak']); // Define premium items
+
+    for (const item of items) {
+      const allergenSet = new Set();
+      (item.recipe || []).forEach(r => {
+        const s = (r.inventory?.allergen_info || '').trim();
+        if (!s) return;
+        normalizeTokens(s).forEach(a => allergenSet.add(a));
+      });
+      
+      const nutrition = nutritionData[item.name] || null;
+      
+      const itemData = {
+        name: item.name,
+        price: Number(item.price),
+        allergens: Array.from(allergenSet).map(titleCase),
+        isPremium: premiumEntrees.has(item.name),
+        nutrition: nutrition
+      };
+      // Category 3 = A La Carte (actual protein dishes)
+      // Category 4 = Sides
+      if (item.category_id === 3) menu.entrees.push(itemData);
+      else if (item.category_id === 4) menu.sides.push(itemData);
+    }
+
+    // Find base price from category 1 (Bowl/Plate/Bigger Plate)
+    const mealItems = items.filter(i => i.category_id === 1);
+    const basePrice = (() => {
+      const map = { bowl: 'Bowl', plate: 'Plate', 'bigger-plate': 'Bigger Plate' };
+      const name = map[type] || 'Plate';
+      const found = mealItems.find(e => e.name === name);
+      return found ? Number(found.price) : 0;
+    })();
+    const premiumSurcharge = 1.50;
+    res.render('builder', { menu, type, price: basePrice, premiumSurcharge, isEdit: true, editIdx });
+  } catch (err) {
+    console.error('Builder edit error:', err);
+    res.status(500).send('Unable to load builder edit');
+  }
+});
 
 app.get('/builder/:type', async (req, res) => {
   try {
@@ -597,6 +1009,42 @@ app.get('/builder/:type', async (req, res) => {
     }
     function titleCase(s) { return s.replace(/\w+/g, w => w.charAt(0).toUpperCase() + w.slice(1)); }
 
+    const nutritionData = {
+      // Sides
+      'Chow Mein': { calories: 600, protein: 15, fat: 23, carbs: 94 },
+      'Fried Rice': { calories: 620, protein: 13, fat: 19, carbs: 101 },
+      'White Steamed Rice': { calories: 520, protein: 10, fat: 0, carbs: 118 },
+      'Super Greens': { calories: 130, protein: 9, fat: 4, carbs: 14 },
+      'Chow Fun': { calories: 410, protein: 9, fat: 9, carbs: 73 },
+      // Veggies
+      'Eggplant & Tofu': { calories: 340, protein: 7, fat: 24, carbs: 23 },
+      'Super Greens Entree': { calories: 90, protein: 6, fat: 3, carbs: 10 },
+      // Chicken
+      'Black Pepper Chicken': { calories: 280, protein: 13, fat: 19, carbs: 15 },
+      'Kung Pao Chicken': { calories: 320, protein: 17, fat: 21, carbs: 15 },
+      'Grilled Teriyaki Chicken': { calories: 275, protein: 33, fat: 10, carbs: 14 },
+      'Teriyaki Chicken': { calories: 340, protein: 41, fat: 13, carbs: 14 },
+      'Mushroom Chicken': { calories: 220, protein: 13, fat: 14, carbs: 10 },
+      'The Original Orange Chicken': { calories: 510, protein: 26, fat: 24, carbs: 53 },
+      'Orange Chicken': { calories: 510, protein: 26, fat: 24, carbs: 53 },
+      'Potato Chicken': { calories: 190, protein: 8, fat: 10, carbs: 18 },
+      // Chicken Breast
+      'Honey Sesame Chicken Breast': { calories: 340, protein: 16, fat: 15, carbs: 35 },
+      'String Bean Chicken Breast': { calories: 210, protein: 12, fat: 12, carbs: 13 },
+      'SweetFire Chicken Breast': { calories: 360, protein: 15, fat: 15, carbs: 40 },
+      'Sweet & Sour Chicken Breast': { calories: 300, protein: 10, fat: 12, carbs: 40 },
+      // Beef
+      'Beijing Beef': { calories: 480, protein: 14, fat: 27, carbs: 46 },
+      'Broccoli Beef': { calories: 150, protein: 9, fat: 7, carbs: 13 },
+      'Black Pepper Sirloin Steak': { calories: 210, protein: 19, fat: 10, carbs: 13 },
+      // Seafood
+      'Chili Crisp Shrimp': { calories: 210, protein: 13, fat: 10, carbs: 19 },
+      'Honey Walnut Shrimp': { calories: 430, protein: 13, fat: 28, carbs: 32 },
+      'Wok Fired Shrimp': { calories: 190, protein: 17, fat: 5, carbs: 19 },
+      'Golden Treasure Shrimp': { calories: 360, protein: 14, fat: 18, carbs: 35 },
+      'Steamed Ginger Fish': { calories: 200, protein: 15, fat: 12, carbs: 8 }
+    };
+
     const menu = { entrees: [], sides: [] };
     const premiumEntrees = new Set(['Honey Walnut Shrimp', 'Black Pepper Sirloin Steak']); // Define premium items
 
@@ -607,11 +1055,15 @@ app.get('/builder/:type', async (req, res) => {
         if (!s) return;
         normalizeTokens(s).forEach(a => allergenSet.add(a));
       });
+      
+      const nutrition = nutritionData[item.name] || null;
+      
       const itemData = {
         name: item.name,
         price: Number(item.price),
         allergens: Array.from(allergenSet).map(titleCase),
-        isPremium: premiumEntrees.has(item.name)
+        isPremium: premiumEntrees.has(item.name),
+        nutrition: nutrition
       };
       // Category 3 = A La Carte (actual protein dishes)
       // Category 4 = Sides
@@ -633,73 +1085,6 @@ app.get('/builder/:type', async (req, res) => {
   } catch (err) {
     console.error('Builder route error:', err);
     res.status(500).send('Unable to load builder');
-  }
-});
-
-app.get('/builder/edit', async (req, res) => {
-  try {
-    const type = (req.query.type || 'plate').toLowerCase();
-    const editIdx = req.query.idx ? Number(req.query.idx) : null;
-    const items = await prisma.menu_item.findMany({
-      where: { is_active: true },
-      include: {
-        category: true,
-        recipe: {
-          include: {
-            inventory: { select: { name: true, allergen_info: true } }
-          }
-        }
-      },
-      orderBy: { name: 'asc' }
-    });
-
-    // Allergen helpers
-    const stopWords = new Set(['none', 'no', 'n/a', 'na', 'null', '-', '']);
-    const stripPhrases = [/^contains\s*:?/i, /^may\s*contain\s*:?/i, /^traces\s*of\s*:?/i];
-    const splitRegex = /[,/;&]|\band\b/i;
-    function normalizeTokens(text) {
-      if (!text) return [];
-      let t = String(text).trim();
-      for (const rx of stripPhrases) t = t.replace(rx, '').trim();
-      return t.split(splitRegex).map(s => s.trim().toLowerCase()).filter(s => s && !stopWords.has(s));
-    }
-    function titleCase(s) { return s.replace(/\w+/g, w => w.charAt(0).toUpperCase() + w.slice(1)); }
-
-    const menu = { entrees: [], sides: [] };
-    const premiumEntrees = new Set(['Honey Walnut Shrimp', 'Black Pepper Sirloin Steak']); // Define premium items
-
-    for (const item of items) {
-      const allergenSet = new Set();
-      (item.recipe || []).forEach(r => {
-        const s = (r.inventory?.allergen_info || '').trim();
-        if (!s) return;
-        normalizeTokens(s).forEach(a => allergenSet.add(a));
-      });
-      const itemData = {
-        name: item.name,
-        price: Number(item.price),
-        allergens: Array.from(allergenSet).map(titleCase),
-        isPremium: premiumEntrees.has(item.name)
-      };
-      // Category 3 = A La Carte (actual protein dishes)
-      // Category 4 = Sides
-      if (item.category_id === 3) menu.entrees.push(itemData);
-      else if (item.category_id === 4) menu.sides.push(itemData);
-    }
-
-    // Find base price from category 1 (Bowl/Plate/Bigger Plate)
-    const mealItems = items.filter(i => i.category_id === 1);
-    const basePrice = (() => {
-      const map = { bowl: 'Bowl', plate: 'Plate', 'bigger-plate': 'Bigger Plate' };
-      const name = map[type] || 'Plate';
-      const found = mealItems.find(e => e.name === name);
-      return found ? Number(found.price) : 0;
-    })();
-    const premiumSurcharge = 1.50;
-    res.render('builder', { menu, type, price: basePrice, premiumSurcharge, isEdit: true, editIdx });
-  } catch (err) {
-    console.error('Builder edit error:', err);
-    res.status(500).send('Unable to load builder edit');
   }
 });
 
@@ -749,7 +1134,7 @@ app.get("/debug/allergens/:name", async (req, res) => {
 });
 
 // ---------- 2. ORDER ----------
-app.get("/order", requireAuth, async (req, res) => {
+app.get("/order", async (req, res) => {
   const menu = { entrees: [], sides: [], a_la_carte: [] };
   try {
     const items = await prisma.menu_item.findMany({
@@ -771,7 +1156,7 @@ app.get("/order", requireAuth, async (req, res) => {
 });
 
 // ---------- 3. SUMMARY (Now supports full cart) ----------
-app.post("/summary", requireAuth, async (req, res) => {
+app.post("/summary", async (req, res) => {
   const { cart: rawCart } = req.body;
 
   if (!rawCart || !Array.isArray(rawCart) || rawCart.length === 0) {
@@ -802,7 +1187,7 @@ app.post("/summary", requireAuth, async (req, res) => {
 // -------------------------------------------------
 
 // 1. Add item to cart
-app.post("/api/cart/add", requireAuth, (req, res) => {
+app.post("/api/cart/add", requireAuth(), (req, res) => {
   const { name, price } = req.body;
   if (!name || price === undefined) return res.status(400).json({error: "missing data"});
 
@@ -820,12 +1205,12 @@ app.post("/api/cart/add", requireAuth, (req, res) => {
 });
 
 // 2. Get current cart (for the modal)
-app.get("/api/cart", requireAuth, (req, res) => {
+app.get("/api/cart", (req, res) => {
   res.json({ cart: req.session.cart || [] });
 });
 
 // 3. Clear cart
-app.delete("/api/cart/clear", requireAuth, (req, res) => {
+app.delete("/api/cart/clear", (req, res) => {
   req.session.cart = [];
   res.json({ success: true });
 });
@@ -853,14 +1238,23 @@ app.post("/api/checkout", async (req, res) => {
       return res.status(400).json({ error: "Invalid dine option" });
     }
 
-    // Total uses the combo prices already calculated on the front end
-    const total = cart.reduce(
+    // Get tax rate from database
+    const taxRateRow = await prisma.tax_rate.findFirst();
+    const taxRate = taxRateRow ? Number(taxRateRow.rate) : 0.0825; // Default 8.25% if not found
+
+    // Calculate subtotal
+    const subtotal = cart.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
     );
 
+    // Calculate tax and total
+    const taxAmount = subtotal * taxRate;
+    const total = subtotal + taxAmount;
+
     // Menu items by name (Bowl / Plate / Bigger Plate / a la carte, etc.)
-    const itemNames = cart.map((item) => item.name);
+    // For sized items, use baseName for database lookup
+    const itemNames = cart.map((item) => item.baseName || item.name);
     const menuItems = await prisma.menu_item.findMany({
       where: { name: { in: itemNames } },
       select: { menu_item_id: true, name: true },
@@ -903,16 +1297,25 @@ app.post("/api/checkout", async (req, res) => {
         status: "queued",
         order_item: {
           create: cart.map((item) => {
-            const mi = menuItemByName[item.name];
+            // For sized items, use baseName for database lookup
+            const lookupName = item.baseName || item.name;
+            const mi = menuItemByName[lookupName];
             if (!mi) {
-              throw new Error(`Unknown menu item: ${item.name}`);
+              throw new Error(`Unknown menu item: ${lookupName}`);
             }
 
+            // For sized items, multiply quantity by serving multiplier
+            const finalQty = item.multiplier ? (item.quantity * item.multiplier) : item.quantity;
+            
+            // Calculate tax for this item
+            const itemTotal = item.price * item.quantity;
+            const itemTax = itemTotal * taxRate;
+            
             const orderItemData = {
-              qty: item.quantity,
+              qty: finalQty,
               unit_price: item.price,
               discount_amount: 0,
-              tax_amount: 0,
+              tax_amount: itemTax,
               menu_item: {
                 connect: { menu_item_id: mi.menu_item_id },
               },
@@ -952,10 +1355,205 @@ app.post("/api/checkout", async (req, res) => {
       },
     });
 
+    try {
+      // Broadcast to kitchen listeners that queued orders changed
+      kitchenBroadcast('queued-changed', { orderId: order.order_id });
+    } catch {}
     res.json({ success: true, order_id: order.order_id });
   } catch (err) {
     console.error("Checkout error:", err);
     res.status(500).json({ success: false, error: "Checkout failed" });
+  }
+});
+
+// ===== CLOCK IN/OUT ENDPOINTS (for tracking employee ID on orders only) =====
+app.post("/api/clock/in", requireAuth('cashier'), async (req, res) => {
+  try {
+    const { employee_id } = req.body;
+
+    if (!employee_id) {
+      return res.status(400).json({ error: "Employee ID is required" });
+    }
+
+    // Verify employee exists
+    const employee = await prisma.employee.findUnique({
+      where: { employee_id: parseInt(employee_id) },
+      select: { employee_id: true, display_name: true, is_active: true }
+    });
+
+    if (!employee) {
+      return res.status(404).json({ error: "Employee not found" });
+    }
+
+    if (!employee.is_active) {
+      return res.status(400).json({ error: "Employee account is inactive" });
+    }
+
+    // Just return employee info - no database tracking
+    res.json({
+      success: true,
+      employee_id: employee.employee_id,
+      display_name: employee.display_name
+    });
+  } catch (err) {
+    console.error("Clock in error:", err);
+    res.status(500).json({ success: false, error: err.message || "Clock in failed" });
+  }
+});
+
+app.post("/api/clock/out", requireAuth('cashier'), async (req, res) => {
+  try {
+    // No database operations needed - just acknowledge the clock out
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Clock out error:", err);
+    res.status(500).json({ success: false, error: err.message || "Clock out failed" });
+  }
+});
+
+// ===== CASHIER CHECKOUT (orders immediately marked as DONE) =====
+app.post("/api/cashier/checkout", requireAuth('cashier'), async (req, res) => {
+  try {
+    const { cart, paymentMethod, dineOption, clockedInEmployeeId } = req.body;
+
+    if (!Array.isArray(cart) || cart.length === 0) {
+      return res.status(400).json({ error: "Cart is empty" });
+    }
+
+    // Validate payment method (must match payment_method_enum in schema)
+    const validPaymentMethods = ['cash', 'card', 'giftcard', 'dining_dollars', 'meal_swipe'];
+    if (!validPaymentMethods.includes(paymentMethod)) {
+      return res.status(400).json({ error: "Invalid payment method" });
+    }
+
+    // Validate dine option
+    const validDineOptions = ['dine_in', 'takeout'];
+    if (!validDineOptions.includes(dineOption)) {
+      return res.status(400).json({ error: "Invalid dine option" });
+    }
+
+    // Get tax rate from database
+    const taxRateRow = await prisma.tax_rate.findFirst();
+    const taxRate = taxRateRow ? Number(taxRateRow.rate) : 0.0825; // Default 8.25% if not found
+
+    // Calculate subtotal
+    const subtotal = cart.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+
+    // Calculate tax and total
+    const taxAmount = subtotal * taxRate;
+    const total = subtotal + taxAmount;
+
+    // Get menu items from database
+    const itemNames = cart.map((item) => item.baseName || item.name);
+    const menuItems = await prisma.menu_item.findMany({
+      where: { name: { in: itemNames } },
+      select: { menu_item_id: true, name: true },
+    });
+
+    const menuItemByName = {};
+    menuItems.forEach((mi) => {
+      menuItemByName[mi.name] = mi;
+    });
+
+    // Collect option names from all cart items (sides + entrees)
+    const optionNameSet = new Set();
+    cart.forEach((item) => {
+      if (Array.isArray(item.options)) {
+        item.options.forEach((opt) => {
+          if (opt && opt.name) optionNameSet.add(opt.name);
+        });
+      }
+    });
+
+    let optionByName = {};
+    if (optionNameSet.size > 0) {
+      const optionNames = Array.from(optionNameSet);
+      const options = await prisma.option.findMany({
+        where: { name: { in: optionNames } },
+        select: { option_id: true, name: true },
+      });
+      options.forEach((o) => {
+        if (!optionByName[o.name]) {
+          optionByName[o.name] = o;
+        }
+      });
+    }
+
+    // Get employee_id: prioritize clocked-in employee, fall back to logged-in user
+    const employeeId = clockedInEmployeeId || req.session.user?.employee_id || 1;
+
+    // Create order with status "done" (cashier orders skip kitchen queue)
+    const order = await prisma.order.create({
+      data: {
+        employee_id: employeeId,
+        dine_option: dineOption,
+        status: "done", // CASHIER ORDERS ARE IMMEDIATELY DONE
+        order_item: {
+          create: cart.map((item) => {
+            const lookupName = item.baseName || item.name;
+            const mi = menuItemByName[lookupName];
+            if (!mi) {
+              throw new Error(`Unknown menu item: ${lookupName}`);
+            }
+
+            const finalQty = item.multiplier ? (item.quantity * item.multiplier) : item.quantity;
+            
+            // Calculate tax for this item
+            const itemTotal = item.price * item.quantity;
+            const itemTax = itemTotal * taxRate;
+            
+            const orderItemData = {
+              qty: finalQty,
+              unit_price: item.price,
+              discount_amount: 0,
+              tax_amount: itemTax,
+              menu_item: {
+                connect: { menu_item_id: mi.menu_item_id },
+              },
+            };
+
+            // Attach options for meals
+            if (Array.isArray(item.options) && item.options.length > 0) {
+              const optionCreates = [];
+              item.options.forEach((opt) => {
+                const row = optionByName[opt.name];
+                if (!row) return;
+                const qty = Number(opt.qty) || 1;
+                optionCreates.push({
+                  qty,
+                  option: { connect: { option_id: row.option_id } },
+                });
+              });
+
+              if (optionCreates.length > 0) {
+                orderItemData.order_item_option = { create: optionCreates };
+              }
+            }
+
+            return orderItemData;
+          }),
+        },
+        payment: {
+          create: {
+            method: paymentMethod,
+            amount: total,
+          },
+        },
+      },
+      include: {
+        order_item: true,
+        payment: true,
+      },
+    });
+
+    // Note: No kitchen broadcast since cashier orders bypass the kitchen queue
+    res.json({ success: true, order_id: order.order_id });
+  } catch (err) {
+    console.error("Cashier checkout error:", err);
+    res.status(500).json({ success: false, error: err.message || "Checkout failed" });
   }
 });
 
@@ -1092,7 +1690,7 @@ async function ensurePreparedAndConsumeForOrder(tx, orderId) {
 }
 
 // Cook a batch: subtract inventory by recipe and increase KV prepared stock
-app.post('/kitchen/stock/:menuItemId/cook', requireAuth, async (req, res) => {
+app.post('/kitchen/stock/:menuItemId/cook', requireAuth('cook'), async (req, res) => {
   const menuItemId = parseInt(req.params.menuItemId, 10);
   const servings = Math.max(0, parseInt(req.body?.servings ?? '0', 10));
   if (!Number.isFinite(menuItemId) || servings <= 0) {
@@ -1152,7 +1750,9 @@ app.post('/kitchen/stock/:menuItemId/cook', requireAuth, async (req, res) => {
 
     const key = prepKey(menuItemId);
     const row = await prisma.pricing_settings.findUnique({ where: { key } });
-    res.json({ success: true, stock: { menu_item_id: menuItemId, servings_available: Number(row?.value ?? 0) } });
+    const payload = { menu_item_id: menuItemId, servings_available: Number(row?.value ?? 0) };
+    try { kitchenBroadcast('stock-updated', payload); } catch {}
+    res.json({ success: true, stock: payload });
   } catch (err) {
     console.error('Cook batch error:', err);
     res.status(500).json({ success: false, error: 'Failed to cook batch' });
@@ -1160,10 +1760,11 @@ app.post('/kitchen/stock/:menuItemId/cook', requireAuth, async (req, res) => {
 });
 
 // Discard all remaining prepared stock (end-of-day)
-app.post('/kitchen/stock/discard', requireAuth, async (req, res) => {
+app.post('/kitchen/stock/discard', requireAuth('cook'), async (req, res) => {
   try {
     const rows = await prisma.pricing_settings.findMany({ where: { key: { startsWith: 'prep:mi:' } } });
     await prisma.$transaction(rows.map((r) => prisma.pricing_settings.update({ where: { key: r.key }, data: { value: 0 } })));
+    try { kitchenBroadcast('stock-refresh', {}); } catch {}
     res.json({ success: true });
   } catch (err) {
     console.error('Discard stock error:', err);
@@ -1172,7 +1773,7 @@ app.post('/kitchen/stock/discard', requireAuth, async (req, res) => {
 });
 
 // Get current prepared stock snapshot
-app.get('/kitchen/stock', requireAuth, async (req, res) => {
+app.get('/kitchen/stock', async (req, res) => {
   try {
     const rows = await prisma.pricing_settings.findMany({ where: { key: { startsWith: 'prep:mi:' } }, orderBy: { key: 'asc' } });
     const ids = rows.map((r) => parseInt(r.key.split(':')[2], 10)).filter((n) => Number.isFinite(n));
@@ -1187,6 +1788,18 @@ app.get('/kitchen/stock', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('Get stock error:', err);
     res.status(500).json({ success: false, error: 'Failed to fetch stock' });
+  }
+});
+
+// --- TAX RATE ENDPOINT ---
+app.get('/api/tax-rate', async (req, res) => {
+  try {
+    const taxRateRecord = await prisma.tax_rate.findFirst();
+    const taxRate = taxRateRecord?.rate ?? 0.0825; // Default 8.25%
+    res.json({ rate: taxRate });
+  } catch (err) {
+    console.error("Error fetching tax rate:", err);
+    res.status(500).json({ error: "Unable to fetch tax rate" });
   }
 });
 
@@ -1227,6 +1840,32 @@ app.post("/api/employees", async (req, res) => {
   }
 });
 
+app.delete('/api/employees/:id', async (req, res) => {
+  const id = parseInt(req.params.id);
+
+  if (isNaN(id)) {
+    return res.status(400).json({ error: "Invalid Employee ID" });
+  }
+
+  try {
+    await prisma.employee.delete({
+      where: { employee_id: id }
+    });
+
+    res.json({ success: true, message: "Employee deleted successfully" });
+  } catch (err) {
+    console.error("Delete employee error:", err);
+    
+    if (err.code === 'P2003') {
+      return res.status(400).json({ 
+        error: "Cannot delete this employee because they have associated records (e.g., orders, shifts). Please deactivate them instead." 
+      });
+    }
+
+    res.status(500).json({ error: "Failed to delete employee" });
+  }
+});
+
 // Update employee info
 app.put('/api/employees/:id', async (req, res) => {
   const { id } = req.params;
@@ -1262,20 +1901,44 @@ app.put("/api/employees/:id/role", async (req, res) => {
 
 // Deactivate employee
 app.put('/api/employees/:id/deactivate', async (req, res) => {
-  const updated = await prisma.employee.update({
-    where: { employee_id: parseInt(req.params.id) },
-    data: { is_active: false }
-  });
-  res.json(updated);
+  const id = parseInt(req.params.id);
+
+  try {
+    // Check if employee exists
+    const employee = await prisma.employee.findUnique({ where: { employee_id: id } });
+    if (!employee) return res.status(404).json({ error: "Employee not found" });
+
+    const updated = await prisma.employee.update({
+      where: { employee_id: id },
+      data: { is_active: false }
+    });
+
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to deactivate employee" });
+  }
 });
 
 // Reactivate employee
 app.put('/api/employees/:id/reactivate', async (req, res) => {
-  const updated = await prisma.employee.update({
-    where: { employee_id: parseInt(req.params.id) },
-    data: { is_active: true }
-  });
-  res.json(updated);
+  const id = parseInt(req.params.id);
+
+  try {
+    // Check if employee exists
+    const employee = await prisma.employee.findUnique({ where: { employee_id: id } });
+    if (!employee) return res.status(404).json({ error: "Employee not found" });
+
+    const updated = await prisma.employee.update({
+      where: { employee_id: id },
+      data: { is_active: true }
+    });
+
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to reactivate employee" });
+  }
 });
 
 // Reset password for employee
@@ -1294,27 +1957,63 @@ app.put("/api/employees/:id/reset-password", async (req, res) => {
 });
 
 // --- Shifts ---
-// Create shift
+//Create shifts
 app.post("/api/shifts", async (req, res) => {
-  const { manager_id, shift_date, start_time, end_time } = req.body;
+  const { shift_date, start_time, end_time } = req.body;
 
-  if (!manager_id || !shift_date || !start_time || !end_time) {
-    return res.status(400).json({ error: "Missing required fields" });
+  // Manager ID is always 1
+  const manager_id = 1;
+
+  // Validate required fields
+  if (!shift_date || !start_time || !end_time) {
+    return res.status(400).json({ error: "All fields are required" });
+  }
+
+  // Validate shift_date format
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(shift_date)) {
+    return res.status(400).json({ error: "Shift date must be in YYYY-MM-DD format" });
+  }
+  const shiftDateObj = new Date(shift_date);
+  if (isNaN(shiftDateObj.getTime())) {
+    return res.status(400).json({ error: "Invalid shift date" });
+  }
+
+  // Validate time format
+  const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+  if (!timeRegex.test(start_time) || !timeRegex.test(end_time)) {
+    return res.status(400).json({ error: "Start and end times must be in HH:MM format" });
   }
 
   try {
+    // Check that manager 1 exists
+    const manager = await prisma.manager.findUnique({
+      where: { manager_id },
+    });
+
+    if (!manager) {
+      return res.status(400).json({ error: "Manager with ID 1 does not exist." });
+    }
+
+    // Parse times and add 6-hour offset
+    const [startHour, startMinute] = start_time.split(":").map(Number);
+    const [endHour, endMinute] = end_time.split(":").map(Number);
+
+    const startDateTime = new Date(Date.UTC(1970, 0, 1, startHour + 6, startMinute));
+    const endDateTime = new Date(Date.UTC(1970, 0, 1, endHour + 6, endMinute));
+
     const shift = await prisma.shift_schedule.create({
       data: {
-        manager_id: Number(manager_id), // ensure Int
-        shift_date: new Date(shift_date),
-        start_time: new Date(`1970-01-01T${start_time}:00`),
-        end_time: new Date(`1970-01-01T${end_time}:00`),
+        manager_id,
+        shift_date: shiftDateObj,
+        start_time: startDateTime,
+        end_time: endDateTime,
       },
     });
-    res.json(shift);
+
+    res.json({ message: "Shift created successfully!", shift });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Failed to create shift. Check server logs." });
   }
 });
 
@@ -1572,6 +2271,36 @@ app.put("/api/menu/:id/recipe", async (req, res) => {
   }
 });
 
+// Update menu item
+app.put('/api/menu/:id', async (req, res) => {
+  const id = parseInt(req.params.id);
+  const { name, price, category_id, is_active } = req.body;
+
+  if (!id) return res.status(400).json({ error: 'Menu item ID is required' });
+
+  try {
+    // Fetch the item first (optional)
+    const menuItem = await prisma.menu_item.findUnique({ where: { menu_item_id: id } });
+    if (!menuItem) return res.status(404).json({ error: 'Menu item not found' });
+
+    // Update the item
+    const updated = await prisma.menu_item.update({
+      where: { menu_item_id: id },
+      data: {
+        name: name ?? menuItem.name,
+        price: price ?? menuItem.price,
+        category_id: category_id ?? menuItem.category_id,
+        is_active: is_active ?? menuItem.is_active
+      }
+    });
+
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update menu item' });
+  }
+});
+
 // --- INVENTORY ROUTES ---
 // GET all inventory items
 app.get('/api/inventory', async (req, res) => {
@@ -1761,19 +2490,26 @@ app.get("/api/x-report", async (req, res) => {
 //Z Report
 app.get("/api/z-report", async (req, res) => {
   try {
-    // Fetch all orders that haven't been included in a Z report yet
+    // Fetch only orders not yet included in a Z report
     const orders = await prisma.order.findMany({
-      where: { status: "done" }, // maybe you want a "z_reported: false" flag in production
-      include: { order_item: { include: { menu_item: true } } },
+      where: {
+        status: "done",
+        z_reported: false
+      },
+      include: {
+        order_item: {
+          include: { menu_item: true }
+        }
+      }
     });
 
-    // Aggregate sales per menu item
     const salesMap = {};
     let totalOrders = 0;
     let totalRevenue = 0;
 
     for (const order of orders) {
-      totalOrders += 1;
+      totalOrders++;
+
       for (const item of order.order_item) {
         const key = item.menu_item.name;
         const revenue = parseFloat(item.unit_price) * item.qty;
@@ -1782,6 +2518,7 @@ app.get("/api/z-report", async (req, res) => {
         if (!salesMap[key]) {
           salesMap[key] = { name: key, quantitySold: 0, revenue: 0 };
         }
+
         salesMap[key].quantitySold += item.qty;
         salesMap[key].revenue += revenue;
       }
@@ -1789,10 +2526,10 @@ app.get("/api/z-report", async (req, res) => {
 
     const items = Object.values(salesMap);
 
-    // Mark these orders as "counted in Z report" by setting a timestamp field
+    // Mark these orders as included in Z report
     await prisma.order.updateMany({
       where: { order_id: { in: orders.map(o => o.order_id) } },
-      data: { status: "queued" } // or add a boolean like z_reported = true in a real system
+      data: { z_reported: true }
     });
 
     res.json({
@@ -1898,6 +2635,44 @@ app.post('/api/translate', async (req, res) => {
   }
 });
 
+// ====================== CALL STAFF REAL-TIME NOTIFICATION ======================
+const staffCallClients = new Set(); // holds all open cashier SSE connections
+
+app.get('/api/call-staff/stream', (req, res) => {
+  // SSE setup
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*',
+  });
+  res.flushHeaders();
+
+  // Send a comment heartbeat every 15s so proxies don’t close it
+  const heartbeat = setInterval(() => res.write(`:\n\n`), 15000);
+
+  staffCallClients.add(res);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    staffCallClients.delete(res);
+  });
+});
+
+app.post('/api/call-staff', (req, res) => {
+  const message = JSON.stringify({
+    timestamp: new Date().toISOString(),
+    message: 'Customer at kiosk needs assistance!'
+  });
+
+  // Broadcast to every connected cashier screen
+  staffCallClients.forEach(client => {
+    client.write(`data: ${message}\n\n`);
+  });
+
+  res.json({ success: true });
+});
+
 
 // ---------- 5. TEST DB ----------
 app.get("/test-db", async (req, res) => {
@@ -1915,3 +2690,6 @@ app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
   console.log("Login → /login (Google OAuth)");
 });
+
+
+module.exports = app;

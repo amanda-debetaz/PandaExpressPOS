@@ -6,10 +6,9 @@
     <title>Panda Express Kiosk</title>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
-<!-- LARGER TEXT
   <style>
     html {
-      font-size: 19px !important; /* ~+20% larger base */
+      font-size: 17px !important;
     }
 
     /* Buttons & key numbers */
@@ -17,17 +16,10 @@
       font-size: 1.6rem !important;
       padding: 1rem 1.5rem !important;   /* ← fixed line */
     }
-
-    #cart-total,
-    #cart-drawer-total,
-    #success-total {
-      font-size: 3.8rem !important;
-      font-weight: 900 !important;
-    }
-
-    #success-order-number {
-      font-size: 5rem !important;
-      font-weight: 900 !important;
+    
+    #call-staff-btn {
+      padding: 0.5rem 1rem !important;
+      width: fit-content !important;
     }
 
     /* Text classes – all bumped up */
@@ -47,7 +39,7 @@
 
     /* Success modal title */
     #order-success-modal h2 {
-      font-size: 4.5rem !important;
+      font-size: 2.5rem !important;
     }
 
     /* Bottom bar total – huge and clear */
@@ -56,70 +48,236 @@
       font-weight: 900 !important;
     }
     
-  </style> -->
+  </style>
+
+  <style id="text-size-styles">
+    /* Text size configurations - Large (default) */
+    html.text-size-large {
+      font-size: 17px !important;
+    }
+    html.text-size-large button {
+      font-size: 1.6rem !important;
+      padding: 2rem 1.5rem !important;
+    }
+    html.text-size-large .nav-link {
+      padding: 2rem 1.5rem !important;
+    }
+    html.text-size-large .text-xs { font-size: 1.1rem !important; }
+    html.text-size-large .text-sm { font-size: 1.4rem !important; }
+    html.text-size-large .text-base { font-size: 1.6rem !important; }
+    html.text-size-large #cart-total,
+    html.text-size-large #cart-drawer-total,
+    html.text-size-large #success-total { font-size: 2rem !important; }
+    html.text-size-large #success-order-number { font-size: 3rem !important; }
+    html.text-size-large #item-qty { font-size: 4.5rem !important; }
+    html.text-size-large #cart-drawer-items > div,
+    html.text-size-large .payment-method-btn,
+    html.text-size-large .dine-option-btn,
+    html.text-size-large #success-done-btn { font-size: 1.8rem !important; padding: 1.8rem 1.2rem !important; }
+    html.text-size-large #order-success-modal h2 { font-size: 4.5rem !important; }
+    html.text-size-large #order-success-modal .text-lg { font-size: 2rem !important; }
+    html.text-size-large #order-success-modal .text-sm { font-size: 1.4rem !important; }
+    html.text-size-large #order-success-modal .font-medium { font-size: 1.6rem !important; }
+    html.text-size-large #order-success-modal .font-bold { font-size: 1.8rem !important; }
+
+    /* Medium text size */
+    html.text-size-medium {
+      font-size: 14px !important;
+    }
+    html.text-size-medium button {
+      font-size: 1.4rem !important;
+      padding: 2rem 1.2rem !important;
+    }
+    html.text-size-medium .nav-link {
+      padding: 2rem 1.5rem !important;
+    }
+    html.text-size-medium .text-xs { font-size: 0.9rem !important; }
+    html.text-size-medium .text-sm { font-size: 1.1rem !important; }
+    html.text-size-medium .text-base { font-size: 1.3rem !important; }
+    html.text-size-medium #cart-total,
+    html.text-size-medium #cart-drawer-total,
+    html.text-size-medium #success-total { font-size: 2rem !important; }
+    html.text-size-medium #success-order-number { font-size: 3rem !important; }
+    html.text-size-medium #item-qty { font-size: 3.5rem !important; }
+    html.text-size-medium #cart-drawer-items > div,
+    html.text-size-medium .payment-method-btn,
+    html.text-size-medium .dine-option-btn,
+    html.text-size-medium #success-done-btn { font-size: 1.5rem !important; padding: 1.5rem 1rem !important; }
+    html.text-size-medium #order-success-modal h2 { font-size: 3.5rem !important; }
+    html.text-size-medium #order-success-modal .text-lg { font-size: 1.6rem !important; }
+    html.text-size-medium #order-success-modal .text-sm { font-size: 1.1rem !important; }
+    html.text-size-medium #order-success-modal .font-medium { font-size: 1.3rem !important; }
+    html.text-size-medium #order-success-modal .font-bold { font-size: 1.4rem !important; }
+
+    /* Small text size */
+    html.text-size-small {
+      font-size: 12px !important;
+    }
+    html.text-size-small button {
+      font-size: 1.2rem !important;
+      padding: 0.6rem 1rem !important;
+    }
+    html.text-size-small .text-xs { font-size: 0.75rem !important; }
+    html.text-size-small .text-sm { font-size: 0.9rem !important; }
+    html.text-size-small .text-base { font-size: 1.1rem !important; }
+    html.text-size-small #cart-total,
+    html.text-size-small #cart-drawer-total,
+    html.text-size-small #success-total { font-size: 2.5rem !important; }
+    html.text-size-small #success-order-number { font-size: 3.2rem !important; }
+    html.text-size-small #item-qty { font-size: 3rem !important; }
+    html.text-size-small #cart-drawer-items > div,
+    html.text-size-small .payment-method-btn,
+    html.text-size-small .dine-option-btn,
+    html.text-size-small #success-done-btn { font-size: 1.3rem !important; padding: 1.2rem 0.8rem !important; }
+    html.text-size-small #order-success-modal h2 { font-size: 2.8rem !important; }
+    html.text-size-small #order-success-modal .text-lg { font-size: 1.3rem !important; }
+    html.text-size-small #order-success-modal .text-sm { font-size: 0.9rem !important; }
+    html.text-size-small #order-success-modal .font-medium { font-size: 1.1rem !important; }
+    html.text-size-small #order-success-modal .font-bold { font-size: 1.2rem !important; }
+  </style>
 
 <body class="h-screen flex bg-black text-white overflow-hidden">
     <script>
       const menuData = JSON.parse('<%- JSON.stringify(menu || {}) %>');
     </script>
     
+
+    <!-- Landing Page / Screensaver -->
+    <div id="landing-page" role="complementary" aria-label="Welcome Screen" class="fixed inset-0 z-[100] flex flex-col items-center justify-center cursor-pointer overflow-hidden">
+      <!-- Background -->
+      <div class="absolute inset-0 bg-gradient-to-br from-red-900 via-red-700 to-red-800"></div>
+      
+      <!-- Content overlay -->
+      <div class="relative z-10 text-center">
+        <img src="/images/panda_logo.png" alt="Panda Express" class="w-64 h-64 mx-auto mb-8 drop-shadow-2xl animate-pulse">
+        <h1 class="text-6xl font-bold text-white mb-4 drop-shadow-2xl">Welcome to Panda Express</h1>
+        <p class="text-3xl text-white/95 mb-12 drop-shadow-xl">Tap anywhere to start your order</p>
+        <div class="text-white/80 text-xl">
+          <svg class="w-16 h-16 mx-auto animate-bounce drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+          </svg>
+        </div>
+      </div>
+    </div>
+    
     <aside class="w-72 bg-black border-r border-red-900 flex flex-col h-screen">
       <div class="px-6 pt-8 pb-4 flex-shrink-0">
+        <img src="/images/panda_logo.png" alt="Panda Express" class="w-32 mb-4">
         <div class="text-xs tracking-[0.25em] uppercase text-red-500 font-bold" data-original="Panda Express">Panda Express</div>
-        <div class="mt-1 text-[11px] tracking-[0.3em] uppercase text-neutral-400" data-original="Self-Service Kiosk">Self-Service Kiosk</div>
+        <div class="mt-1 text-sm tracking-[0.2em] uppercase text-neutral-300 font-semibold" data-original="Self-Service Kiosk">Self-Service Kiosk</div>
       </div>
 
-      <nav class="flex-shrink-0">
-        <ul class="flex flex-col text-sm">
-          <li>
-            <button data-category="entrees" class="nav-link active w-full text-left" data-original="Entrees">Entrees</button>
-          </li>
-          <li>
-            <button data-category="a_la_carte" class="nav-link w-full text-left" data-original="A La Carte">A La Carte</button>
-          </li>
-          <li>
-            <button data-category="sides" class="nav-link w-full text-left" data-original="Sides">Sides</button>
-          </li>
-          <li>
-            <button data-category="appetizers" class="nav-link w-full text-left" data-original="Appetizers">Appetizers</button>
-          </li>
-        </ul>
+      <div class="flex-1 overflow-y-auto">
+        <nav aria-label="Main navigation" class="flex-shrink-0">
+          <ul class="flex flex-col text-sm">
+            <li>
+              <button data-category="entrees" class="nav-link active w-full text-left" data-original="Entrees">Entrees</button>
+            </li>
+            <li>
+              <button data-category="a_la_carte" class="nav-link w-full text-left" data-original="A La Carte">A La Carte</button>
+            </li>
+            <li>
+              <button data-category="sides" class="nav-link w-full text-left" data-original="Sides">Sides</button>
+            </li>
+            <li>
+              <button data-category="appetizers" class="nav-link w-full text-left" data-original="Appetizers">Appetizers</button>
+            </li>
+            <li>
+              <button data-category="drinks" class="nav-link w-full text-left" data-original="Drinks">Drinks</button>
+            </li>
+          </ul>
+        </nav>
+
+        <div class="border-t border-neutral-800">
+        <button id="accessibility-toggle" class="w-full px-6 py-4 text-left text-sm font-semibold text-neutral-300 hover:bg-neutral-900 transition flex items-center justify-between">
+          <span><span class="no-translate">⚙️</span> <span data-original="Accessibility">Accessibility</span></span>
+          <span id="accessibility-arrow" class="transform transition-transform no-translate">▼</span>
+        </button>
         
-        <div class="mt-8 border-t border-neutral-800 pt-4">
-          <div class="px-6 text-[10px] uppercase tracking-widest text-neutral-500 mb-3" data-original="Language">Language</div>
-          <div class="px-6 flex gap-2 flex-wrap">
-            <button onclick="changeLanguage('en')" class="text-xs font-bold text-white bg-neutral-800 px-3 py-2 rounded hover:bg-red-700 transition">EN</button>
-            <button onclick="changeLanguage('es')" class="text-xs font-bold text-white bg-neutral-800 px-3 py-2 rounded hover:bg-red-700 transition">ES</button>
-            <button onclick="changeLanguage('zh')" class="text-xs font-bold text-white bg-neutral-800 px-3 py-2 rounded hover:bg-red-700 transition">ZH</button>
-            <button onclick="changeLanguage('fr')" class="text-xs font-bold text-white bg-neutral-800 px-3 py-2 rounded hover:bg-red-700 transition">FR</button>
-            <button onclick="changeLanguage('de')" class="text-xs font-bold text-white bg-neutral-800 px-3 py-2 rounded hover:bg-red-700 transition">DE</button>
+        <div id="accessibility-panel" class="hidden px-6 pb-4">
+          <div class="mb-4">
+            <div class="text-xs uppercase tracking-wide text-neutral-300 font-semibold mb-2" data-original="Language">Language</div>
+            <div class="flex gap-2 flex-wrap">
+              <button onclick="changeLanguage('en')" class="text-xs font-bold text-white bg-neutral-800 px-2 py-2 rounded hover:bg-red-700 transition flex flex-col items-center gap-1">
+                <span class="text-base">🇺🇸</span>
+                <span class="text-[0.6rem]">EN</span>
+              </button>
+              <button onclick="changeLanguage('es')" class="text-xs font-bold text-white bg-neutral-800 px-2 py-2 rounded hover:bg-red-700 transition flex flex-col items-center gap-1">
+                <span class="text-base">🇪🇸</span>
+                <span class="text-[0.6rem]">ES</span>
+              </button>
+              <button onclick="changeLanguage('zh')" class="text-xs font-bold text-white bg-neutral-800 px-2 py-2 rounded hover:bg-red-700 transition flex flex-col items-center gap-1">
+                <span class="text-base">🇨🇳</span>
+                <span class="text-[0.6rem]">ZH</span>
+              </button>
+              <button onclick="changeLanguage('fr')" class="text-xs font-bold text-white bg-neutral-800 px-2 py-2 rounded hover:bg-red-700 transition flex flex-col items-center gap-1">
+                <span class="text-base">🇫🇷</span>
+                <span class="text-[0.6rem]">FR</span>
+              </button>
+              <button onclick="changeLanguage('de')" class="text-xs font-bold text-white bg-neutral-800 px-2 py-2 rounded hover:bg-red-700 transition flex flex-col items-center gap-1">
+                <span class="text-base">🇩🇪</span>
+                <span class="text-[0.6rem]">DE</span>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <div class="text-xs uppercase tracking-wide text-neutral-300 font-semibold mb-2" data-original="Text Size">Text Size</div>
+            <div class="flex gap-2 flex-wrap">
+              <button onclick="changeTextSize('small')" class="text-size-btn text-white bg-neutral-800 px-3 py-2 rounded hover:bg-red-700 transition flex flex-col items-center gap-1" data-size="small">
+                <span class="text-xs font-bold">Aa</span>
+                <span class="text-[0.55rem] uppercase tracking-wide" data-original="Small">Small</span>
+              </button>
+              <button onclick="changeTextSize('medium')" class="text-size-btn text-white bg-neutral-800 px-3 py-2 rounded hover:bg-red-700 transition flex flex-col items-center gap-1" data-size="medium">
+                <span class="text-sm font-bold">Aa</span>
+                <span class="text-[0.55rem] uppercase tracking-wide" data-original="Medium">Medium</span>
+              </button>
+              <button onclick="changeTextSize('large')" class="text-size-btn text-white bg-red-700 px-3 py-2 rounded hover:bg-red-800 transition flex flex-col items-center gap-1" data-size="large">
+                <span class="text-base font-bold">Aa</span>
+                <span class="text-[0.55rem] uppercase tracking-wide" data-original="Large">Large</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <div class="text-xs uppercase tracking-wide text-neutral-300 font-semibold mb-2" data-original="Screen Reader">Screen Reader</div>
+            <button id="tts-toggle" class="flex items-center gap-3 px-4 py-3 bg-neutral-800 hover:bg-neutral-700 rounded text-white transition-colors w-full">
+              <span class="text-2xl no-translate" id="tts-icon">🔇</span>
+              <div class="text-left flex-1">
+                <div class="text-sm font-semibold" data-original="Text-to-Speech">Text-to-Speech</div>
+                <div class="text-xs text-neutral-400" data-original="Off" id="tts-status">Off</div>
+              </div>
+            </button>
           </div>
         </div>
-      </nav>
-
-      <div class="flex-1 border-t border-neutral-800 min-h-0"></div>
-
-      <div id="instruction-text" 
-           class="px-6 py-4 text-[11px] text-neutral-500 border-t border-neutral-800 flex-shrink-0" 
-           data-original="Tap items to add them to your order.">
-        Tap items to add them to your order.
       </div>
     </aside>
 
-    <main class="flex-1 flex flex-col bg-white text-black h-screen">
+    <main role="main" aria-label="Menu and order area" class="flex-1 flex flex-col bg-white text-black h-screen">
       <header class="flex items-center justify-between px-10 py-6 border-b border-neutral-200 flex-shrink-0">
         <div>
           <h1 id="category-title" class="text-3xl font-semibold tracking-tight" data-original="Entrees">Entrees</h1>
-          <p class="mt-1 text-sm text-neutral-500" data-original="Choose your main dish to start your order.">
+          <p class="mt-1 text-sm text-neutral-700" data-original="Choose your main dish to start your order.">
             Choose your main dish to start your order.
           </p>
         </div>
 
-        <div id="weather-widget" class="flex items-center gap-3 bg-neutral-100 px-4 py-2 rounded-lg hidden">
-          <img id="weather-icon" src="" alt="Weather" class="w-10 h-10 object-contain">
-          <div class="text-right">
-            <div id="weather-temp" class="text-xl font-bold text-neutral-800">--°</div>
-            <div id="weather-desc" class="text-xs text-neutral-500 uppercase tracking-wider">Loading</div>
+        <div class="flex items-center gap-4">
+          <button id="call-staff-btn"
+            class="px-5 py-3 bg-red-600 hover:bg-red-700 active:bg-red-800
+                  text-white font-bold text-base rounded-lg
+                  shadow-lg transform transition-all duration-200
+                  active:scale-95 flex items-center gap-2">
+            <span class="text-xl">🆘</span>
+            <span data-original="Call Staff for Help">Call Staff for Help</span>
+          </button>
+          
+          <div id="weather-widget" class="flex items-center gap-3 bg-neutral-100 px-4 py-2 rounded-lg hidden">
+            <img id="weather-icon" src="" alt="Weather" class="w-10 h-10 object-contain">
+            <div class="text-right">
+              <div id="weather-temp" class="text-xl font-bold text-neutral-800">--°</div>
+              <div id="weather-desc" class="text-xs text-neutral-700 uppercase tracking-wider">Loading</div>
+            </div>
           </div>
         </div>
       </header>
@@ -129,14 +287,15 @@
         <div id="a_la_carte" class="category-section hidden"><div class="grid gap-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div></div>
         <div id="sides" class="category-section hidden"><div class="grid gap-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div></div>
         <div id="appetizers" class="category-section hidden"><div class="grid gap-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div></div>
+        <div id="drinks" class="category-section hidden"><div class="grid gap-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div></div>
       </section>
 
       <div class="border-t border-neutral-300 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex-shrink-0">
         <div class="px-10 py-5 flex items-center justify-between">
-          <div class="text-xs uppercase tracking-[0.25em] text-neutral-500 font-medium" data-original="Order Summary">Order Summary</div>
+          <div class="text-xs uppercase tracking-[0.25em] text-neutral-700 font-medium" data-original="Order Summary">Order Summary</div>
           <div class="flex items-center gap-6">
             <div class="flex items-baseline gap-4 text-sm">
-              <span class="text-neutral-500 text-xs">
+              <span class="text-neutral-700 text-xs">
                 <span data-original="Items:">Items:</span> <span id="cart-count" class="font-semibold text-black">0</span>
               </span>
               <span class="font-bold text-red-700 text-xl">
@@ -162,16 +321,27 @@
     
     <div class="flex items-center justify-between px-6 py-5 border-b border-neutral-200">
       <div class="text-lg font-bold tracking-wider uppercase text-neutral-800" data-original="Your Cart">Your Cart</div>
-      <button id="cart-drawer-close" class="text-sm uppercase tracking-wider text-neutral-500 hover:text-black font-medium" data-original="Close">Close</button>
+      <button id="cart-drawer-close" class="text-sm uppercase tracking-wider text-neutral-700 hover:text-black font-medium border-2 border-neutral-300 hover:border-red-600 px-4 py-2 rounded-lg transition" data-original="Close">Close</button>
     </div>
 
     <div id="cart-drawer-items" class="flex-1 overflow-y-auto p-5 space-y-3 text-sm">
-      <div class="text-neutral-500 italic" data-original="No items yet">No items yet</div>
+      <div class="text-neutral-700 italic" data-original="No items yet">No items yet</div>
     </div>
 
     <div class="p-5 border-t border-neutral-200">
-      <div class="flex items-center justify-between mb-3">
-        <div class="text-lg font-bold"><span data-original="Total:">Total:</span> $<span id="cart-drawer-total">0.00</span></div>
+      <div class="mb-3 space-y-1">
+        <div class="flex items-center justify-between text-sm">
+          <span data-original="Subtotal:">Subtotal:</span>
+          <span id="cart-subtotal">$0.00</span>
+        </div>
+        <div class="flex items-center justify-between text-sm">
+          <span data-original="Tax:">Tax:</span>
+          <span id="cart-tax">$0.00</span>
+        </div>
+        <div class="flex items-center justify-between text-lg font-bold border-t pt-2">
+          <span data-original="Total:">Total:</span>
+          <span id="cart-drawer-total">$0.00</span>
+        </div>
       </div>
       
       <div class="flex gap-2">
@@ -181,27 +351,79 @@
     </div>
   </aside>
 
+    <!-- Item Info Modal -->
+    <div id="item-info-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-50 backdrop-blur-sm">
+      <div class="bg-white text-black w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl">
+        <div class="bg-gradient-to-r from-red-700 to-red-600 px-6 py-5 flex items-center justify-between">
+          <h3 class="text-2xl font-bold text-white" id="info-item-name"></h3>
+          <button id="info-modal-close" aria-label="Close" class="text-white hover:text-red-100 text-2xl font-bold"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="p-6 space-y-4">
+          <div class="bg-gradient-to-br from-red-50 to-red-100/50 rounded-xl p-5">
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center flex-shrink-0">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+              </div>
+              <div class="flex-1">
+                <h5 class="font-semibold text-red-900 mb-2 text-lg" data-original="Allergen Information">Allergen Information</h5>
+                <p id="info-allergens" class="text-base text-red-800 leading-relaxed"></p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-neutral-50 rounded-xl p-5">
+            <h5 class="font-semibold text-neutral-900 mb-4 text-lg flex items-center gap-2">
+              <svg class="w-5 h-5 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+              </svg>
+              <span data-original="Nutrition Facts">Nutrition Facts</span>
+            </h5>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="bg-white rounded-lg p-3 border border-neutral-200">
+                <div class="text-xs text-neutral-500 uppercase tracking-wide mb-1" data-original="Calories">Calories</div>
+                <div id="info-calories" class="text-2xl font-bold text-neutral-900">--</div>
+              </div>
+              <div class="bg-white rounded-lg p-3 border border-neutral-200">
+                <div class="text-xs text-neutral-500 uppercase tracking-wide mb-1" data-original="Protein">Protein</div>
+                <div id="info-protein" class="text-2xl font-bold text-neutral-900">--</div>
+              </div>
+              <div class="bg-white rounded-lg p-3 border border-neutral-200">
+                <div class="text-xs text-neutral-500 uppercase tracking-wide mb-1" data-original="Fat">Fat</div>
+                <div id="info-fat" class="text-2xl font-bold text-neutral-900">--</div>
+              </div>
+              <div class="bg-white rounded-lg p-3 border border-neutral-200">
+                <div class="text-xs text-neutral-500 uppercase tracking-wide mb-1" data-original="Carbs">Carbs</div>
+                <div id="info-carbs" class="text-2xl font-bold text-neutral-900">--</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="meal-modal" class="fixed inset-0 hidden items-center justify-center bg-black/60 z-50">
        <div class="bg-white text-black w-full max-w-3xl border border-neutral-200 rounded-lg overflow-hidden shadow-xl flex flex-col">
           <div class="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
              <div>
                 <div class="text-lg font-semibold" id="meal-modal-title" data-original="Build Your Meal">Build Your Meal</div>
-                <div class="text-sm text-neutral-600"><span data-original="Price:">Price:</span> $<span id="meal-modal-price">0.00</span></div>
+                <div class="text-sm text-neutral-700"><span data-original="Price:">Price:</span> $<span id="meal-modal-price">0.00</span></div>
              </div>
-             <button id="meal-modal-close" class="text-sm text-neutral-500 hover:text-black" data-original="Close">Close</button>
+             <button id="meal-modal-close" class="text-sm text-neutral-700 hover:text-black" data-original="Close">Close</button>
           </div>
           <div class="px-6 py-5 grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-y-auto max-h-[70vh]">
              <section>
                 <div class="text-sm uppercase tracking-[0.18em] text-neutral-700 font-semibold mb-3" data-original="Side (total 1)">Side (total 1)</div>
-                <div class="text-xs text-neutral-500 mb-2" id="meal-side-hint" data-original="Select one full side.">Select one full side.</div>
+                <div class="text-xs text-neutral-700 mb-2" id="meal-side-hint" data-original="Select one full side.">Select one full side.</div>
                 <div id="meal-sides" class="grid grid-cols-2 gap-2"></div>
-                <div class="mt-2 text-xs text-neutral-600"><span data-original="Selected:">Selected:</span> <span id="meal-side-count">0</span>/1</div>
+                <div class="mt-2 text-xs text-neutral-700"><span data-original="Selected:">Selected:</span> <span id="meal-side-count">0</span>/1</div>
              </section>
              <section>
                 <div class="text-sm uppercase tracking-[0.18em] text-neutral-700 font-semibold mb-3" data-original="Entrees">Entrees</div>
-                <div class="text-xs text-neutral-500 mb-2"><span data-original="Choose up to">Choose up to</span> <span id="meal-entree-max">1</span></div>
+                <div class="text-xs text-neutral-700 mb-2"><span data-original="Choose up to">Choose up to</span> <span id="meal-entree-max">1</span></div>
                 <div id="meal-entrees" class="space-y-2 overflow-y-auto"></div>
-                <div class="mt-2 text-xs text-neutral-600"><span data-original="Selected:">Selected:</span> <span id="meal-entree-count">0</span>/<span id="meal-entree-max-2">1</span></div>
+                <div class="mt-2 text-xs text-neutral-700"><span data-original="Selected:">Selected:</span> <span id="meal-entree-count">0</span>/<span id="meal-entree-max-2">1</span></div>
              </section>
           </div>
           <div class="px-6 py-4 border-t border-neutral-200 flex items-center justify-end gap-3 bg-neutral-50">
@@ -215,19 +437,27 @@
       <div class="bg-white text-black w-full max-w-md border border-neutral-200 rounded-lg overflow-hidden shadow-xl">
         <div class="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
           <div class="text-lg font-semibold" id="item-modal-title">Item</div>
-          <button id="item-modal-close" class="text-sm text-neutral-500 hover:text-black" data-original="Close">Close</button>
+          <button id="item-modal-close" class="text-neutral-500 hover:text-neutral-700 border-2 border-neutral-300 rounded-full w-8 h-8 flex items-center justify-center hover:border-red-600" data-original="Close">✕</button>
         </div>
         <div class="px-6 py-5 space-y-4">
-          <div class="text-neutral-600"><span data-original="Price:">Price:</span> $<span id="item-modal-price">0.00</span></div>
+          <div class="text-5xl font-bold text-neutral-700 mb-4"><span data-original="Price:">Price:</span> $<span id="item-modal-price">0.00</span></div>
           <div class="text-sm">
-            <span class="text-neutral-600" data-original="Allergens:">Allergens:</span>
+            <span class="text-neutral-700" data-original="Allergens:">Allergens:</span>
             <span id="item-modal-allergens" class="font-medium text-red-700">None</span>
           </div>
+          <div id="size-selection" class="hidden">
+            <div class="text-sm text-neutral-700 mb-2" data-original="Size">Size</div>
+            <div class="grid grid-cols-3 gap-2">
+              <button class="size-btn px-4 py-3 border-2 border-neutral-300 rounded-lg font-semibold hover:border-red-600 transition" data-size="small" data-multiplier="1" data-original="Small">Small</button>
+              <button class="size-btn px-4 py-3 border-2 border-neutral-300 rounded-lg font-semibold hover:border-red-600 transition" data-size="medium" data-multiplier="2" data-original="Medium">Medium</button>
+              <button class="size-btn px-4 py-3 border-2 border-neutral-300 rounded-lg font-semibold hover:border-red-600 transition" data-size="large" data-multiplier="3" data-original="Large">Large</button>
+            </div>
+          </div>
           <div class="flex items-center gap-3">
-            <span class="text-sm text-neutral-600" data-original="Quantity">Quantity</span>
+            <span class="text-sm text-neutral-700" data-original="Quantity">Quantity</span>
             <div class="flex items-center gap-2">
               <button id="item-qty-minus" class="px-3 py-2 border border-neutral-300">-</button>
-              <div id="item-qty" class="w-10 text-center font-semibold">1</div>
+              <div id="item-qty" class="min-w-[2.5rem] text-center font-semibold">1</div>
               <button id="item-qty-plus" class="px-3 py-2 border border-neutral-300">+</button>
             </div>
           </div>
@@ -294,7 +524,26 @@
         </div>
       </div>
     </div>
+    <div id="clear-cart-modal" class="fixed inset-0 hidden items-center justify-center bg-black/70 z-50">
+      <div class="bg-white text-black w-full max-w-md border border-neutral-200 rounded-lg overflow-hidden shadow-xl">
+        <div class="px-6 py-4 border-b border-neutral-200 bg-red-700 text-white">
+          <div class="text-xl font-semibold">Clear Cart?</div>
+          <div class="text-sm mt-1">Are you sure you want to remove all items?</div>
+        </div>
 
+        <div class="px-6 py-6 flex flex-col gap-4">
+          <button id="confirm-clear-cart"
+            class="w-full px-6 py-3 bg-red-700 text-white font-semibold text-lg rounded hover:bg-red-800 transition">
+            Yes, Clear Cart
+          </button>
+
+          <button id="cancel-clear-cart"
+            class="w-full px-6 py-3 bg-neutral-300 text-black font-semibold text-lg rounded hover:bg-neutral-200 transition">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
     <div id="order-success-modal" class="fixed inset-0 hidden items-center justify-center bg-black/70 z-50">
       <div class="bg-white text-black w-full max-w-lg border border-neutral-200 rounded-lg overflow-hidden shadow-2xl">
         <div class="px-8 py-10 text-center">
@@ -302,22 +551,22 @@
             <svg class="w-16 h-16 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
           </div>
           <h2 class="text-3xl font-bold text-neutral-900 mb-3" data-original="Order Placed!">Order Placed!</h2>
-          <p class="text-lg text-neutral-600 mb-6" data-original="Your order has been sent to the kitchen.">Your order has been sent to the kitchen.</p>
+          <p class="text-lg text-neutral-700 mb-6" data-original="Your order has been sent to the kitchen.">Your order has been sent to the kitchen.</p>
           <div class="bg-neutral-50 rounded-lg px-6 py-5 mb-8 text-left">
             <div class="flex justify-between text-sm mb-2">
-              <span class="text-neutral-600" data-original="Order Number">Order Number</span>
+              <span class="text-neutral-700" data-original="Order Number">Order Number</span>
               <span class="font-bold text-xl" id="success-order-number">#0000</span>
             </div>
             <div class="flex justify-between text-sm mb-2">
-              <span class="text-neutral-600" data-original="Total Paid">Total Paid</span>
+              <span class="text-neutral-700" data-original="Total Paid">Total Paid</span>
               <span class="font-bold text-xl" id="success-total">$0.00</span>
             </div>
             <div class="flex justify-between text-sm">
-              <span class="text-neutral-600" data-original="Dine Option">Dine Option</span>
+              <span class="text-neutral-700" data-original="Dine Option">Dine Option</span>
               <span class="font-medium capitalize" id="success-dine-option">—</span>
             </div>
           </div>
-          <p class="text-sm text-neutral-500 mb-8" data-original="Please wait at the counter or take a seat. We'll call your number when it's ready!">
+          <p class="text-sm text-neutral-700 mb-8" data-original="Please wait at the counter or take a seat. We'll call your number when it's ready!">
             Please wait at the counter or take a seat.<br>We'll call your number when it's ready!
           </p>
           <button id="success-done-btn" class="px-10 py-4 text-lg font-semibold uppercase tracking-wider bg-red-700 text-white rounded-lg hover:bg-red-800 transition-all" data-original="Done">Done</button>
@@ -325,14 +574,39 @@
       </div>
     </div>
 
+    <!-- Are You Still There Modal -->
+    <div id="still-there-modal" class="fixed inset-0 hidden items-center justify-center bg-black/70 z-[90] backdrop-blur-sm">
+      <div class="bg-white text-black w-full max-w-xl rounded-2xl overflow-hidden shadow-2xl">
+        <div class="bg-gradient-to-r from-red-700 to-red-600 px-8 py-6">
+          <h2 class="text-3xl font-bold text-white text-center" data-original="Are You Still There?">Are You Still There?</h2>
+        </div>
+        <div class="px-10 py-10">
+          <div class="flex items-center justify-center mb-8 p-4">
+            <div class="relative w-40 h-40">
+              <div class="absolute inset-2 rounded-full bg-red-50 flex items-center justify-center">
+                <div id="still-there-countdown" class="text-6xl font-bold text-red-700">10</div>
+              </div>
+              <svg class="absolute inset-0 w-40 h-40 -rotate-90" viewBox="0 0 160 160">
+                <circle cx="80" cy="80" r="72" stroke="#fecaca" stroke-width="8" fill="none"/>
+                <circle id="countdown-circle" cx="80" cy="80" r="72" stroke="#dc2626" stroke-width="8" fill="none" stroke-dasharray="452" stroke-dashoffset="0" class="transition-all duration-1000 ease-linear"/>
+              </svg>
+            </div>
+          </div>
+          <p class="text-xl text-center text-neutral-600 mb-8" data-original="Your session will timeout soon. Tap continue to keep ordering.">Your session will timeout soon. Tap continue to keep ordering.</p>
+          <button id="still-there-continue" class="w-full px-8 py-4 text-xl font-semibold bg-red-700 text-white rounded-lg hover:bg-red-800 transition-all shadow-md" data-original="Continue Ordering">Continue Ordering</button>
+        </div>
+      </div>
+    </div>
+
     <style>
       .nav-link {
         display: block;
-        padding: 1rem 1.5rem;
+        padding: 2rem 1.5rem;
         border-left: 4px solid transparent;
         background: #000;
         color: #d4d4d4;
-        font-weight: 500;
+        font-weight: 600;
+        font-size: 1.1rem;
         cursor: pointer;
         transition: all 0.2s;
       }
@@ -424,9 +698,137 @@
     </style>
 
     <script>
+      // ==================================================================
+      // BLOCKING POPUP: More than 10 of one item → ONLY Cancel or Call Staff
+      // ==================================================================
+      function showTooManyItemsWarning(itemName, attemptedQty) {
+        return new Promise((resolve) => {
+          const overlay = document.createElement('div');
+          overlay.className = 'fixed inset-0 bg-black/90 flex items-center justify-center z-[60]';
+
+          overlay.innerHTML = `
+            <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-6 p-10 text-center">
+              <h2 class="text-5xl font-black text-red-700 mb-8">Too Many Items</h2>
+              
+              <p class="text-3xl leading-relaxed mb-10 text-neutral-800">
+                You are trying to order <strong>${attemptedQty}</strong> × <br><em>${itemName}</em>
+              </p>
+
+              <p class="text-2xl text-neutral-700 mb-12">
+                For orders this large, please speak with a staff member.
+              </p>
+
+              <div class="flex flex-col gap-6 max-w-md mx-auto">
+                <button id="too-many-cancel"
+                        class="px-10 py-6 bg-neutral-200 text-black font-bold text-2xl rounded-xl hover:bg-neutral-300 transition">
+                  Cancel
+                </button>
+
+                <button id="too-many-call-staff"
+                        class="px-10 py-6 bg-red-600 hover:bg-red-700 active:bg-red-800
+                              text-white font-bold text-3xl rounded-xl shadow-2xl transition-all">
+                  Call Staff for Help
+                </button>
+              </div>
+            </div>
+          `;
+
+          document.body.appendChild(overlay);
+
+          overlay.querySelector('#too-many-cancel').onclick = () => {
+            document.body.removeChild(overlay);
+            resolve(false); // blocked
+          };
+
+          const staffBtn = overlay.querySelector('#too-many-call-staff');
+          staffBtn.onclick = async () => {
+            staffBtn.disabled = true;
+            staffBtn.textContent = 'Help Requested…';
+
+            try {
+              await fetch('/api/call-staff', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+              });
+            } catch (e) {
+              console.error('Call staff failed', e);
+            }
+
+            setTimeout(() => {
+              staffBtn.disabled = false;
+              staffBtn.textContent = 'Call Staff for Help';
+            }, 15000);
+          };
+
+          overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+              document.body.removeChild(overlay);
+              resolve(false);
+            }
+          });
+        });
+      }
+
+      // ==================================================================
+      // ORIGINAL addToCart (save before override)
+      // ==================================================================
+      const originalAddToCart = function(name, price, qty = 1) {
+        const existing = cart.find(i => i.name === name);
+        if (existing) {
+          existing.quantity += qty;
+        } else {
+          cart.push({ name, price: parseFloat(price), quantity: qty });
+        }
+        renderCartDrawer();
+        saveCart(cart);
+        openCartDrawer();
+      };
+
+      // ==================================================================
+      // NEW addToCart — BLOCK >10 of one item
+      // ==================================================================
+      async function addToCart(name, price, qty = 1) {
+        const existing = cart.find(i => i.name === name);
+        const newQty = (existing ? existing.quantity : 0) + qty;
+
+        if (newQty > 10) {
+          await showTooManyItemsWarning(name, newQty);
+          return; // BLOCKED — user cannot proceed
+        }
+
+        // Safe to add
+        originalAddToCart(name, price, qty);
+      }
+      
+      // Add cart item with size information
+      async function addToCartWithSize(itemData) {
+        const existing = cart.find(i => i.name === itemData.name);
+        const newQty = (existing ? existing.quantity : 0) + itemData.quantity;
+
+        if (newQty > 10) {
+          await showTooManyItemsWarning(itemData.name, newQty);
+          return;
+        }
+
+        if (existing) {
+          existing.quantity += itemData.quantity;
+        } else {
+          cart.push({
+            name: itemData.name,
+            baseName: itemData.baseName,
+            price: itemData.price,
+            quantity: itemData.quantity,
+            size: itemData.size,
+            multiplier: itemData.multiplier
+          });
+        }
+        renderCartDrawer();
+        saveCart(cart);
+        openCartDrawer();
+      }
       // Populate menu items from server data
       function populateMenu() {
-        const categories = ['entrees', 'a_la_carte', 'sides', 'appetizers'];
+        const categories = ['entrees', 'a_la_carte', 'sides', 'appetizers', "drinks"];
         
         // Map item names to image filenames
         const imageMap = {
@@ -452,7 +854,8 @@
           'Super Greens (entree)': 'super-greens-(entree).jpg',
           'Chicken Egg Roll': 'chicken-egg-roll.jpg',
           'Veggie Spring Roll': 'veggie-spring-roll.jpg',
-          'Cream Cheese Rangoon': 'cream-cheese-rangoon.jpg'
+          'Cream Cheese Rangoon': 'cream-cheese-rangoon.jpg',
+          'Fountain Drink': 'afcd896b29a94935ae1ecdc641b5bcdf.png'
         };
         
         categories.forEach(category => {
@@ -470,15 +873,49 @@
             card.dataset.price = item.price.toFixed(2);
             const allergensList = item.allergens || [];
             card.dataset.allergens = allergensList.join(', ');
-            if (allergensList.length) {
-              card.title = `Allergens: ${allergensList.join(', ')}`;
-            }
             card.dataset.category = category;
             
-            const imageSrc = imageMap[item.name] ? `/images/${imageMap[item.name]}` : '/images/placeholder.jpg';
+            // Store nutrition data
+            if (item.nutrition) {
+              card.dataset.nutrition = JSON.stringify(item.nutrition);
+            }
             
+            // Store size pricing data
+            if (item.sizePricing) {
+              card.dataset.sizePricing = JSON.stringify(item.sizePricing);
+            }
+            
+            const imageSrc = imageMap[item.name] ? `/images/${imageMap[item.name]}` : '/images/placeholder.jpg';
+            const isMeal = ['Bowl', 'Plate', 'Bigger Plate'].includes(item.name);
+            const priceDisplay = isMeal ? `$${item.price.toFixed(2)}+` : `$${item.price.toFixed(2)}`;
+            
+            // Check if item is premium
+            const isPremiumItem = item.name.toLowerCase().includes('honey walnut') || 
+                                  item.name.toLowerCase().includes('black pepper sirloin') ||
+                                  item.name.toLowerCase().includes('black pepper chicken');
+            
+            // Meal descriptions and calorie ranges
+            let mealDescription = '';
+            let calorieRange = '';
+            if (item.name === 'Bowl') {
+              mealDescription = '1 Side & 1 Entree';
+              calorieRange = '400-900 cal';
+            } else if (item.name === 'Plate') {
+              mealDescription = '1 Side & 2 Entrees';
+              calorieRange = '600-1400 cal';
+            } else if (item.name === 'Bigger Plate') {
+              mealDescription = '1 Side & 3 Entrees';
+              calorieRange = '800-1900 cal';
+            }
+            
+            // Only show info badge for non-meal items
+            const nutritionData = item.nutrition ? JSON.stringify(item.nutrition) : '{}';
+            const premiumBadge = isPremiumItem ? `<div class="absolute top-2 left-2 z-10"><span class="text-xs font-bold bg-yellow-500 text-black px-2 py-1 rounded shadow">PREMIUM</span></div>` : '';
+            const infoBadge = isMeal ? '' : `<div class="absolute top-2 right-2 flex items-center gap-1 z-10"><span class="text-xs font-medium text-neutral-700 bg-white px-2 py-1 rounded shadow" data-original="More Info">More Info</span><button class="info-badge w-6 h-6 rounded-full bg-red-700 text-white text-xs font-bold flex items-center justify-center hover:bg-red-800 transition" aria-label="More info for ${item.name}" data-item-name="${item.name}" data-allergens="${allergensList.join(', ') || 'None'}" data-nutrition='${nutritionData}'>i</button></div>`;
+            const mealInfo = isMeal ? `<div class="text-xs text-neutral-600 leading-tight">${mealDescription}</div><div class="text-xs text-neutral-500">${calorieRange}</div>` : '';
             card.innerHTML = `
-              ${allergensList.length ? `<span class="absolute top-2 right-2 w-5 h-5 rounded-full bg-red-700 text-white text-[10px] font-bold flex items-center justify-center" title="Allergens: ${allergensList.join(', ')}">i</span>` : ''}
+              ${premiumBadge}
+              ${infoBadge}
               <div class="item-image">
                 <img src="${imageSrc}" alt="${item.name}" class="item-img" />
               </div>
@@ -486,7 +923,8 @@
                 <div class="text-sm font-semibold leading-snug" 
                      data-translate-type="item-name" 
                      data-original="${item.name}">${item.name}</div>
-                <div class="text-base font-bold text-red-700">$${item.price.toFixed(2)}</div>
+                <div class="text-base font-bold text-red-700">${priceDisplay}</div>
+                ${mealInfo}
               </div>
             `;
             
@@ -515,6 +953,10 @@
         appetizers: {
           title: "Appetizers",
           description: "Start your meal with delicious appetizers."
+        },
+        drinks: {
+          title: "Drinks",
+          description: "Order a refreshing beverage with your meal."
         }
       };
 
@@ -540,17 +982,32 @@
           // Update header with category info
           const info = categoryInfo[cat];
           if (info) {
-            document.getElementById("category-title").textContent = info.title;
-            document.querySelector("header p").textContent = info.description;
-          }
+            const titleEl = document.getElementById("category-title");
+            const descEl = document.querySelector("header p");
 
-          const currentLang = localStorage.getItem('kiosk_lang') || 'en';
-          if (currentLang !== 'en') {
-            // Small timeout to let the text update to English first (from existing logic), then translate
-            setTimeout(() => changeLanguage(currentLang), 50);
+            titleEl.textContent = info.title;
+            descEl.textContent = info.description;
+
+            titleEl.setAttribute('data-original', info.title);
+            descEl.setAttribute('data-original', info.description);
+          
+            const currentLang = localStorage.getItem('kiosk_lang') || 'en';
+            if (currentLang !== 'en') {
+              setTimeout(() => changeLanguage(currentLang), 20);
+            }
           }
         });
       });
+
+      // Tax rate (fetch from server)
+      let TAX_RATE = 0.0825; // Default 8.25%
+      fetch('/api/tax-rate')
+        .then(res => res.json())
+        .then(data => {
+          TAX_RATE = data.rate;
+          renderCartDrawer(); // Update cart display with correct tax
+        })
+        .catch(err => console.error('Failed to fetch tax rate:', err));
 
       // Cart state (persist across pages)
       const CART_KEY = 'kiosk_cart';
@@ -596,17 +1053,20 @@
 
       function renderCartDrawer() {
         const count = cart.reduce((s, i) => s + i.quantity, 0);
-        const total = cart.reduce((s, i) => s + (i.price * i.quantity), 0).toFixed(2);
+        const subtotal = cart.reduce((s, i) => s + (i.price * i.quantity), 0);
+        const tax = subtotal * TAX_RATE;
+        const total = subtotal + tax;
         
         document.getElementById("cart-count").textContent = count;
-        document.getElementById("cart-total").textContent = total;
+        document.getElementById("cart-total").textContent = total.toFixed(2);
         
         const itemsEl = document.getElementById('cart-drawer-items');
-        const totalEl = document.getElementById('cart-drawer-total');
-        totalEl.textContent = total;
+        document.getElementById('cart-subtotal').textContent = '$' + subtotal.toFixed(2);
+        document.getElementById('cart-tax').textContent = '$' + tax.toFixed(2);
+        document.getElementById('cart-drawer-total').textContent = '$' + total.toFixed(2);
 
         if (cart.length === 0) {
-          itemsEl.innerHTML = '<div class="text-neutral-500 italic" data-original="No items yet">No items yet</div>';
+          itemsEl.innerHTML = '<div class="text-neutral-700 italic" data-original="No items yet">No items yet</div>';
         } else {
           itemsEl.innerHTML = cart.map((item, idx) => {
             let childrenHtml = '';
@@ -642,7 +1102,7 @@
                   </div>
                   <div class="flex items-center gap-2">
                     ${maybeEdit}
-                    <button data-idx="${idx}" class="delete-item px-2 py-1 text-xs text-red-700 border border-red-300 hover:bg-red-50" data-original="Delete">Delete</button>
+                    <button data-idx="${idx}" class="delete-item px-2 py-1 text-xs text-red-700 border border-red-300 hover:bg-red-50" data-original="Delete" aria-label="Delete ${item.name}">Delete</button>
                     <div class="w-16 text-right font-semibold">$${(item.price * item.quantity).toFixed(2)}</div>
                   </div>
                 </div>
@@ -654,12 +1114,12 @@
               <div class="flex items-start justify-between gap-3 border-b border-neutral-200 pb-3 last:border-b-0">
                 <div class="flex-1">
                   <div class="font-medium" data-translate-type="item-name" data-original="${item.name}">${item.name}</div>
-                  <div class="text-xs text-neutral-500 mt-1"><span data-original="Qty:">Qty:</span> ${item.quantity}</div>
+                  <div class="text-xs text-neutral-700 mt-1"><span data-original="Qty:">Qty:</span> <span class="inline-block max-w-[3rem] truncate align-bottom">${item.quantity}</span></div>
                 </div>
                 <div class="flex items-center gap-2">
                   <button data-idx="${idx}" class="qty-minus px-2 py-1 text-xs border border-neutral-300">-</button>
                   <button data-idx="${idx}" class="qty-plus px-2 py-1 text-xs border border-neutral-300">+</button>
-                  <button data-idx="${idx}" class="delete-item px-2 py-1 text-xs text-red-700 border border-red-300 hover:bg-red-50" data-original="Delete">Delete</button>
+                  <button data-idx="${idx}" class="delete-item px-2 py-1 text-xs text-red-700 border border-red-300 hover:bg-red-50" data-original="Delete" aria-label="Delete ${item.name}">Delete</button>
                   <div class="w-16 text-right font-semibold">$${(item.price * item.quantity).toFixed(2)}</div>
                 </div>
               </div>`;
@@ -680,28 +1140,161 @@
         document.getElementById('cart-drawer-backdrop').classList.add('hidden');
       }
 
-      function addToCart(name, price, qty = 1) {
-        const existing = cart.find(i => i.name === name);
-        if (existing) {
-          existing.quantity += qty;
+      // Info modal functions
+      const infoModal = document.getElementById('item-info-modal');
+      const infoModalItemName = document.getElementById('info-item-name');
+      const infoModalAllergens = document.getElementById('info-allergens');
+      const infoModalCalories = document.getElementById('info-calories');
+      const infoModalProtein = document.getElementById('info-protein');
+      const infoModalFat = document.getElementById('info-fat');
+      const infoModalCarbs = document.getElementById('info-carbs');
+      const infoModalClose = document.getElementById('info-modal-close');
+
+      function openInfoModal(itemName, allergens, nutrition = null) {
+        infoModalItemName.textContent = itemName;
+        infoModalAllergens.textContent = allergens || 'None';
+
+        // Display nutrition data if available
+        if (nutrition && typeof nutrition === 'object') {
+          infoModalCalories.textContent = nutrition.calories || '--';
+          infoModalProtein.textContent = nutrition.protein ? `${nutrition.protein}g` : '--';
+          infoModalFat.textContent = nutrition.fat ? `${nutrition.fat}g` : '--';
+          infoModalCarbs.textContent = nutrition.carbs ? `${nutrition.carbs}g` : '--';
         } else {
-          cart.push({ name, price: parseFloat(price), quantity: qty });
+          infoModalCalories.textContent = '--';
+          infoModalProtein.textContent = '--';
+          infoModalFat.textContent = '--';
+          infoModalCarbs.textContent = '--';
         }
-        renderCartDrawer();
-        saveCart(cart);
-        openCartDrawer();
+        
+        infoModal.classList.remove('hidden');
+        infoModal.classList.add('flex');
+
+        const lang = localStorage.getItem('kiosk_lang') || 'en';
+        const vocab = ttsLexicon[lang] || ttsLexicon['en'];
+
+        const speakDetails = (nameToSpeak, finalAllergens) => {
+            if (!ttsEnabled) return;
+            
+            let text = `${vocab.info} ${nameToSpeak}. `;
+            
+            if (finalAllergens && finalAllergens !== 'None' && finalAllergens.trim() !== '') {
+                text += `${vocab.allergens}: ${finalAllergens}. `;
+            } else {
+                text += `${vocab.none}. `;
+            }
+            
+            if (nutrition && typeof nutrition === 'object') {
+                text += `${vocab.nutrition}: `;
+                if (nutrition.calories) text += `${nutrition.calories} ${vocab.cal}, `;
+                if (nutrition.protein) text += `${nutrition.protein} ${vocab.pro}, `;
+                if (nutrition.fat) text += `${nutrition.fat} ${vocab.fat}, `;
+                if (nutrition.carbs) text += `${nutrition.carbs} ${vocab.carb}.`;
+            }
+            speak(text);
+        };
+
+        if (lang === 'en') {
+            speakDetails(itemName, allergens);
+            return;
+        }
+
+        const textsToTranslate = [itemName];
+        if (allergens && allergens !== 'None') {
+            textsToTranslate.push(allergens);
+        }
+
+        fetch('/api/translate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: textsToTranslate, target: lang })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && Array.isArray(data.translatedText) && data.translatedText.length > 0) {
+                const translatedTitle = data.translatedText[0];
+                infoModalItemName.textContent = translatedTitle;
+
+                let translatedAllergens = null;
+                if (textsToTranslate.length > 1) {
+                     translatedAllergens = data.translatedText[1];
+                     infoModalAllergens.textContent = translatedAllergens;
+                }
+
+                speakDetails(translatedTitle, translatedAllergens || allergens);
+            } else {
+                speakDetails(itemName, allergens);
+            }
+        })
+        .catch(e => {
+            console.error(e);
+            speakDetails(itemName, allergens);
+        });
       }
+
+      
+
+      function closeInfoModal() {
+        infoModal.classList.add('hidden');
+        infoModal.classList.remove('flex');
+      }
+
+      infoModalClose.addEventListener('click', closeInfoModal);
+      infoModal.addEventListener('click', (e) => {
+        if (e.target === infoModal) closeInfoModal();
+      });
 
       // Add click handlers to all item cards
       document.addEventListener('click', (e) => {
+        // Check if info badge was clicked
+        const infoBadge = e.target.closest('.info-badge');
+        if (infoBadge) {
+          e.stopPropagation();
+          const itemName = infoBadge.getAttribute('data-item-name');
+          const allergens = infoBadge.getAttribute('data-allergens');
+          const nutritionStr = infoBadge.getAttribute('data-nutrition');
+          let nutrition = null;
+          try {
+            nutrition = nutritionStr ? JSON.parse(nutritionStr) : null;
+          } catch (e) {
+            console.error('Failed to parse nutrition data:', e);
+          }
+
+          if (ttsEnabled) {
+          let speakText = `Information for ${itemName}. `;
+          
+          // Add Allergens
+          if (allergens && allergens !== 'None' && allergens.trim() !== '') {
+            speakText += `Allergens: ${allergens}. `;
+          } else {
+            speakText += `No allergens listed. `;
+          }
+
+          // Add Nutrition
+          if (nutrition) {
+            speakText += `Nutrition facts: `;
+            if (nutrition.calories) speakText += `${nutrition.calories} calories, `;
+            if (nutrition.protein) speakText += `${nutrition.protein} grams of protein, `;
+            if (nutrition.fat) speakText += `${nutrition.fat} grams of fat, `;
+            if (nutrition.carbs) speakText += `${nutrition.carbs} grams of carbs.`;
+          }
+          speak(speakText);
+          }
+
+          openInfoModal(itemName, allergens, nutrition);
+          return;
+        }
+        
         const card = e.target.closest('.item-card');
         if (card) {
           const name = card.dataset.name;
           const price = card.dataset.price;
+          const category = card.dataset.category;
           // If selection is a meal type, open meal builder instead of item modal
           const mealNames = new Set(['Bowl','Plate','Bigger Plate']);
           if (mealNames.has(name)) {
             const slug = name === 'Bowl' ? 'bowl' : (name === 'Bigger Plate' ? 'bigger-plate' : 'plate');
+            localStorage.setItem('kiosk_from_builder', 'true');
             window.location.href = `/builder/${slug}`;
             return;
           }
@@ -709,7 +1302,8 @@
             .split(',')
             .map(t => t.trim())
             .filter(Boolean);
-          openItemModal(name, price, allergens);
+          const sizePricing = card.dataset.sizePricing ? JSON.parse(card.dataset.sizePricing) : {};
+          openItemModal(name, price, allergens, category, sizePricing);
         }
       });
 
@@ -729,15 +1323,86 @@
       let selectedItemPrice = 0;
       let selectedQty = 1;
       let selectedAllergens = [];
+      let selectedSize = 'medium'; // default
+      let selectedMultiplier = 2; // default medium = x2
+      let selectedCategory = '';
+      let selectedSizePricing = {}; // size pricing from database
+      let selectedBaseName = ''; // for checking premium status
 
-      async function openItemModal(name, price, allergens = []) {
+      async function openItemModal(name, price, allergens = [], category = '', sizePricing = {}) {
         selectedItemName = name;
         selectedItemPrice = parseFloat(price);
         selectedQty = 1;
+        selectedCategory = category;
+        selectedSize = 'medium';
+        selectedMultiplier = 2;
+        selectedSizePricing = sizePricing;
+        selectedBaseName = name;
         
         itemModalTitle.textContent = name;
         itemModalPrice.textContent = selectedItemPrice.toFixed(2);
         itemQtyEl.textContent = String(selectedQty);
+        
+        // Show size selection for a la carte items (entrees and sides)
+        const sizeSelection = document.getElementById('size-selection');
+        const isPremium = name.toLowerCase().includes('honey walnut') || 
+                         name.toLowerCase().includes('black pepper sirloin') ||
+                         name.toLowerCase().includes('black pepper chicken');
+        
+        // Check if this item has any size pricing
+        const hasSizePricing = sizePricing && Object.keys(sizePricing).length > 0;
+        
+        if ((category === 'a_la_carte' || category === 'sides') && hasSizePricing) {
+          sizeSelection.classList.remove('hidden');
+          
+          // Add premium badge if applicable
+          if (isPremium && !itemModalTitle.querySelector('.premium-badge')) {
+            const badge = document.createElement('span');
+            badge.className = 'premium-badge text-xs bg-yellow-500 text-black px-2 py-0.5 rounded ml-2 font-bold';
+            badge.textContent = 'PREMIUM';
+            itemModalTitle.appendChild(badge);
+          }
+          
+          // Update size button prices and visibility
+          document.querySelectorAll('.size-btn').forEach(btn => {
+            const size = btn.dataset.size.toLowerCase();
+            // Check both regular and premium (capitalized) keys
+            let sizePrice = null;
+            if (size === 'medium') {
+              // For medium, use base price
+              sizePrice = parseFloat(price);
+            } else if (isPremium) {
+              // For premium items, use capitalized keys for small/large
+              const capitalizedSize = size.charAt(0).toUpperCase() + size.slice(1);
+              sizePrice = sizePricing[capitalizedSize];
+            } else {
+              // For regular items, use lowercase keys
+              sizePrice = sizePricing[size];
+            }
+            
+            // Hide buttons without pricing
+            if (!sizePrice) {
+              btn.classList.add('hidden');
+            } else {
+              btn.classList.remove('hidden');
+              // Update button text with price
+              const sizeLabel = size.charAt(0).toUpperCase() + size.slice(1);
+              btn.innerHTML = `${sizeLabel}<br><span class="text-xs">$${sizePrice.toFixed(2)}</span>`;
+            }
+            
+            // Reset styles
+            btn.classList.remove('bg-red-600', 'text-white', 'border-red-600');
+            btn.classList.add('border-neutral-300');
+            if (size === 'medium') {
+              btn.classList.add('bg-red-600', 'text-white', 'border-red-600');
+            }
+          });
+        } else {
+          sizeSelection.classList.add('hidden');
+          // Remove premium badge if present
+          const badge = itemModalTitle.querySelector('.premium-badge');
+          if (badge) badge.remove();
+        }
         
         const allergenText = allergens.length ? allergens.join(', ') : 'None';
         itemModalAllergens.textContent = allergenText;
@@ -792,10 +1457,66 @@
       itemModal.addEventListener('click', (e) => {
         if (e.target === itemModal) closeItemModal();
       });
+      
+      // Size button handlers
+      document.querySelectorAll('.size-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const size = btn.dataset.size;
+          selectedSize = size;
+          selectedMultiplier = parseInt(btn.dataset.multiplier);
+          
+          // Update price based on size
+          const isPremium = selectedBaseName.toLowerCase().includes('honey walnut') || 
+                           selectedBaseName.toLowerCase().includes('black pepper sirloin') ||
+                           selectedBaseName.toLowerCase().includes('black pepper chicken');
+          
+          let sizePrice = null;
+          if (size === 'medium') {
+            // Medium uses the base price from menu_item
+            const basePrice = parseFloat(document.querySelector('.item-card[data-name="' + selectedBaseName + '"]')?.dataset.price || selectedItemPrice);
+            sizePrice = basePrice;
+          } else if (isPremium) {
+            // For premium items, use capitalized keys for small/large
+            const capitalizedSize = size.charAt(0).toUpperCase() + size.slice(1);
+            sizePrice = selectedSizePricing[capitalizedSize];
+          } else {
+            // For regular items, use lowercase keys
+            sizePrice = selectedSizePricing[size];
+          }
+          
+          if (sizePrice) {
+            selectedItemPrice = sizePrice;
+            itemModalPrice.textContent = selectedItemPrice.toFixed(2);
+          }
+          
+          // Update button styles
+          document.querySelectorAll('.size-btn').forEach(b => {
+            b.classList.remove('bg-red-600', 'text-white', 'border-red-600');
+            b.classList.add('border-neutral-300');
+          });
+          btn.classList.remove('border-neutral-300');
+          btn.classList.add('bg-red-600', 'text-white', 'border-red-600');
+        });
+      });
 
       itemAddBtn.addEventListener('click', () => {
         if (selectedItemName) {
-          addToCart(selectedItemName, selectedItemPrice, selectedQty);
+          if ((selectedCategory === 'a_la_carte' || selectedCategory === 'sides') && selectedSizePricing && Object.keys(selectedSizePricing).length > 0) {
+            // Add with size info
+            const itemWithSize = `${selectedItemName} (${selectedSize.charAt(0).toUpperCase() + selectedSize.slice(1)})`;
+            const itemData = {
+              name: itemWithSize,
+              baseName: selectedItemName,
+              price: selectedItemPrice,
+              quantity: selectedQty,
+              size: selectedSize,
+              multiplier: selectedMultiplier
+            };
+            addToCartWithSize(itemData);
+          } else {
+            addToCart(selectedItemName, selectedItemPrice, selectedQty);
+          }
         }
         closeItemModal();
       });
@@ -884,7 +1605,7 @@
           btn.className = 'w-full text-left border border-neutral-300 px-3 py-2 flex items-center justify-between hover:bg-neutral-50';
           btn.innerHTML = `
             <span>${s.name}</span>
-            <span class="text-xs text-neutral-600">${val === 1 ? 'Full' : val === 0.5 ? 'Half' : ''}</span>
+            <span class="text-xs text-neutral-700">${val === 1 ? 'Full' : val === 0.5 ? 'Half' : ''}</span>
           `;
           btn.addEventListener('click', () => {
             if (!mealConfig.allowHalfSide) {
@@ -988,6 +1709,7 @@
       mealCancel.addEventListener('click', closeMealModal);
       mealModal.addEventListener('click', (e) => { if (e.target === mealModal) closeMealModal(); });
 
+
       // Drawer events
       document.getElementById('cart-open-drawer').addEventListener('click', openCartDrawer);
       document.getElementById('cart-drawer-close').addEventListener('click', closeCartDrawer);
@@ -1003,7 +1725,12 @@
           const i = Number(idxAttr);
           const it = cart[i];
           if (it && it.type === 'meal') {
-            const slug = it.name === 'Bowl' ? 'bowl' : (it.name === 'Bigger Plate' ? 'bigger-plate' : 'plate');
+            // Determine the correct slug based on cart item name
+            let slug = 'plate';
+            if (it.name === 'Bowl') slug = 'bowl';
+            else if (it.name === 'Bigger Plate') slug = 'bigger-plate';
+            else if (it.name === 'Plate') slug = 'plate';
+            localStorage.setItem('kiosk_from_builder', 'true');
             window.location.href = `/builder/edit?idx=${i}&type=${slug}`;
           }
           return;
@@ -1032,7 +1759,7 @@
           alert("Please add items to your cart first");
           return;
         }
-        // Show dine option modal first
+        // Show dine option modal
         document.getElementById('dine-option-modal').classList.remove('hidden');
         document.getElementById('dine-option-modal').classList.add('flex');
         closeCartDrawer();
@@ -1055,8 +1782,10 @@
           dineOptionModal.classList.add('hidden');
           dineOptionModal.classList.remove('flex');
           
-          const total = cart.reduce((s, i) => s + (i.price * i.quantity), 0).toFixed(2);
-          document.getElementById('payment-total').textContent = total;
+          const subtotal = cart.reduce((s, i) => s + (i.price * i.quantity), 0);
+          const tax = subtotal * 0.08;
+          const grandTotal = subtotal + tax;
+          document.getElementById('payment-total').textContent = grandTotal.toFixed(2);
           document.getElementById('payment-modal').classList.remove('hidden');
           document.getElementById('payment-modal').classList.add('flex');
         });
@@ -1065,7 +1794,10 @@
       // Payment modal handlers
       const paymentModal = document.getElementById('payment-modal');
       
+      let orderInProgress = false; // Prevent spam orders
+      
       document.getElementById('payment-cancel').addEventListener('click', () => {
+        if (orderInProgress) return; // Don't allow canceling during order
         paymentModal.classList.add('hidden');
         paymentModal.classList.remove('flex');
         // Go back to dine option modal
@@ -1076,7 +1808,21 @@
 
       document.querySelectorAll('.payment-method-btn').forEach((btn) => {
         btn.addEventListener('click', async () => {
+          // Prevent spam clicks
+          if (orderInProgress) {
+            console.log('Order already in progress, ignoring click');
+            return;
+          }
+          
           const method = btn.getAttribute('data-method');
+          orderInProgress = true;
+          
+          // Disable all payment buttons
+          document.querySelectorAll('.payment-method-btn').forEach(b => {
+            b.disabled = true;
+            b.style.opacity = '0.5';
+            b.style.cursor = 'not-allowed';
+          });
 
           const checkoutCart = cart.map((item) => {
             if (item.type === 'meal' && item.details) {
@@ -1088,6 +1834,12 @@
 
           if (!checkoutCart.length) {
             alert('Cart is empty.');
+            orderInProgress = false;
+            document.querySelectorAll('.payment-method-btn').forEach(b => {
+              b.disabled = false;
+              b.style.opacity = '1';
+              b.style.cursor = 'pointer';
+            });
             return;
           }
 
@@ -1101,18 +1853,22 @@
             const data = await response.json();
 
             if (data.success) {
-              const total = checkoutCart.reduce((s, i) => s + i.price * i.quantity, 0).toFixed(2);
 
               // Fill success modal
               document.getElementById('success-order-number').textContent = `#${data.order_id}`;
-              document.getElementById('success-total').textContent = `$${total}`;
+              const subtotal = checkoutCart.reduce((s, i) => s + i.price * i.quantity, 0);
+              const tax = subtotal * 0.08;
+              const grandTotal = subtotal + tax;
+              // → Used for success screen
+              document.getElementById('success-total').textContent = `$${grandTotal.toFixed(2)}`;
               document.getElementById('success-dine-option').textContent = 
                 selectedDineOption === 'dine_in' ? 'Dine In' : 'Takeout';
 
-              // Clear cart
+              // Clear cart and reset state
               cart = [];
               renderCartDrawer();
               saveCart(cart);
+              selectedDineOption = null;
 
               // Hide payment modal
               paymentModal.classList.add('hidden');
@@ -1121,8 +1877,22 @@
               // Show success modal
               document.getElementById('order-success-modal').classList.remove('hidden');
               document.getElementById('order-success-modal').classList.add('flex');
+              
+              // Reset order flag after success
+              orderInProgress = false;
+              document.querySelectorAll('.payment-method-btn').forEach(b => {
+                b.disabled = false;
+                b.style.opacity = '1';
+                b.style.cursor = 'pointer';
+              });
             } else {
               alert('Failed to place order: ' + (data.error || 'Unknown error'));
+              orderInProgress = false;
+              document.querySelectorAll('.payment-method-btn').forEach(b => {
+                b.disabled = false;
+                b.style.opacity = '1';
+                b.style.cursor = 'pointer';
+              });
               paymentModal.classList.add('hidden');
               paymentModal.classList.remove('flex');
               openCartDrawer();
@@ -1130,6 +1900,12 @@
           } catch (err) {
             console.error('Checkout error:', err);
             alert('Failed to place order. Please try again.');
+            orderInProgress = false;
+            document.querySelectorAll('.payment-method-btn').forEach(b => {
+              b.disabled = false;
+              b.style.opacity = '1';
+              b.style.cursor = 'pointer';
+            });
             paymentModal.classList.add('hidden');
             paymentModal.classList.remove('flex');
             openCartDrawer();
@@ -1137,20 +1913,52 @@
         });
       });
 
-      // Close success modal and restart
+      // Close success modal and show landing page after 3 seconds
       document.getElementById('success-done-btn').addEventListener('click', () => {
         document.getElementById('order-success-modal').classList.add('hidden');
         document.getElementById('order-success-modal').classList.remove('flex');
-        setTimeout(() => window.location.reload(), 800);
-      });
-      
-
-      document.getElementById("cart-clear").addEventListener("click", () => {
-        if (cart.length === 0) return;
-        if (confirm("Clear all items from cart?")) {
+        setTimeout(() => {
+          showLandingPage();
+          // Clear cart and reset after returning to landing page
           cart = [];
           renderCartDrawer();
           saveCart(cart);
+        }, 3000);
+      });
+      
+
+      const clearCartModal = document.getElementById("clear-cart-modal");
+      const confirmClearCart = document.getElementById("confirm-clear-cart");
+      const cancelClearCart = document.getElementById("cancel-clear-cart");
+
+      document.getElementById("cart-clear").addEventListener("click", () => {
+        if (cart.length === 0) return;
+
+        clearCartModal.classList.remove("hidden");
+        clearCartModal.classList.add("flex");
+      });
+
+      // Confirm
+      confirmClearCart.addEventListener("click", () => {
+        cart = [];
+        renderCartDrawer();
+        saveCart(cart);
+
+        clearCartModal.classList.add("hidden");
+        clearCartModal.classList.remove("flex");
+      });
+
+      // Cancel
+      cancelClearCart.addEventListener("click", () => {
+        clearCartModal.classList.add("hidden");
+        clearCartModal.classList.remove("flex");
+      });
+
+      // Clicking the background closes it too
+      clearCartModal.addEventListener("click", (e) => {
+        if (e.target === clearCartModal) {
+          clearCartModal.classList.add("hidden");
+          clearCartModal.classList.remove("flex");
         }
       });
 
@@ -1205,71 +2013,359 @@
       // Translation Logic
       const originalTexts = new Map();
 
+      // Text Size Logic
+      function changeTextSize(size) {
+        // Remove all text size classes
+        document.documentElement.classList.remove('text-size-small', 'text-size-medium', 'text-size-large');
+        // Add the selected size class
+        document.documentElement.classList.add(`text-size-${size}`);
+        // Save preference
+        localStorage.setItem('kiosk_text_size', size);
+        
+        // Update button states
+        document.querySelectorAll('.text-size-btn').forEach(btn => {
+          if (btn.getAttribute('data-size') === size) {
+            btn.classList.remove('bg-neutral-800');
+            btn.classList.add('bg-red-700');
+          } else {
+            btn.classList.remove('bg-red-700');
+            btn.classList.add('bg-neutral-800');
+          }
+        });
+      }
+
+      // Initialize text size on page load
+      function initTextSize() {
+        const savedSize = localStorage.getItem('kiosk_text_size') || 'large';
+        changeTextSize(savedSize);
+      }
+
+      // Text-to-Speech Logic
+      const ttsLexicon = {
+      'en': { info: "Information for", allergens: "Allergens", none: "No allergens listed", nutrition: "Nutrition facts", cal: "calories", pro: "grams of protein", fat: "grams of fat", carb: "grams of carbs" },
+      'es': { info: "Información para", allergens: "Alérgenos", none: "No hay alérgenos listados", nutrition: "Información nutricional", cal: "calorías", pro: "gramos de proteína", fat: "gramos de grasa", carb: "gramos de carbohidratos" },
+      'zh': { info: "信息", allergens: "过敏原", none: "未列出过敏原", nutrition: "营养成分", cal: "卡路里", pro: "克蛋白质", fat: "克脂肪", carb: "克碳水化合物" },
+      'zh-CN': { info: "信息", allergens: "过敏原", none: "未列出过敏原", nutrition: "营养成分", cal: "卡路里", pro: "克蛋白质", fat: "克脂肪", carb: "克碳水化合物" },
+      'fr': { info: "Informations pour", allergens: "Allergènes", none: "Aucun allergène répertorié", nutrition: "Valeurs nutritionnelles", cal: "calories", pro: "grammes de protéines", fat: "grammes de lipides", carb: "grammes de glucides" },
+      'de': { info: "Informationen für", allergens: "Allergene", none: "Keine Allergene aufgeführt", nutrition: "Nährwerte", cal: "Kalorien", pro: "Gramm Protein", fat: "Gramm Fett", carb: "Gramm Kohlenhydrate" }
+      };
+
+      let ttsEnabled = false;
+      let currentUtterance = null;
+      const synth = window.speechSynthesis;
+
+      function initTTS() {
+        const savedTTS = localStorage.getItem('kiosk_tts_enabled');
+        if (savedTTS === 'true') {
+          ttsEnabled = true;
+        }
+        updateTTSUI();
+      }
+
+      function updateTTSUI() {
+        const icon = document.getElementById('tts-icon');
+        const status = document.getElementById('tts-status');
+        const toggle = document.getElementById('tts-toggle');
+        
+        if (ttsEnabled) {
+          icon.textContent = '🔊';
+          status.textContent = 'On';
+          status.setAttribute('data-original', 'On');
+          toggle.classList.remove('bg-neutral-800');
+          toggle.classList.add('bg-green-700');
+        } else {
+          icon.textContent = '🔇';
+          status.textContent = 'Off';
+          status.setAttribute('data-original', 'Off');
+          toggle.classList.remove('bg-green-700');
+          toggle.classList.add('bg-neutral-800');
+        }
+      }
+
+      function speak(text) {
+        if (!ttsEnabled || !text) return;
+        
+        // Cancel any ongoing speech
+        synth.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        const lang = localStorage.getItem('kiosk_lang') || 'en';
+        
+        // Map language codes to speech synthesis language codes
+        const langMap = {
+          'en': 'en-US',
+          'es': 'es-ES',
+          'zh': 'zh-CN',
+          'fr': 'fr-FR',
+          'de': 'de-DE'
+        };
+        
+        utterance.lang = langMap[lang] || 'en-US';
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+        
+        currentUtterance = utterance;
+        synth.speak(utterance);
+      }
+
+      document.getElementById('tts-toggle')?.addEventListener('click', () => {
+        ttsEnabled = !ttsEnabled;
+        localStorage.setItem('kiosk_tts_enabled', ttsEnabled.toString());
+        updateTTSUI();
+        
+        if (ttsEnabled) {
+          speak('Text to speech enabled');
+        } else {
+          synth.cancel();
+        }
+      });
+
+      // Add TTS to navigation buttons
+      document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('mouseenter', () => speak(link.textContent.trim()));
+      });
+
+      document.addEventListener('mouseenter', (e) => {
+        if (!ttsEnabled) return;
+        const target = e.target;
+
+        // Cart Total Display
+        const totalDisplay = target.closest('#cart-total-display');
+        if (totalDisplay) {
+            speak(totalDisplay.textContent.trim());
+            return;
+        }
+
+        // Item Cards
+        if (target.closest('.item-card')) {
+          const card = target.closest('.item-card');
+          const name = card.querySelector('[data-translate-type="item-name"]')?.textContent || card.dataset.name;
+          if (name) speak(name);
+          return;
+        }
+
+        // Cart Items
+        if (target.closest('#cart-drawer-items > div')) {
+          const name = target.querySelector('.font-medium')?.textContent;
+          if (name) speak(name);
+          return;
+        }
+
+        // Generic Buttons
+        if (target.tagName === 'BUTTON' && target.id !== 'tts-toggle') {
+          const text = target.getAttribute('aria-label') || target.textContent.trim();
+          if (text && text.length < 50) speak(text);
+        }
+      }, true);
+
+      // Accessibility panel toggle
+      document.getElementById('accessibility-toggle')?.addEventListener('click', () => {
+        const panel = document.getElementById('accessibility-panel');
+        const arrow = document.getElementById('accessibility-arrow');
+        if (panel.classList.contains('hidden')) {
+          panel.classList.remove('hidden');
+          arrow.style.transform = 'rotate(180deg)';
+        } else {
+          panel.classList.add('hidden');
+          arrow.style.transform = 'rotate(0deg)';
+        }
+      });
+
+      // Landing page / Screensaver functionality
+      let inactivityTimer = null;
+      let warningTimer = null;
+      let countdownTimer = null;
+      const INACTIVITY_WARNING_TIMEOUT = 45000; // 45 seconds before warning
+      const WARNING_COUNTDOWN = 10; // 10 seconds countdown
+      const landingPage = document.getElementById('landing-page');
+      const stillThereModal = document.getElementById('still-there-modal');
+      const stillThereCountdown = document.getElementById('still-there-countdown');
+      let countdownValue = WARNING_COUNTDOWN;
+
+      function showLandingPage() {
+        landingPage.style.display = 'flex';
+      }
+
+      function hideLandingPage() {
+        landingPage.style.display = 'none';
+        resetInactivityTimer();
+      }
+
+      function showStillThereModal() {
+        stillThereModal.classList.remove('hidden');
+        stillThereModal.classList.add('flex');
+        countdownValue = WARNING_COUNTDOWN;
+        stillThereCountdown.textContent = countdownValue;
+        startCountdown();
+      }
+
+      function hideStillThereModal() {
+        stillThereModal.classList.add('hidden');
+        stillThereModal.classList.remove('flex');
+        clearInterval(countdownTimer);
+        clearTimeout(warningTimer);
+        resetInactivityTimer();
+      }
+
+      function startCountdown() {
+        const circle = document.getElementById('countdown-circle');
+        const circumference = 2 * Math.PI * 72; // radius is 72
+        
+        countdownTimer = setInterval(() => {
+          countdownValue--;
+          stillThereCountdown.textContent = countdownValue;
+          
+          // Animate the circle
+          const progress = countdownValue / WARNING_COUNTDOWN;
+          const offset = circumference * (1 - progress);
+          if (circle) {
+            circle.style.strokeDashoffset = offset;
+          }
+          
+          if (countdownValue <= 0) {
+            clearInterval(countdownTimer);
+            hideStillThereModal();
+            clearCartAndReturnToLanding();
+          }
+        }, 1000);
+      }
+
+      function clearCartAndReturnToLanding() {
+        // Clear the cart
+        cart = [];
+        renderCartDrawer();
+        saveCart(cart);
+        // Close any open modals
+        document.getElementById('item-modal')?.classList.add('hidden');
+        document.getElementById('meal-modal')?.classList.add('hidden');
+        document.getElementById('item-info-modal')?.classList.add('hidden');
+        closeCartDrawer();
+        // Show landing page
+        showLandingPage();
+      }
+
+      function resetInactivityTimer() {
+        clearTimeout(inactivityTimer);
+        clearTimeout(warningTimer);
+        clearInterval(countdownTimer);
+        inactivityTimer = setTimeout(() => {
+          showStillThereModal();
+        }, INACTIVITY_WARNING_TIMEOUT);
+      }
+
+      // Hide landing page on tap/click
+      landingPage.addEventListener('click', hideLandingPage);
+
+      // Continue button in still there modal
+      document.getElementById('still-there-continue').addEventListener('click', hideStillThereModal);
+      stillThereModal.addEventListener('click', (e) => {
+        if (e.target === stillThereModal) {
+          hideStillThereModal();
+        }
+      });
+
+      // Track user activity to reset timer
+      ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+        document.addEventListener(event, () => {
+          if (landingPage.style.display === 'none' && stillThereModal.classList.contains('hidden')) {
+            resetInactivityTimer();
+          }
+        }, true);
+      });
+
       document.addEventListener('DOMContentLoaded', () => {
         const savedLang = localStorage.getItem('kiosk_lang');
         if (savedLang && savedLang !== 'en') {
           setTimeout(() => changeLanguage(savedLang), 100);
         }
         loadWeather(); // Load weather on startup
+        initTextSize(); // Initialize text size
+        initTTS(); // Initialize text-to-speech
+        
+        // Check if returning from builder - if so, don't show landing page
+        const fromBuilder = localStorage.getItem('kiosk_from_builder');
+        if (fromBuilder === 'true') {
+          localStorage.removeItem('kiosk_from_builder');
+          hideLandingPage();
+        } else {
+          // Start with landing page visible
+          showLandingPage();
+        }
       });
 
     async function changeLanguage(lang) {
       localStorage.setItem('kiosk_lang', lang);
-      
-      const staticElements = [
-        { el: document.getElementById('category-title'), original: 'Entrees' },
-        { el: document.querySelector('header p'), original: 'Choose your main dish to start your order.' },
-        { el: document.querySelector('.nav-link[data-category="entrees"]'), original: 'Entrees' },
-        { el: document.querySelector('.nav-link[data-category="sides"]'), original: 'Sides' },
-        { el: document.querySelector('.nav-link[data-category="a_la_carte"]'), original: 'A La Carte' },
-        { el: document.querySelector('.nav-link[data-category="appetizers"]'), original: 'Appetizers' },
-        { el: document.getElementById('cart-open-drawer'), original: 'View Cart' },
-        { el: document.getElementById('instruction-text'), original: 'Tap items to add them to your order.' },
-        { el: document.getElementById('weather-desc'), original: document.getElementById('weather-desc')?.getAttribute('data-original') },
-      ];
 
-      staticElements.forEach(item => {
-        if(item.el && item.original && !item.el.hasAttribute('data-original')) {
-            item.el.setAttribute('data-original', item.original);
-        }
-      });
+      const elementsToTranslate = document.querySelectorAll('[data-original]');
+      if (elementsToTranslate.length === 0) return;
 
       if (lang === 'en') {
-        document.querySelectorAll('[data-original]').forEach(el => {
-            const orig = el.getAttribute('data-original');
-            if(orig) el.textContent = orig;
+        elementsToTranslate.forEach(el => {
+          if (!el.classList.contains('no-translate')) {
+            el.textContent = el.getAttribute('data-original');
+          }
         });
         return;
       }
 
-      const allDomTargets = [
-        ...staticElements.map(i => i.el), 
-        ...Array.from(document.querySelectorAll('[data-translate-type="item-name"]')),
-        ...Array.from(document.querySelectorAll('[data-original]'))
-      ].filter(el => el && el.hasAttribute('data-original'));
+      const uniqueTexts = new Set();
+      elementsToTranslate.forEach(el => {
+        if (!el.classList.contains('no-translate')) {
+           const text = el.getAttribute('data-original');
+           if (text) uniqueTexts.add(text.trim());
+        }
+      });
       
-      const uniqueDomTargets = [...new Set(allDomTargets)];
-      
-      const textsToTranslate = uniqueDomTargets.map(el => el.getAttribute('data-original'));
-
-      if(textsToTranslate.length === 0) return;
+      const textArray = Array.from(uniqueTexts).filter(Boolean);
+      if (textArray.length === 0) return;
 
       try {
         const res = await fetch('/api/translate', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ text: textsToTranslate, target: lang })
+            body: JSON.stringify({ text: textArray, target: lang })
         });
-        
         const data = await res.json();
         
-        if(data.success && Array.isArray(data.translatedText)) {
-            data.translatedText.forEach((txt, i) => {
-              if(uniqueDomTargets[i]) uniqueDomTargets[i].textContent = txt;
+        if (data.success && Array.isArray(data.translatedText)) {
+            const translationMap = {};
+            textArray.forEach((original, index) => {
+                translationMap[original] = data.translatedText[index];
+            });
+
+            elementsToTranslate.forEach(el => {
+                const original = el.getAttribute('data-original').trim();
+                if (translationMap[original]) {
+                    el.textContent = translationMap[original];
+                }
             });
         }
       } catch(e) { console.error("Translation failed", e); }
     }
+
+    const callStaffBtn = document.getElementById('call-staff-btn');
+
+    callStaffBtn.addEventListener('click', async () => {
+      // Disable button for 15 seconds to prevent spam
+      callStaffBtn.disabled = true;
+      callStaffBtn.textContent = 'Help Requested…';
+
+      try {
+        await fetch('/api/call-staff', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch (e) {
+        console.error('Failed to call staff', e);
+      }
+
+      // Re-enable after 15 seconds
+      setTimeout(() => {
+        callStaffBtn.disabled = false;
+        callStaffBtn.textContent = 'Call Staff for Help';
+      }, 15_000);
+    });
     </script>
   </body>
 </html>

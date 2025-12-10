@@ -186,6 +186,7 @@
     <div class="button-group">
       <button class="btn-list-employees">List Employees</button>
       <button class="btn-add-employee">Add Employee</button>
+      <button class="btn-delete-employee">Delete Employee</button>
     </div>
     <div class="employee-table-container" style="margin-top:10px;"></div>
   </div>
@@ -275,6 +276,9 @@
 
     <button type="button" id="editRecipeBtn">Edit Recipe</button>
     <div id="editRecipeContainer" style="display:none; margin-top:1rem;"></div>
+
+    <button type="button" id="editMenuBtn">Edit Menu Item</button>
+    <div id="editMenuContainer" style="display:none; margin-top:1rem;"></div>
   </form>
 
   <h2>Menu Items</h2>
@@ -402,22 +406,67 @@ async function addEmployee() {
 
   if (!res.ok) return alert("Failed to add employee");
   alert("Employee added successfully!");
+  listEmployees();
 }
 
+async function deleteEmployee() {
+  const id = prompt("Enter Employee ID to permanently delete:");
+  if (!id) return;
+
+  if (!confirm("Are you sure you want to permanently delete this employee? This action cannot be undone.")) return;
+
+  try {
+    const res = await fetch(`/api/employees/${id}`, { method: "DELETE" });
+    
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || "Failed to delete employee");
+    }
+
+    alert("Employee deleted.");
+    listEmployees();
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
+}
 
 
 async function deactivateEmployee() {
   const id = prompt("Enter Employee ID to deactivate:");
   if (!id) return;
-  await fetch(`/api/employees/${id}/deactivate`, { method: "PUT" });
-  alert("Employee deactivated.");
+
+  try {
+    const res = await fetch(`/api/employees/${id}/deactivate`, { method: "PUT" });
+    
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || "Employee not found or could not be deactivated");
+    }
+
+    alert("Employee deactivated.");
+    listEmployees(); // refresh employee list
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
 }
 
 async function reactivateEmployee() {
   const id = prompt("Enter Employee ID to reactivate:");
   if (!id) return;
-  await fetch(`/api/employees/${id}/reactivate`, { method: "PUT" });
-  alert("Employee reactivated.");
+
+  try {
+    const res = await fetch(`/api/employees/${id}/reactivate`, { method: "PUT" });
+    
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || "Employee not found or could not be reactivated");
+    }
+
+    alert("Employee reactivated.");
+    listEmployees(); // refresh employee list
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
 }
 
 async function resetPassword() {
@@ -493,25 +542,39 @@ async function listShiftsByDate() {
 
 // -------------------- CREATE SHIFT --------------------
 document.getElementById("createShiftBtn").addEventListener("click", async () => {
-  const manager_id = Number(prompt("Enter manager ID:")); // convert to number
   const shift_date = prompt("Enter shift date (YYYY-MM-DD):");
-  const start_time = prompt("Enter start time (HH:MM):");
-  const end_time = prompt("Enter end time (HH:MM):");
+  const start_time_input = prompt("Enter start time (HH:MM):");
+  const end_time_input = prompt("Enter end time (HH:MM):");
 
-  if (!manager_id || !shift_date || !start_time || !end_time) {
+  if (!shift_date || !start_time_input || !end_time_input) {
     alert("All fields are required!");
     return;
   }
 
-  const res = await fetch("/api/shifts", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ manager_id, shift_date, start_time, end_time })
-  });
+  try {
+    const res = await fetch("/api/shifts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        shift_date,
+        start_time: start_time_input,
+        end_time: end_time_input,
+      }),
+    });
 
-  const data = await res.json();
-  console.log(data);
-  alert("Shift created successfully!");
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(`Failed to create shift: ${data.error}`);
+      console.error("Server error:", data);
+    } else {
+      alert("Shift created successfully!");
+      console.log("Created shift:", data.shift);
+    }
+  } catch (err) {
+    console.error("Network error:", err);
+    alert("Failed to create shift due to network error. Check console.");
+  }
 });
 
 // -------------------- DELETE SHIFT --------------------
@@ -572,6 +635,7 @@ document.getElementById("removeEmployeeBtn").addEventListener("click", async () 
 // --- Attach Event Listeners ---
 document.querySelector(".btn-list-employees").addEventListener("click", listEmployees);
 document.querySelector(".btn-add-employee").addEventListener("click", addEmployee);
+document.querySelector(".btn-delete-employee").addEventListener("click", deleteEmployee);
 document.querySelector(".btn-deactivate-employee").addEventListener("click", deactivateEmployee);
 document.querySelector(".btn-reactivate-employee").addEventListener("click", reactivateEmployee);
 document.querySelector(".btn-reset-password").addEventListener("click", resetPassword);
@@ -783,6 +847,71 @@ document.getElementById("editRecipeBtn").addEventListener("click", async () => {
         container.style.display = "none";
         container.innerHTML = "";
 
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
+    };
+
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
+});
+
+document.getElementById("editMenuBtn").addEventListener("click", async () => {
+  const menuId = prompt("Enter the Menu Item ID to edit:");
+  if (!menuId) return;
+
+  const container = document.getElementById("editMenuContainer");
+
+  try {
+    // Fetch the current menu item details
+    const res = await fetch(`/api/menu/${menuId}`);
+    if (!res.ok) throw new Error("Menu item not found");
+    const item = await res.json();
+
+    container.innerHTML = ""; // clear previous content
+
+    // Build edit form
+    const form = document.createElement("form");
+    form.style.display = "flex";
+    form.style.flexDirection = "column";
+    form.style.gap = "10px";
+
+    form.innerHTML = `
+      <label>
+        Name: <strong>${item.name}</strong>
+      </label>
+      <label>
+        Price: <input type="number" id="editPrice" step="0.01" value="${item.price}">
+      </label>
+      <label>
+        Active: <input type="checkbox" id="editActive" ${item.is_active ? "checked" : ""}>
+      </label>
+      <button type="button" id="saveMenuEditBtn">Save Changes</button>
+    `;
+
+    container.appendChild(form);
+    container.style.display = "block";
+
+    // Save button
+    document.getElementById("saveMenuEditBtn").onclick = async () => {
+      const newPrice = parseFloat(document.getElementById("editPrice").value);
+      const isActive = document.getElementById("editActive").checked;
+
+      if (isNaN(newPrice)) return alert("Invalid price");
+
+      try {
+        const updateRes = await fetch(`/api/menu/${menuId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ price: newPrice, is_active: isActive })
+        });
+
+        if (!updateRes.ok) throw new Error("Failed to update menu item");
+
+        alert("Menu item updated!");
+        container.style.display = "none";
+        listMenuItems(); // refresh table
       } catch (err) {
         alert("Error: " + err.message);
       }
