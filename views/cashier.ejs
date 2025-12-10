@@ -1474,7 +1474,19 @@
 
     (function () {
       // ===== CONFIG =====
-      const TAX_RATE = 0.0825;
+      let TAX_RATE = 0.0825; // Default 8.25%
+      
+      // Fetch tax rate from server
+      fetch('/api/tax-rate')
+        .then(res => res.json())
+        .then(data => {
+          TAX_RATE = data.rate;
+          updateOrderSummary(); // Refresh display with correct tax
+        })
+        .catch(err => console.error('Failed to fetch tax rate:', err));
+
+      // ===== CLOCK IN/OUT STATE =====
+      let clockedInEmployee = null; // { employee_id, display_name, log_id }
 
       // ===== CLOCK IN/OUT STATE =====
       let clockedInEmployee = null; // { employee_id, display_name, log_id }

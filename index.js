@@ -432,18 +432,161 @@ app.post("/kitchen/:orderId/status", requireAuth('cook'), async (req, res) => {
     if (status === 'prepping' || status === 'done') {
       await prisma.$transaction(async (tx) => {
         await ensurePreparedAndConsumeForOrder(tx, orderId);
+        
+        // Get current order to check previous status
+        const currentOrder = await tx.order.findUnique({
+          where: { order_id: orderId },
+          include: {
+            order_item: true,
+            payment: true,
+          },
+        });
+
+        const wasCompleted = currentOrder?.status === 'done';
+        const completedTime = status === 'done' ? new Date() : null;
+        
         await tx.order.update({
           where: { order_id: orderId },
           data: {
             status,
-            completed_at: status === 'done' ? new Date() : null,
+            completed_at: completedTime,
           },
         });
+
+        // If moving FROM done to another status, subtract from statistics
+        if (wasCompleted && status !== 'done' && currentOrder) {
+          const orderSubtotal = currentOrder.order_item.reduce(
+            (sum, item) => sum + Number(item.unit_price) * item.qty,
+            0
+          );
+          const orderDiscounts = currentOrder.order_item.reduce(
+            (sum, item) => sum + Number(item.discount_amount),
+            0
+          );
+          const orderTax = currentOrder.order_item.reduce(
+            (sum, item) => sum + Number(item.tax_amount),
+            0
+          );
+          const orderRevenue = currentOrder.payment[0]?.amount || 0;
+
+          const statsDate = new Date(currentOrder.completed_at || currentOrder.created_at);
+          statsDate.setHours(0, 0, 0, 0);
+
+          // Subtract from statistics
+          await tx.store_statistics.update({
+            where: { stats_date: statsDate },
+            data: {
+              total_orders: { decrement: 1 },
+              subtotal: { decrement: orderSubtotal },
+              discounts: { decrement: orderDiscounts },
+              tax: { decrement: orderTax },
+              revenue: { decrement: Number(orderRevenue) },
+            },
+          });
+        }
+
+        // Update store_statistics when order is marked as done
+        if (status === 'done' && !wasCompleted) {
+          // Get order details with items and payment
+          const orderWithDetails = await tx.order.findUnique({
+            where: { order_id: orderId },
+            include: {
+              order_item: true,
+              payment: true,
+            },
+          });
+
+          if (orderWithDetails) {
+            // Calculate totals from order items
+            const orderSubtotal = orderWithDetails.order_item.reduce(
+              (sum, item) => sum + Number(item.unit_price) * item.qty,
+              0
+            );
+            const orderDiscounts = orderWithDetails.order_item.reduce(
+              (sum, item) => sum + Number(item.discount_amount),
+              0
+            );
+            const orderTax = orderWithDetails.order_item.reduce(
+              (sum, item) => sum + Number(item.tax_amount),
+              0
+            );
+            const orderRevenue = orderWithDetails.payment[0]?.amount || 0;
+
+            // Get the date for this order (use completed_at or created_at)
+            const statsDate = new Date(completedTime || orderWithDetails.created_at);
+            statsDate.setHours(0, 0, 0, 0); // Start of day
+
+            // Upsert store_statistics
+            await tx.store_statistics.upsert({
+              where: { stats_date: statsDate },
+              update: {
+                total_orders: { increment: 1 },
+                subtotal: { increment: orderSubtotal },
+                discounts: { increment: orderDiscounts },
+                tax: { increment: orderTax },
+                revenue: { increment: Number(orderRevenue) },
+              },
+              create: {
+                stats_date: statsDate,
+                total_orders: 1,
+                subtotal: orderSubtotal,
+                discounts: orderDiscounts,
+                tax: orderTax,
+                revenue: Number(orderRevenue),
+              },
+            });
+          }
+        }
       });
     } else {
-      await prisma.order.update({
-        where: { order_id: orderId },
-        data: { status, completed_at: null },
+      // For status 'queued', check if we need to subtract from statistics
+      await prisma.$transaction(async (tx) => {
+        const currentOrder = await tx.order.findUnique({
+          where: { order_id: orderId },
+          include: {
+            order_item: true,
+            payment: true,
+          },
+        });
+
+        const wasCompleted = currentOrder?.status === 'done';
+        
+        await tx.order.update({
+          where: { order_id: orderId },
+          data: { status, completed_at: null },
+        });
+
+        // If moving FROM done to queued, subtract from statistics
+        if (wasCompleted && currentOrder) {
+          const orderSubtotal = currentOrder.order_item.reduce(
+            (sum, item) => sum + Number(item.unit_price) * item.qty,
+            0
+          );
+          const orderDiscounts = currentOrder.order_item.reduce(
+            (sum, item) => sum + Number(item.discount_amount),
+            0
+          );
+          const orderTax = currentOrder.order_item.reduce(
+            (sum, item) => sum + Number(item.tax_amount),
+            0
+          );
+          const orderRevenue = currentOrder.payment[0]?.amount || 0;
+
+          const statsDate = new Date(currentOrder.completed_at || currentOrder.created_at);
+          statsDate.setHours(0, 0, 0, 0);
+
+          // Subtract from statistics
+          await tx.store_statistics.update({
+            where: { stats_date: statsDate },
+            data: {
+              total_orders: { decrement: 1 },
+              subtotal: { decrement: orderSubtotal },
+              discounts: { decrement: orderDiscounts },
+              tax: { decrement: orderTax },
+              revenue: { decrement: Number(orderRevenue) },
+            },
+          });
+        }
       });
     }
     try { kitchenBroadcast('queued-changed', { orderId }); } catch {}
@@ -560,7 +703,7 @@ let menuCache = { entrees: [], a_la_carte: [], sides: [], appetizers: [] , drink
 
 app.get("/kiosk", requireAuth(), async (req, res) => {
   try {
-    // Fetch all active menu items with their categories and ingredient allergens
+    // Fetch all active menu items with their categories, ingredient allergens, and size pricing
     const menuItems = await prisma.menu_item.findMany({
       where: { is_active: true },
       include: {
@@ -569,7 +712,8 @@ app.get("/kiosk", requireAuth(), async (req, res) => {
           include: {
             inventory: { select: { name: true, allergen_info: true } }
           }
-        }
+        },
+        size_pricing: true
       },
       orderBy: { price: 'asc' }
     });
@@ -672,11 +816,21 @@ app.get("/kiosk", requireAuth(), async (req, res) => {
       // Get nutrition data if available
       const nutrition = nutritionData[item.name] || null;
 
+      // Build size pricing object
+      const sizePricing = {};
+      if (item.size_pricing && item.size_pricing.length > 0) {
+        item.size_pricing.forEach(sp => {
+          // Use the size as-is from database (capitalized for premium, lowercase for regular)
+          sizePricing[sp.size] = parseFloat(sp.price);
+        });
+      }
+
       const itemData = {
         name: item.name,
         price: parseFloat(item.price),
         allergens: finalAllergens,
-        nutrition: nutrition
+        nutrition: nutrition,
+        sizePricing: sizePricing
       };
 
       // Category IDs from your schema:
@@ -1084,11 +1238,19 @@ app.post("/api/checkout", async (req, res) => {
       return res.status(400).json({ error: "Invalid dine option" });
     }
 
-    // Total uses the combo prices already calculated on the front end
-    const total = cart.reduce(
+    // Get tax rate from database
+    const taxRateRow = await prisma.tax_rate.findFirst();
+    const taxRate = taxRateRow ? Number(taxRateRow.rate) : 0.0825; // Default 8.25% if not found
+
+    // Calculate subtotal
+    const subtotal = cart.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
     );
+
+    // Calculate tax and total
+    const taxAmount = subtotal * taxRate;
+    const total = subtotal + taxAmount;
 
     // Menu items by name (Bowl / Plate / Bigger Plate / a la carte, etc.)
     // For sized items, use baseName for database lookup
@@ -1145,11 +1307,15 @@ app.post("/api/checkout", async (req, res) => {
             // For sized items, multiply quantity by serving multiplier
             const finalQty = item.multiplier ? (item.quantity * item.multiplier) : item.quantity;
             
+            // Calculate tax for this item
+            const itemTotal = item.price * item.quantity;
+            const itemTax = itemTotal * taxRate;
+            
             const orderItemData = {
               qty: finalQty,
               unit_price: item.price,
               discount_amount: 0,
-              tax_amount: 0,
+              tax_amount: itemTax,
               menu_item: {
                 connect: { menu_item_id: mi.menu_item_id },
               },
@@ -1266,11 +1432,19 @@ app.post("/api/cashier/checkout", requireAuth('cashier'), async (req, res) => {
       return res.status(400).json({ error: "Invalid dine option" });
     }
 
-    // Calculate total
-    const total = cart.reduce(
+    // Get tax rate from database
+    const taxRateRow = await prisma.tax_rate.findFirst();
+    const taxRate = taxRateRow ? Number(taxRateRow.rate) : 0.0825; // Default 8.25% if not found
+
+    // Calculate subtotal
+    const subtotal = cart.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
     );
+
+    // Calculate tax and total
+    const taxAmount = subtotal * taxRate;
+    const total = subtotal + taxAmount;
 
     // Get menu items from database
     const itemNames = cart.map((item) => item.baseName || item.name);
@@ -1327,11 +1501,15 @@ app.post("/api/cashier/checkout", requireAuth('cashier'), async (req, res) => {
 
             const finalQty = item.multiplier ? (item.quantity * item.multiplier) : item.quantity;
             
+            // Calculate tax for this item
+            const itemTotal = item.price * item.quantity;
+            const itemTax = itemTotal * taxRate;
+            
             const orderItemData = {
               qty: finalQty,
               unit_price: item.price,
               discount_amount: 0,
-              tax_amount: 0,
+              tax_amount: itemTax,
               menu_item: {
                 connect: { menu_item_id: mi.menu_item_id },
               },
@@ -1610,6 +1788,18 @@ app.get('/kitchen/stock', async (req, res) => {
   } catch (err) {
     console.error('Get stock error:', err);
     res.status(500).json({ success: false, error: 'Failed to fetch stock' });
+  }
+});
+
+// --- TAX RATE ENDPOINT ---
+app.get('/api/tax-rate', async (req, res) => {
+  try {
+    const taxRateRecord = await prisma.tax_rate.findFirst();
+    const taxRate = taxRateRecord?.rate ?? 0.0825; // Default 8.25%
+    res.json({ rate: taxRate });
+  } catch (err) {
+    console.error("Error fetching tax rate:", err);
+    res.status(500).json({ error: "Unable to fetch tax rate" });
   }
 });
 
@@ -2300,19 +2490,26 @@ app.get("/api/x-report", async (req, res) => {
 //Z Report
 app.get("/api/z-report", async (req, res) => {
   try {
-    // Fetch all orders that haven't been included in a Z report yet
+    // Fetch only orders not yet included in a Z report
     const orders = await prisma.order.findMany({
-      where: { status: "done" }, // maybe you want a "z_reported: false" flag in production
-      include: { order_item: { include: { menu_item: true } } },
+      where: {
+        status: "done",
+        z_reported: false
+      },
+      include: {
+        order_item: {
+          include: { menu_item: true }
+        }
+      }
     });
 
-    // Aggregate sales per menu item
     const salesMap = {};
     let totalOrders = 0;
     let totalRevenue = 0;
 
     for (const order of orders) {
-      totalOrders += 1;
+      totalOrders++;
+
       for (const item of order.order_item) {
         const key = item.menu_item.name;
         const revenue = parseFloat(item.unit_price) * item.qty;
@@ -2321,6 +2518,7 @@ app.get("/api/z-report", async (req, res) => {
         if (!salesMap[key]) {
           salesMap[key] = { name: key, quantitySold: 0, revenue: 0 };
         }
+
         salesMap[key].quantitySold += item.qty;
         salesMap[key].revenue += revenue;
       }
@@ -2328,10 +2526,10 @@ app.get("/api/z-report", async (req, res) => {
 
     const items = Object.values(salesMap);
 
-    // Mark these orders as "counted in Z report" by setting a timestamp field
+    // Mark these orders as included in Z report
     await prisma.order.updateMany({
       where: { order_id: { in: orders.map(o => o.order_id) } },
-      data: { status: "queued" } // or add a boolean like z_reported = true in a real system
+      data: { z_reported: true }
     });
 
     res.json({
@@ -2492,3 +2690,6 @@ app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
   console.log("Login → /login (Google OAuth)");
 });
+
+
+module.exports = app;
