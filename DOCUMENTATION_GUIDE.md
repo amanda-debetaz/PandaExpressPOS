@@ -48,11 +48,27 @@ npm run docs:serve
 
 Then open http://localhost:8080/jsdoc in your browser to view the generated documentation.
 
+### Update Deployed Documentation
+
+After making changes and regenerating docs:
+
+```bash
+# 1. Regenerate documentation
+npm run docs
+
+# 2. Deploy to Vercel
+cd docs
+vercel --prod
+```
+
+The live documentation will be updated at the Vercel URL.
+
 ### View Documentation Files
 
 The generated documentation can be found at:
 - **JSDoc HTML**: `./docs/jsdoc/index.html`
 - **API Manual**: `./API_DOCUMENTATION.md` (markdown reference)
+- **Live Documentation**: https://team31project3-px2mziqvo-devans-projects-40004d0c.vercel.app
 
 ## Documentation Structure
 
