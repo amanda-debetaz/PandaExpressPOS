@@ -1120,15 +1120,10 @@
               <button
                 class="btn btn-drink drink-btn"
                 data-base="Fountain Drink"
+                data-name="Fountain Drink"
+                data-price="2.20"
               >
                 Fountain Drink
-              </button>
-              <button
-                class="btn btn-drink drink-btn"
-                data-base="Water"
-                data-free="true"
-              >
-                Water
               </button>
             </div>
           </section>
@@ -1459,9 +1454,58 @@
         <button id="drink-size-cancel" class="drink-size-cancel">Cancel</button>
       </div>
     </div>
+
+    <!-- ITEM SIZE MODAL (for a la carte entrees/sides) -->
+    <div id="item-size-modal" class="drink-popup-overlay" style="display: none;">
+      <div class="drink-popup-modal">
+        <h3 class="drink-popup-title" id="item-size-title">Select Size</h3>
+        <div id="item-size-buttons" class="drink-size-options">
+          <!-- Dynamically populated -->
+        </div>
+        <button id="item-size-cancel" class="drink-size-cancel">Cancel</button>
+      </div>
+    </div>
   </body>
 
   <script>
+    // Load menu data from server and update button prices
+    const menuItems = <%- JSON.stringify(menuItems || []) %>;
+    
+    // Update button prices and size pricing from database
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('Loading menu items:', menuItems.length);
+      menuItems.forEach(item => {
+        const buttons = document.querySelectorAll(`[data-name="${item.name}"]`);
+        console.log(`Looking for buttons with name "${item.name}":`, buttons.length, 'found');
+        
+        if (buttons.length === 0) {
+          console.warn(`No buttons found for item: ${item.name}`);
+        }
+        
+        buttons.forEach(btn => {
+          // Convert Prisma Decimal to number
+          btn.dataset.price = parseFloat(item.price).toFixed(2);
+          
+          // Add size pricing if available
+          if (item.size_pricing && item.size_pricing.length > 0) {
+            const sizePricing = {};
+            item.size_pricing.forEach(sp => {
+              sizePricing[sp.size] = parseFloat(sp.price);
+            });
+            const sizePricingJson = JSON.stringify(sizePricing);
+            btn.setAttribute('data-size-pricing', sizePricingJson);
+            console.log(`Added size pricing to ${item.name}:`, sizePricingJson);
+          }
+        });
+      });
+      
+      // Log all button names for comparison
+      console.log('All button names in DOM:');
+      document.querySelectorAll('[data-name]').forEach(btn => {
+        console.log(`  "${btn.getAttribute('data-name')}"`);
+      });
+    });
+    
     // Back to Navigation button
     document.getElementById("back-nav-btn")?.addEventListener("click", () => {
       window.location.href = "/";
@@ -1535,6 +1579,7 @@
         // remove highlight from any previously selected buttons
         document.querySelectorAll(".btn-selected").forEach((btn) => {
           btn.classList.remove("btn-selected");
+          delete btn.dataset.count;
         });
         selectedBaseButton = null;
         selectedEntreeButtons = [];
@@ -1557,51 +1602,68 @@
         return { name, kindLabel };
       }
 
-      // ===== DRINK SIZE LOGIC =====
-      const drinkButtons = document.querySelectorAll(".drink-btn");
-      const drinkSizePopup = document.getElementById("drink-size-popup");
+      // ===== DRINK LOGIC =====
+      function initDrinkButtons() {
+        const drinkButtons = document.querySelectorAll(".drink-btn");
+        drinkButtons.forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const drinkName = btn.getAttribute("data-base");
+            const price = parseFloat(btn.getAttribute("data-price") || btn.dataset.price || 0);
+            // Drinks add directly with base price (no size selection)
+            addOrderLine(drinkName, price);
+          });
+        });
+      }
+      initDrinkButtons();
 
-      let pendingDrinkName = null;
+      // ===== ITEM SIZE MODAL (for a la carte items) =====
+      const itemSizeModal = document.getElementById("item-size-modal");
+      const itemSizeTitle = document.getElementById("item-size-title");
+      const itemSizeButtons = document.getElementById("item-size-buttons");
+      const itemSizeCancel = document.getElementById("item-size-cancel");
 
-      drinkButtons.forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const drinkName = btn.getAttribute("data-base");
-          const isFree = btn.getAttribute("data-free") === "true";
-
-          // Water = free, no popup
-          if (isFree) {
-            addOrderLine(drinkName, 0.0);
-            return;
+      function showItemSizeModal(itemName, basePrice, sizePricing) {
+        itemSizeTitle.textContent = `${itemName} - Select Size`;
+        itemSizeButtons.innerHTML = '';
+        
+        const isPremium = itemName.toLowerCase().includes('honey walnut') || 
+                         itemName.toLowerCase().includes('black pepper sirloin');
+        
+        // Generate size buttons (small, medium, large)
+        const sizes = ['small', 'medium', 'large'];
+        sizes.forEach(size => {
+          let price;
+          if (size === 'medium') {
+            price = basePrice; // Medium uses base price
+          } else if (isPremium) {
+            // Premium items use capitalized size keys
+            const capSize = size.charAt(0).toUpperCase() + size.slice(1);
+            price = sizePricing[capSize];
+          } else {
+            // Regular items use lowercase
+            price = sizePricing[size];
           }
-
-          // Otherwise open size popup
-          pendingDrinkName = drinkName;
-          drinkSizePopup.style.display = "flex";
+          
+          if (price) {
+            const btn = document.createElement('button');
+            btn.className = 'btn drink-size-btn drink-size-option';
+            const sizeLabel = size.charAt(0).toUpperCase() + size.slice(1);
+            btn.textContent = `${sizeLabel} – $${parseFloat(price).toFixed(2)}`;
+            btn.addEventListener('click', () => {
+              const finalName = `${itemName} (${sizeLabel})`;
+              addOrderLine(finalName, parseFloat(price), itemName);
+              itemSizeModal.style.display = 'none';
+            });
+            itemSizeButtons.appendChild(btn);
+          }
         });
+        
+        itemSizeModal.style.display = 'flex';
+      }
+
+      itemSizeCancel.addEventListener('click', () => {
+        itemSizeModal.style.display = 'none';
       });
-
-      // handle selecting drink size
-      document.querySelectorAll(".drink-size-btn").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const size = btn.getAttribute("data-size");
-          const price = parseFloat(btn.getAttribute("data-price"));
-
-          const finalName = `${size} ${pendingDrinkName}`;
-
-          addOrderLine(finalName, price);
-
-          drinkSizePopup.style.display = "none";
-          pendingDrinkName = null;
-        });
-      });
-
-      // cancel button
-      document
-        .getElementById("drink-size-cancel")
-        .addEventListener("click", () => {
-          drinkSizePopup.style.display = "none";
-          pendingDrinkName = null;
-        });
 
       // ===== CLOCK IN/OUT LOGIC =====
       const clockModal = document.getElementById("clock-modal");
@@ -1722,7 +1784,7 @@
 
       // ===== ORDER LOGIC =====
 
-      function addOrderLine(name, price) {
+      function addOrderLine(name, price, baseName = null, options = null) {
         const existing = orderItems.find(
           (item) => item.name === name && item.price === price
         );
@@ -1731,8 +1793,10 @@
           orderItems.push({
             id: nextId++,
             name,
+            baseName: baseName || name,
             price,
             quantity: 1,
+            options: options || undefined
           });
         }
         renderOrder();
@@ -1844,75 +1908,104 @@
 
       function chooseBase(baseName, btn) {
         if (!activeMeal) return;
-
-        // If this base is already selected, unselect it
-        if (activeMeal.baseChoice === baseName && selectedBaseButton === btn) {
-          activeMeal.baseChoice = null;
-          btn.classList.remove("btn-selected");
-
-          setMealStatus(
-            `Building ${activeMeal.mealName}: choose ${activeMeal.basesNeeded} base & ${activeMeal.entreesNeeded} entree(s)`
-          );
-          return;
+        
+        const cfg = MEAL_CONFIGS[activeMeal.mealName];
+        const allowHalf = cfg && (activeMeal.mealName === 'Plate' || activeMeal.mealName === 'Bigger Plate');
+        
+        if (!activeMeal.sideCounts) {
+          activeMeal.sideCounts = {};
         }
-
-        // Otherwise, switch selection to this base
-        if (selectedBaseButton) {
-          selectedBaseButton.classList.remove("btn-selected");
+        
+        if (allowHalf) {
+          // Toggle between 0 -> 0.5 -> 1 -> 0
+          const current = activeMeal.sideCounts[baseName] || 0;
+          if (current === 0) {
+            activeMeal.sideCounts[baseName] = 0.5;
+            btn.classList.add("btn-selected");
+          } else if (current === 0.5) {
+            activeMeal.sideCounts[baseName] = 1;
+          } else {
+            activeMeal.sideCounts[baseName] = 0;
+            btn.classList.remove("btn-selected");
+          }
+          
+          // Check if total equals 1
+          const total = Object.values(activeMeal.sideCounts).reduce((s, v) => s + v, 0);
+          if (Math.abs(total - 1) < 0.001) {
+            activeMeal.baseChoice = Object.entries(activeMeal.sideCounts)
+              .filter(([_, v]) => v > 0)
+              .map(([name, v]) => v === 1 ? name : `${name} (Half)`)
+              .join(' + ');
+            setMealStatus(`Building ${activeMeal.mealName}: choose ${activeMeal.entreesNeeded} entree(s)`);
+            tryCompleteMeal();
+          } else {
+            activeMeal.baseChoice = null;
+            setMealStatus(`Building ${activeMeal.mealName}: sides ${total.toFixed(1)}/1, choose ${activeMeal.entreesNeeded} entrees`);
+          }
+        } else {
+          // Bowl: single full side only
+          if (selectedBaseButton) {
+            selectedBaseButton.classList.remove("btn-selected");
+          }
+          selectedBaseButton = btn;
+          btn.classList.add("btn-selected");
+          activeMeal.baseChoice = baseName;
+          setMealStatus(`Building ${activeMeal.mealName}: choose ${activeMeal.entreesNeeded} entree(s)`);
+          tryCompleteMeal();
         }
-        selectedBaseButton = btn;
-        btn.classList.add("btn-selected");
-
-        activeMeal.baseChoice = baseName;
-        setMealStatus(
-          `Building ${activeMeal.mealName}: choose ${activeMeal.entreesNeeded} entree(s)`
-        );
-
-        tryCompleteMeal();
       }
 
       function chooseEntree(entreeName, btn) {
         if (!activeMeal) return;
-
-        // If already selected: unselect / remove
-        const existingBtnIndex = selectedEntreeButtons.indexOf(btn);
-        if (existingBtnIndex !== -1) {
-          selectedEntreeButtons.splice(existingBtnIndex, 1);
-          btn.classList.remove("btn-selected");
-
-          // remove one occurrence of this entree from choices
-          const choiceIndex = activeMeal.entreeChoices.indexOf(entreeName);
-          if (choiceIndex !== -1) {
-            activeMeal.entreeChoices.splice(choiceIndex, 1);
+        
+        // Initialize entree counts if needed
+        if (!activeMeal.entreeCounts) {
+          activeMeal.entreeCounts = {};
+        }
+        
+        // Increment count for this entree
+        const currentCount = activeMeal.entreeCounts[entreeName] || 0;
+        activeMeal.entreeCounts[entreeName] = currentCount + 1;
+        
+        // Add visual feedback
+        if (!btn.dataset.count) {
+          btn.classList.add("btn-selected");
+        }
+        btn.dataset.count = activeMeal.entreeCounts[entreeName];
+        
+        // Calculate total entrees selected
+        const totalEntrees = Object.values(activeMeal.entreeCounts).reduce((sum, c) => sum + c, 0);
+        
+        // Update entree choices array
+        activeMeal.entreeChoices = [];
+        Object.entries(activeMeal.entreeCounts).forEach(([name, count]) => {
+          for (let i = 0; i < count; i++) {
+            activeMeal.entreeChoices.push(name);
           }
-
-          const remaining =
-            activeMeal.entreesNeeded - activeMeal.entreeChoices.length;
-          setMealStatus(
-            `Building ${activeMeal.mealName}: ${remaining} entree(s) left`
-          );
-          return;
-        }
-
-        // Not selected yet; if already at max, ignore extra taps
-        if (activeMeal.entreeChoices.length >= activeMeal.entreesNeeded) {
-          return;
-        }
-
-        // Select this entree
-        selectedEntreeButtons.push(btn);
-        btn.classList.add("btn-selected");
-        activeMeal.entreeChoices.push(entreeName);
-
-        const remaining =
-          activeMeal.entreesNeeded - activeMeal.entreeChoices.length;
+        });
+        
+        const remaining = activeMeal.entreesNeeded - totalEntrees;
         if (remaining > 0) {
-          setMealStatus(
-            `Building ${activeMeal.mealName}: ${remaining} entree(s) left`
-          );
+          setMealStatus(`Building ${activeMeal.mealName}: ${remaining} entree(s) left`);
+        } else if (remaining === 0) {
+          // Check if base is also selected before saying complete
+          if (activeMeal.baseChoice) {
+            setMealStatus(`Building ${activeMeal.mealName}: complete!`);
+          } else {
+            setMealStatus(`Building ${activeMeal.mealName}: now choose base`);
+          }
+          tryCompleteMeal();
+        } else {
+          // Too many - remove last one
+          activeMeal.entreeCounts[entreeName]--;
+          if (activeMeal.entreeCounts[entreeName] === 0) {
+            delete activeMeal.entreeCounts[entreeName];
+            btn.classList.remove("btn-selected");
+            delete btn.dataset.count;
+          } else {
+            btn.dataset.count = activeMeal.entreeCounts[entreeName];
+          }
         }
-
-        tryCompleteMeal();
       }
 
       function tryCompleteMeal() {
@@ -1928,7 +2021,36 @@
 
           const lineName = `${activeMeal.mealName} (${baseText}; ${entreeText})`;
 
-          addOrderLine(lineName, activeMeal.mealPrice);
+          // Build options array for backend (sides and entrees)
+          const options = [];
+          
+          // Add base/side options
+          if (activeMeal.sideCounts) {
+            Object.entries(activeMeal.sideCounts).forEach(([name, count]) => {
+              if (count > 0) {
+                options.push({ name, qty: count });
+              }
+            });
+          } else if (activeMeal.baseChoice) {
+            // For Bowl (single base without sideCounts)
+            options.push({ name: activeMeal.baseChoice, qty: 1 });
+          }
+          
+          // Add entree options
+          if (activeMeal.entreeCounts) {
+            Object.entries(activeMeal.entreeCounts).forEach(([name, count]) => {
+              if (count > 0) {
+                options.push({ name, qty: count });
+              }
+            });
+          } else {
+            // Fallback to entreeChoices array
+            activeMeal.entreeChoices.forEach(name => {
+              options.push({ name, qty: 1 });
+            });
+          }
+
+          addOrderLine(lineName, activeMeal.mealPrice, activeMeal.mealName, options);
 
           activeMeal = null;
           setMealStatus("");
@@ -1973,8 +2095,26 @@
         // Not building a meal:
         if (kind === "meal") {
           startMealBuild(name, price);
+        } else if (kind === "base" || kind === "entree") {
+          // For bases and entrees ordered a la carte, check for size options
+          const sizePricingStr = btn.getAttribute('data-size-pricing');
+          console.log('A la carte item clicked:', name, 'sizePricing:', sizePricingStr);
+          if (sizePricingStr) {
+            try {
+              const sizePricing = JSON.parse(sizePricingStr);
+              if (sizePricing && Object.keys(sizePricing).length > 0) {
+                console.log('Showing size modal for:', name, sizePricing);
+                showItemSizeModal(name, price, sizePricing);
+                return;
+              }
+            } catch (e) {
+              console.error('Error parsing size pricing:', e);
+            }
+          }
+          // No size pricing, add directly
+          addOrderLine(name, price);
         } else {
-          // base/entree/item all add a-la-carte if no active meal
+          // Regular items without sizes
           addOrderLine(name, price);
         }
       }
@@ -2086,39 +2226,19 @@
 
         // Convert cashier orderItems to the format expected by backend
         const cartForBackend = orderItems.map((item) => {
-          // Check if this is a meal (contains sides/entrees)
-          const isMeal =
-            item.name.includes("(") &&
-            (item.name.includes("Bowl") || item.name.includes("Plate"));
-
-          if (isMeal) {
-            // Parse meal format: "Plate (White Steamed Rice; Kung Pao Chicken, Beijing Beef)"
-            const match = item.name.match(/^([^(]+)\(([^;]+);\s*(.+)\)$/);
-            if (match) {
-              const mealType = match[1].trim();
-              const sides = match[2].trim().split(/,\s*/);
-              const entrees = match[3].trim().split(/,\s*/);
-
-              const options = [
-                ...sides.map((s) => ({ name: s, qty: 1 })),
-                ...entrees.map((e) => ({ name: e, qty: 1 })),
-              ];
-
-              return {
-                name: mealType,
-                price: item.price,
-                quantity: item.quantity,
-                options: options,
-              };
-            }
-          }
-
-          // Regular item (a la carte, drinks, appetizers)
-          return {
+          const cartItem = {
             name: item.name,
+            baseName: item.baseName || item.name,
             price: item.price,
             quantity: item.quantity,
           };
+          
+          // Include options array if present (for meals)
+          if (item.options && Array.isArray(item.options)) {
+            cartItem.options = item.options;
+          }
+          
+          return cartItem;
         });
 
         try {

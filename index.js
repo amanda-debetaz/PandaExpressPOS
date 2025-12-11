@@ -416,9 +416,27 @@ app.get("/manager", requireAuth('manager'), async (req, res) => {
  * @param {express.Request} req - Express request object
  * @param {express.Response} res - Express response object
  * @access Cashier role required
- * @description Renders cashier point-of-sale interface for order processing
+ * @description Renders cashier point-of-sale interface for order processing with menu data
  */
-app.get("/cashier", requireAuth('cashier'), (req, res) => res.render("cashier"));
+app.get("/cashier", requireAuth('cashier'), async (req, res) => {
+  try {
+    // Fetch all active menu items with prices and size pricing
+    const menuItems = await prisma.menu_item.findMany({
+      where: { is_active: true },
+      include: { 
+        category: true,
+        size_pricing: true
+      },
+      orderBy: { name: 'asc' }
+    });
+
+    // Pass menu items to template
+    res.render("cashier", { menuItems });
+  } catch (err) {
+    console.error("Cashier menu load error:", err);
+    res.status(500).send("Unable to load cashier interface");
+  }
+});
 
 /**
  * Cutoff date for displaying completed orders in kitchen view
@@ -1849,6 +1867,29 @@ app.post("/api/cashier/checkout", requireAuth('cashier'), async (req, res) => {
       include: {
         order_item: true,
         payment: true,
+      },
+    });
+
+    // Update store_statistics since cashier orders are immediately done
+    const statsDate = new Date();
+    statsDate.setHours(0, 0, 0, 0); // Start of day
+
+    await prisma.store_statistics.upsert({
+      where: { stats_date: statsDate },
+      update: {
+        total_orders: { increment: 1 },
+        subtotal: { increment: subtotal },
+        discounts: { increment: 0 },
+        tax: { increment: taxAmount },
+        revenue: { increment: Number(total) },
+      },
+      create: {
+        stats_date: statsDate,
+        total_orders: 1,
+        subtotal: subtotal,
+        discounts: 0,
+        tax: taxAmount,
+        revenue: Number(total),
       },
     });
 
