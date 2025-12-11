@@ -1,4 +1,51 @@
-/**
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>index.js - Documentation</title>
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-index.html">index</a><ul class='methods'><li data-type='method'><a href="module-index.html#~kitchenBroadcast">kitchenBroadcast</a></li><li data-type='method'><a href="module-index.html#~requireAuth">requireAuth</a></li><li data-type='method'><a href="module-index.html#~shutdown">shutdown</a></li></ul></li></ul>
+    
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">index.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
  * @file Main application entry point for Panda Express POS System
  * @description Express.js server with Passport authentication, Prisma ORM, and multiple view routes
  * @module index
@@ -56,7 +103,7 @@ const port = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
 app.use(express.urlencoded({ extended: true }));
-app.use(express.json());               // <-- add once if not already present
+app.use(express.json());               // &lt;-- add once if not already present
 
 // ---------- PostgreSQL ----------
 // All DB access uses Prisma. No direct pg pool needed.
@@ -68,7 +115,7 @@ app.use(express.json());               // <-- add once if not already present
  * @function shutdown
  * @param {string} signal - The signal received (SIGINT, SIGTERM, etc.)
  * @description Disconnects Prisma client and exits process cleanly
- * @returns {Promise<void>}
+ * @returns {Promise&lt;void>}
  */
 async function shutdown(signal) {
   console.log(`Received ${signal}, shutting down...`);
@@ -77,7 +124,7 @@ async function shutdown(signal) {
 }
 ['SIGINT', 'SIGTERM'].forEach(sig => process.on(sig, () => shutdown(sig)));
 
-// ---------- View engine & static ----------
+// ---------- View engine &amp; static ----------
 app.set("view engine", "ejs");
 app.use(express.static("public"));
 
@@ -505,13 +552,13 @@ app.get("/kitchen", requireAuth('cook'), async (req, res) => {
           // Show each side unit as 1/2
           for (const s of sideOpts) {
             const units = s.qty || 1;
-            for (let i = 0; i < units; i++) options.push(`${s.name} (1/2)`);
+            for (let i = 0; i &lt; units; i++) options.push(`${s.name} (1/2)`);
           }
         } else if (totalSideUnits === 1) {
           // Single full side
           for (const s of sideOpts) {
             // if somehow multiple entries, still list by qty
-            for (let i = 0; i < (s.qty || 1); i++) options.push(`${s.name}`);
+            for (let i = 0; i &lt; (s.qty || 1); i++) options.push(`${s.name}`);
           }
         }
         // Entrees with counts
@@ -543,7 +590,7 @@ app.get("/kitchen", requireAuth('cook'), async (req, res) => {
       }
     });
 
-    // Get menu item IDs and names for prepared items (category 3 & 4)
+    // Get menu item IDs and names for prepared items (category 3 &amp; 4)
     const allPrepItems = await prisma.menu_item.findMany({
       where: { category_id: { in: PREPARED_CATEGORY_IDS } },
       select: { menu_item_id: true, name: true }
@@ -624,7 +671,7 @@ app.post("/kitchen/:orderId/status", requireAuth('cook'), async (req, res) => {
         });
 
         // If moving FROM done to another status, subtract from statistics
-        if (wasCompleted && status !== 'done' && currentOrder) {
+        if (wasCompleted &amp;&amp; status !== 'done' &amp;&amp; currentOrder) {
           const orderSubtotal = currentOrder.order_item.reduce(
             (sum, item) => sum + Number(item.unit_price) * item.qty,
             0
@@ -656,7 +703,7 @@ app.post("/kitchen/:orderId/status", requireAuth('cook'), async (req, res) => {
         }
 
         // Update store_statistics when order is marked as done
-        if (status === 'done' && !wasCompleted) {
+        if (status === 'done' &amp;&amp; !wasCompleted) {
           // Get order details with items and payment
           const orderWithDetails = await tx.order.findUnique({
             where: { order_id: orderId },
@@ -727,7 +774,7 @@ app.post("/kitchen/:orderId/status", requireAuth('cook'), async (req, res) => {
         });
 
         // If moving FROM done to queued, subtract from statistics
-        if (wasCompleted && currentOrder) {
+        if (wasCompleted &amp;&amp; currentOrder) {
           const orderSubtotal = currentOrder.order_item.reduce(
             (sum, item) => sum + Number(item.unit_price) * item.qty,
             0
@@ -762,7 +809,7 @@ app.post("/kitchen/:orderId/status", requireAuth('cook'), async (req, res) => {
     try { kitchenBroadcast('queued-changed', { orderId }); } catch {}
     res.redirect("/kitchen");
   } catch (err) {
-    if (err && err.__insufficientStock) {
+    if (err &amp;&amp; err.__insufficientStock) {
       return res.status(400).send(err.message || 'Insufficient prepared stock');
     }
     console.error("Error updating kitchen order status:", err);
@@ -815,7 +862,7 @@ app.post("/kitchen/clear-done", requireAuth('cook'), (req, res) => {
 // Simple Server-Sent Events stream for kitchen updates
 /**
  * Set of active SSE client response streams for kitchen updates
- * @type {Set<express.Response>}
+ * @type {Set&lt;express.Response>}
  */
 const kitchenClients = new Set();
 
@@ -985,7 +1032,7 @@ app.get("/kiosk", requireAuth(), async (req, res) => {
     // Normalization helpers for allergen strings from inventory
     const stopWords = new Set(['none', 'no', 'n/a', 'na', 'null', '-', '']);
     const stripPhrases = [/^contains\s*:?/i, /^may\s*contain\s*:?/i, /^traces\s*of\s*:?/i];
-    const splitRegex = /[,/;&]|\band\b/i;
+    const splitRegex = /[,/;&amp;]|\band\b/i;
 
     function normalizeTokens(text) {
       if (!text) return [];
@@ -995,7 +1042,7 @@ app.get("/kiosk", requireAuth(), async (req, res) => {
       return t
         .split(splitRegex)
         .map(s => s.trim().toLowerCase())
-        .filter(s => s && !stopWords.has(s));
+        .filter(s => s &amp;&amp; !stopWords.has(s));
     }
 
     function titleCase(s) {
@@ -1036,7 +1083,7 @@ app.get("/kiosk", requireAuth(), async (req, res) => {
 
       // Build size pricing object
       const sizePricing = {};
-      if (item.size_pricing && item.size_pricing.length > 0) {
+      if (item.size_pricing &amp;&amp; item.size_pricing.length > 0) {
         item.size_pricing.forEach(sp => {
           // Use the size as-is from database (capitalized for premium, lowercase for regular)
           sizePricing[sp.size] = parseFloat(sp.price);
@@ -1110,12 +1157,12 @@ app.get('/builder/edit', async (req, res) => {
     // Allergen helpers
     const stopWords = new Set(['none', 'no', 'n/a', 'na', 'null', '-', '']);
     const stripPhrases = [/^contains\s*:?/i, /^may\s*contain\s*:?/i, /^traces\s*of\s*:?/i];
-    const splitRegex = /[,/;&]|\band\b/i;
+    const splitRegex = /[,/;&amp;]|\band\b/i;
     function normalizeTokens(text) {
       if (!text) return [];
       let t = String(text).trim();
       for (const rx of stripPhrases) t = t.replace(rx, '').trim();
-      return t.split(splitRegex).map(s => s.trim().toLowerCase()).filter(s => s && !stopWords.has(s));
+      return t.split(splitRegex).map(s => s.trim().toLowerCase()).filter(s => s &amp;&amp; !stopWords.has(s));
     }
     function titleCase(s) { return s.replace(/\w+/g, w => w.charAt(0).toUpperCase() + w.slice(1)); }
 
@@ -1127,7 +1174,7 @@ app.get('/builder/edit', async (req, res) => {
       'Super Greens': { calories: 130, protein: 9, fat: 4, carbs: 14 },
       'Chow Fun': { calories: 410, protein: 9, fat: 9, carbs: 73 },
       // Veggies
-      'Eggplant & Tofu': { calories: 340, protein: 7, fat: 24, carbs: 23 },
+      'Eggplant &amp; Tofu': { calories: 340, protein: 7, fat: 24, carbs: 23 },
       'Super Greens Entree': { calories: 90, protein: 6, fat: 3, carbs: 10 },
       // Chicken
       'Black Pepper Chicken': { calories: 280, protein: 13, fat: 19, carbs: 15 },
@@ -1142,7 +1189,7 @@ app.get('/builder/edit', async (req, res) => {
       'Honey Sesame Chicken Breast': { calories: 340, protein: 16, fat: 15, carbs: 35 },
       'String Bean Chicken Breast': { calories: 210, protein: 12, fat: 12, carbs: 13 },
       'SweetFire Chicken Breast': { calories: 360, protein: 15, fat: 15, carbs: 40 },
-      'Sweet & Sour Chicken Breast': { calories: 300, protein: 10, fat: 12, carbs: 40 },
+      'Sweet &amp; Sour Chicken Breast': { calories: 300, protein: 10, fat: 12, carbs: 40 },
       // Beef
       'Beijing Beef': { calories: 480, protein: 14, fat: 27, carbs: 46 },
       'Broccoli Beef': { calories: 150, protein: 9, fat: 7, carbs: 13 },
@@ -1218,12 +1265,12 @@ app.get('/builder/:type', async (req, res) => {
     // Allergen helpers
     const stopWords = new Set(['none', 'no', 'n/a', 'na', 'null', '-', '']);
     const stripPhrases = [/^contains\s*:?/i, /^may\s*contain\s*:?/i, /^traces\s*of\s*:?/i];
-    const splitRegex = /[,/;&]|\band\b/i;
+    const splitRegex = /[,/;&amp;]|\band\b/i;
     function normalizeTokens(text) {
       if (!text) return [];
       let t = String(text).trim();
       for (const rx of stripPhrases) t = t.replace(rx, '').trim();
-      return t.split(splitRegex).map(s => s.trim().toLowerCase()).filter(s => s && !stopWords.has(s));
+      return t.split(splitRegex).map(s => s.trim().toLowerCase()).filter(s => s &amp;&amp; !stopWords.has(s));
     }
     function titleCase(s) { return s.replace(/\w+/g, w => w.charAt(0).toUpperCase() + w.slice(1)); }
 
@@ -1235,7 +1282,7 @@ app.get('/builder/:type', async (req, res) => {
       'Super Greens': { calories: 130, protein: 9, fat: 4, carbs: 14 },
       'Chow Fun': { calories: 410, protein: 9, fat: 9, carbs: 73 },
       // Veggies
-      'Eggplant & Tofu': { calories: 340, protein: 7, fat: 24, carbs: 23 },
+      'Eggplant &amp; Tofu': { calories: 340, protein: 7, fat: 24, carbs: 23 },
       'Super Greens Entree': { calories: 90, protein: 6, fat: 3, carbs: 10 },
       // Chicken
       'Black Pepper Chicken': { calories: 280, protein: 13, fat: 19, carbs: 15 },
@@ -1250,7 +1297,7 @@ app.get('/builder/:type', async (req, res) => {
       'Honey Sesame Chicken Breast': { calories: 340, protein: 16, fat: 15, carbs: 35 },
       'String Bean Chicken Breast': { calories: 210, protein: 12, fat: 12, carbs: 13 },
       'SweetFire Chicken Breast': { calories: 360, protein: 15, fat: 15, carbs: 40 },
-      'Sweet & Sour Chicken Breast': { calories: 300, protein: 10, fat: 12, carbs: 40 },
+      'Sweet &amp; Sour Chicken Breast': { calories: 300, protein: 10, fat: 12, carbs: 40 },
       // Beef
       'Beijing Beef': { calories: 480, protein: 14, fat: 27, carbs: 46 },
       'Broccoli Beef': { calories: 150, protein: 9, fat: 7, carbs: 13 },
@@ -1320,7 +1367,7 @@ app.get("/debug/allergens/:name", async (req, res) => {
 
     const stopWords = new Set(['none', 'no', 'n/a', 'na', 'null', '-', '']);
     const stripPhrases = [/^contains\s*:?/i, /^may\s*contain\s*:?/i, /^traces\s*of\s*:?/i];
-    const splitRegex = /[,/;&]|\band\b/i;
+    const splitRegex = /[,/;&amp;]|\band\b/i;
     function normalizeTokens(text) {
       if (!text) return [];
       let t = String(text).trim();
@@ -1328,7 +1375,7 @@ app.get("/debug/allergens/:name", async (req, res) => {
       return t
         .split(splitRegex)
         .map(s => s.trim().toLowerCase())
-        .filter(s => s && !stopWords.has(s));
+        .filter(s => s &amp;&amp; !stopWords.has(s));
     }
     function titleCase(s) { return s.replace(/\w+/g, w => w.charAt(0).toUpperCase() + w.slice(1)); }
 
@@ -1530,7 +1577,7 @@ app.post("/api/checkout", async (req, res) => {
     cart.forEach((item) => {
       if (Array.isArray(item.options)) {
         item.options.forEach((opt) => {
-          if (opt && opt.name) optionNameSet.add(opt.name);
+          if (opt &amp;&amp; opt.name) optionNameSet.add(opt.name);
         });
       }
     });
@@ -1582,7 +1629,7 @@ app.post("/api/checkout", async (req, res) => {
             };
 
             // Attach options for Bowls / Plates / Bigger Plates, etc.
-            if (Array.isArray(item.options) && item.options.length > 0) {
+            if (Array.isArray(item.options) &amp;&amp; item.options.length > 0) {
               const optionCreates = [];
               item.options.forEach((opt) => {
                 const row = optionByName[opt.name];
@@ -1766,7 +1813,7 @@ app.post("/api/cashier/checkout", requireAuth('cashier'), async (req, res) => {
     cart.forEach((item) => {
       if (Array.isArray(item.options)) {
         item.options.forEach((opt) => {
-          if (opt && opt.name) optionNameSet.add(opt.name);
+          if (opt &amp;&amp; opt.name) optionNameSet.add(opt.name);
         });
       }
     });
@@ -1819,7 +1866,7 @@ app.post("/api/cashier/checkout", requireAuth('cashier'), async (req, res) => {
             };
 
             // Attach options for meals
-            if (Array.isArray(item.options) && item.options.length > 0) {
+            if (Array.isArray(item.options) &amp;&amp; item.options.length > 0) {
               const optionCreates = [];
               item.options.forEach((opt) => {
                 const row = optionByName[opt.name];
@@ -1911,7 +1958,7 @@ async function computeConsumptionMapForOrder(tx, orderId) {
   const consumeMap = new Map();
   for (const oi of ord.order_item) {
     // If the base menu_item itself is a prepared category (3 or 4), count it directly
-    if (oi.menu_item && PREPARED_CATEGORY_SET.has(oi.menu_item.category_id)) {
+    if (oi.menu_item &amp;&amp; PREPARED_CATEGORY_SET.has(oi.menu_item.category_id)) {
       consumeMap.set(
         oi.menu_item.menu_item_id,
         (consumeMap.get(oi.menu_item.menu_item_id) || 0) + oi.qty
@@ -1968,7 +2015,7 @@ async function ensurePreparedAndConsumeForOrder(tx, orderId) {
     const key = prepKey(mid);
     const row = await tx.pricing_settings.findUnique({ where: { key } });
     const have = Number(row?.value ?? 0);
-    if (have < need) {
+    if (have &lt; need) {
       shortages.push({ menu_item_id: mid, have, need });
     }
   }
@@ -1996,7 +2043,7 @@ async function ensurePreparedAndConsumeForOrder(tx, orderId) {
 app.post('/kitchen/stock/:menuItemId/cook', requireAuth('cook'), async (req, res) => {
   const menuItemId = parseInt(req.params.menuItemId, 10);
   const servings = Math.max(0, parseInt(req.body?.servings ?? '0', 10));
-  if (!Number.isFinite(menuItemId) || servings <= 0) {
+  if (!Number.isFinite(menuItemId) || servings &lt;= 0) {
     return res.status(400).json({ success: false, error: 'Invalid inputs' });
   }
 
@@ -2028,7 +2075,7 @@ app.post('/kitchen/stock/:menuItemId/cook', requireAuth('cook'), async (req, res
     });
 
     // Validate availability
-    const insufficient = consumption.filter((c) => c.current < c.unitsNeeded);
+    const insufficient = consumption.filter((c) => c.current &lt; c.unitsNeeded);
     if (insufficient.length > 0) {
       return res.status(400).json({
         success: false,
@@ -2329,7 +2376,7 @@ app.delete("/api/shifts/:id", async (req, res) => {
     await prisma.shift_assignment.deleteMany({
       where: {
         shift_schedule: {
-          schedule_id: Number(id)  // <- use relation filter
+          schedule_id: Number(id)  // &lt;- use relation filter
         }
       }
     });
@@ -2676,10 +2723,10 @@ app.put('/api/inventory/:id', async (req, res) => {
     const item = await prisma.inventory.update({
       where: { ingredient_id: id },
       data: {
-        ...(current_quantity !== undefined && { current_quantity }),
-        ...(name && { name }),
-        ...(unit && { unit }),
-        ...(cost_per_unit !== undefined && { cost_per_unit }),
+        ...(current_quantity !== undefined &amp;&amp; { current_quantity }),
+        ...(name &amp;&amp; { name }),
+        ...(unit &amp;&amp; { unit }),
+        ...(cost_per_unit !== undefined &amp;&amp; { cost_per_unit }),
       },
     });
     res.json(item);
@@ -2863,7 +2910,7 @@ app.get('/api/weather', async (req, res) => {
     const lat = 30.6280;
     const lon = -96.3344;
 
-    const url = `https://weather.googleapis.com/v1/currentConditions:lookup?key=${apiKey}&location.latitude=${lat}&location.longitude=${lon}&unitsSystem=IMPERIAL`;
+    const url = `https://weather.googleapis.com/v1/currentConditions:lookup?key=${apiKey}&amp;location.latitude=${lat}&amp;location.longitude=${lon}&amp;unitsSystem=IMPERIAL`;
 
     const response = await fetch(url);
     const data = await response.json();
@@ -2996,3 +3043,28 @@ app.listen(port, () => {
 
 
 module.exports = app;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.5</a> on Wed Dec 10 2025 19:23:03 GMT-0600 (Central Standard Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+
+
+</body>
+</html>

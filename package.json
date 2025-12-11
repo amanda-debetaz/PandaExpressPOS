@@ -6,7 +6,11 @@
     "start": "node index.js",
     "prisma:generate": "npx prisma generate --schema=prisma/schema.prisma",
     "prisma:pull": "npx prisma db pull --schema=prisma/schema.prisma",
-    "postinstall": "npm run prisma:generate"
+    "postinstall": "npm run prisma:generate",
+    "docs": "jsdoc -c jsdoc.json",
+    "docs:jsdoc": "jsdoc -c jsdoc.json",
+    "docs:serve": "npx http-server ./docs -p 8080",
+    "docs:open": "start http://localhost:8080/jsdoc"
   },
   "dependencies": {
     "@nestjs/core": "^11.1.8",
@@ -30,13 +34,17 @@
     "typescript": "^5.9.3"
   },
   "devDependencies": {
+    "@jest/globals": "^30.2.0",
     "@playwright/test": "^1.57.0",
     "@types/node": "^24.10.2",
-    "prisma": "^6.19.0",
-    "@jest/globals": "^30.2.0",
+    "docdash": "^2.0.2",
+    "http-server": "^14.1.1",
     "jest": "^30.2.0",
     "jest-mock-extended": "^4.0.0",
+    "jsdoc": "^4.0.5",
     "prisma": "^6.19.0",
-    "supertest": "^7.1.4"
+    "supertest": "^7.1.4",
+    "typedoc": "^0.28.15",
+    "typedoc-plugin-markdown": "^4.9.0"
   }
 }

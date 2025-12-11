@@ -1,0 +1,46 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["./index.js"],
+  "out": "./docs",
+  "name": "Panda Express POS System",
+  "readme": "./API_DOCUMENTATION.md",
+  "includeVersion": true,
+  "plugin": ["typedoc-plugin-markdown"],
+  "excludeExternals": true,
+  "excludePrivate": true,
+  "excludeProtected": false,
+  "excludeInternal": false,
+  "categorizeByGroup": true,
+  "categoryOrder": [
+    "Authentication",
+    "Routes",
+    "API Endpoints",
+    "Middleware",
+    "Utilities",
+    "*"
+  ],
+  "sort": ["source-order"],
+  "kindSortOrder": [
+    "Module",
+    "Namespace",
+    "Class",
+    "Constructor",
+    "Property",
+    "Variable",
+    "Function",
+    "Method",
+    "TypeAlias",
+    "Interface"
+  ],
+  "navigation": {
+    "includeCategories": true,
+    "includeGroups": true,
+    "includeFolders": true
+  },
+  "searchInComments": true,
+  "validation": {
+    "notExported": false,
+    "invalidLink": true,
+    "notDocumented": false
+  }
+}

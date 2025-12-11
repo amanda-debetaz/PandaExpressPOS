@@ -1,0 +1,36 @@
+{
+  "source": {
+    "include": ["index.js"],
+    "includePattern": ".+\\.js$",
+    "excludePattern": "(node_modules/|docs|dist|build|pos-backend)"
+  },
+  "opts": {
+    "template": "node_modules/docdash",
+    "encoding": "utf8",
+    "destination": "./docs/jsdoc",
+    "recurse": false,
+    "verbose": true,
+    "readme": "./API_DOCUMENTATION.md"
+  },
+  "plugins": [
+    "plugins/markdown"
+  ],
+  "templates": {
+    "cleverLinks": true,
+    "monospaceLinks": true,
+    "default": {
+      "outputSourceFiles": true,
+      "includeDate": true
+    },
+    "search": true,
+    "sort": true
+  },
+  "tags": {
+    "allowUnknownTags": true,
+    "dictionaries": ["jsdoc", "closure"]
+  },
+  "markdown": {
+    "parser": "gfm",
+    "hardwrap": false
+  }
+}

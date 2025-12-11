@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>Home - Documentation</title>
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-index.html">index</a><ul class='methods'><li data-type='method'><a href="module-index.html#~kitchenBroadcast">kitchenBroadcast</a></li><li data-type='method'><a href="module-index.html#~requireAuth">requireAuth</a></li><li data-type='method'><a href="module-index.html#~shutdown">shutdown</a></li></ul></li></ul>
+    
+</nav>
+
+<div id="main">
+    
+
+    
+
+
+
+    
+
+
+    <section class="package">
+        <h3> </h3>		
+    </section>
+
+
+
+
+
+
+
+
+
+    
+
+
+
+    <section class="readme usertext">
+        <article><h1>Panda Express POS System - API Documentation</h1>
+<p>Auto-generated TypeDoc-compatible documentation for all routes and functions.</p>
+<h2>Table of Contents</h2>
+<ul>
+<li><a href="#authentication-routes">Authentication Routes</a></li>
+<li><a href="#navigation-routes">Navigation Routes</a></li>
+<li><a href="#kitchen-routes">Kitchen Routes</a></li>
+<li><a href="#kiosk-routes">Kiosk Routes</a></li>
+<li><a href="#cart--checkout">Cart &amp; Checkout</a></li>
+<li><a href="#cashier-routes">Cashier Routes</a></li>
+<li><a href="#employee-management">Employee Management</a></li>
+<li><a href="#menu-management">Menu Management</a></li>
+<li><a href="#inventory-management">Inventory Management</a></li>
+<li><a href="#reporting">Reporting</a></li>
+<li><a href="#utility-routes">Utility Routes</a></li>
+</ul>
+<hr>
+<h2>Authentication Routes</h2>
+<h3>POST /login</h3>
+<p><strong>Local authentication endpoint</strong></p>
+<ul>
+<li><strong>Body</strong>: <code>{ employee_id: number, password_hash: string, next?: string }</code></li>
+<li><strong>Description</strong>: Authenticates user with employee ID and password</li>
+<li><strong>Returns</strong>: Redirects to home or specified URL on success</li>
+<li><strong>Errors</strong>:
+<ul>
+<li>400: Invalid credentials</li>
+<li>500: Authentication failure</li>
+</ul>
+</li>
+</ul>
+<h3>GET /auth/google</h3>
+<p><strong>Initiate Google OAuth flow</strong></p>
+<ul>
+<li><strong>Description</strong>: Redirects to Google OAuth consent screen</li>
+<li><strong>Scope</strong>: profile, email</li>
+</ul>
+<h3>GET /auth/google/callback</h3>
+<p><strong>Handle Google OAuth callback</strong></p>
+<ul>
+<li><strong>Query</strong>: <code>state</code> - Encoded redirect URL</li>
+<li><strong>Description</strong>: Processes Google OAuth response and logs in user</li>
+<li><strong>Returns</strong>: Redirects to home or specified URL</li>
+</ul>
+<h3>GET /logout</h3>
+<p><strong>Logout endpoint</strong></p>
+<ul>
+<li><strong>Description</strong>: Destroys session and logs out user</li>
+<li><strong>Returns</strong>: Redirects to home page</li>
+</ul>
+<hr>
+<h2>Navigation Routes</h2>
+<h3>GET /</h3>
+<p><strong>Home/navigation page</strong></p>
+<ul>
+<li><strong>Access</strong>: Public</li>
+<li><strong>Description</strong>: Displays role-based navigation with buttons for manager, cashier, kiosk, kitchen, etc.</li>
+<li><strong>Returns</strong>: navigation.ejs view</li>
+</ul>
+<h3>GET /manager</h3>
+<p><strong>Manager dashboard</strong></p>
+<ul>
+<li><strong>Access</strong>: Manager role required</li>
+<li><strong>Description</strong>: Main manager interface with employee management, menu management, inventory, and reports</li>
+<li><strong>Returns</strong>: manager.ejs view</li>
+</ul>
+<h3>GET /cashier</h3>
+<p><strong>Cashier POS interface</strong></p>
+<ul>
+<li><strong>Access</strong>: Cashier role required</li>
+<li><strong>Description</strong>: Point-of-sale terminal for taking orders</li>
+<li><strong>Returns</strong>: cashier.ejs view</li>
+</ul>
+<hr>
+<h2>Kitchen Routes</h2>
+<h3>GET /kitchen</h3>
+<p><strong>Kitchen display system</strong></p>
+<ul>
+<li><strong>Access</strong>: Cook role required</li>
+<li><strong>Description</strong>: Shows orders in three columns: Queued, Cooking, Done. Includes batch cooking interface.</li>
+<li><strong>Query Parameters</strong>: None</li>
+<li><strong>Returns</strong>: kitchen.ejs view with orders and prepared item stock</li>
+</ul>
+<h3>POST /kitchen/:orderId/status</h3>
+<p><strong>Update order status</strong></p>
+<ul>
+<li><strong>Access</strong>: Cook role required</li>
+<li><strong>Params</strong>: <code>orderId</code> - Order ID to update</li>
+<li><strong>Body</strong>: <code>{ status: 'queued' | 'prepping' | 'done' }</code></li>
+<li><strong>Description</strong>:
+<ul>
+<li>Moves order through workflow stages</li>
+<li>Marks done: increments daily statistics</li>
+<li>Unmarked from done: decrements statistics</li>
+<li>Handles prepared item stock consumption</li>
+</ul>
+</li>
+<li><strong>Returns</strong>: Redirects to /kitchen</li>
+<li><strong>Errors</strong>:
+<ul>
+<li>400: Invalid status or insufficient stock</li>
+<li>500: Database error</li>
+</ul>
+</li>
+</ul>
+<h3>POST /kitchen/:orderId/cancel</h3>
+<p><strong>Cancel order</strong></p>
+<ul>
+<li><strong>Access</strong>: Cook role required</li>
+<li><strong>Params</strong>: <code>orderId</code> - Order ID to cancel</li>
+<li><strong>Description</strong>: Permanently deletes order (cascade deletes items and payment)</li>
+<li><strong>Returns</strong>: Redirects to /kitchen</li>
+</ul>
+<h3>POST /kitchen/clear-done</h3>
+<p><strong>Clear completed orders from view</strong></p>
+<ul>
+<li><strong>Access</strong>: Cook role required</li>
+<li><strong>Description</strong>: Sets cutoff date to now, hiding older completed orders</li>
+<li><strong>Returns</strong>: Redirects to /kitchen</li>
+</ul>
+<h3>GET /kitchen/events</h3>
+<p><strong>Server-Sent Events stream</strong></p>
+<ul>
+<li><strong>Access</strong>: Public (used by kitchen display)</li>
+<li><strong>Description</strong>: SSE endpoint for real-time kitchen updates. Sends keep-alive every 15 seconds.</li>
+<li><strong>Events</strong>:
+<ul>
+<li><code>queued-changed</code>: Order added/updated</li>
+<li><code>stock-updated</code>: Prepared item stock changed</li>
+<li><code>stock-refresh</code>: Full stock refresh needed</li>
+</ul>
+</li>
+</ul>
+<h3>GET /kitchen/queued-count</h3>
+<p><strong>Get queued order count</strong></p>
+<ul>
+<li><strong>Description</strong>: Returns count of orders with status='queued' for polling</li>
+<li><strong>Returns</strong>: <code>{ count: number }</code></li>
+</ul>
+<h3>POST /kitchen/stock/:menuItemId/cook</h3>
+<p><strong>Batch cook prepared items</strong></p>
+<ul>
+<li><strong>Access</strong>: Cook role required</li>
+<li><strong>Params</strong>: <code>menuItemId</code> - Menu item to cook</li>
+<li><strong>Body</strong>: <code>{ servings: number }</code></li>
+<li><strong>Description</strong>:
+<ul>
+<li>Validates ingredient availability</li>
+<li>Decrements inventory</li>
+<li>Increments prepared stock</li>
+<li>Broadcasts stock update via SSE</li>
+</ul>
+</li>
+<li><strong>Returns</strong>: <code>{ success: true, stock: {...} }</code></li>
+<li><strong>Errors</strong>:
+<ul>
+<li>400: Insufficient inventory</li>
+<li>500: Database error</li>
+</ul>
+</li>
+</ul>
+<h3>POST /kitchen/stock/discard</h3>
+<p><strong>Discard all prepared stock</strong></p>
+<ul>
+<li><strong>Access</strong>: Cook role required</li>
+<li><strong>Description</strong>: Resets all prepared item stock to 0 (end-of-day)</li>
+<li><strong>Returns</strong>: <code>{ success: true }</code></li>
+</ul>
+<h3>GET /kitchen/stock</h3>
+<p><strong>Get prepared stock snapshot</strong></p>
+<ul>
+<li><strong>Description</strong>: Returns current stock levels for all prepared items</li>
+<li><strong>Returns</strong>: <code>{ success: true, stock: Array&lt;{ menu_item_id, servings_available, menu_item }&gt; }</code></li>
+</ul>
+<hr>
+<h2>Kiosk Routes</h2>
+<h3>GET /kiosk</h3>
+<p><strong>Self-service kiosk interface</strong></p>
+<ul>
+<li><strong>Access</strong>: Authenticated users</li>
+<li><strong>Description</strong>:
+<ul>
+<li>Customer-facing menu with categories</li>
+<li>Displays allergens, nutrition info, size pricing</li>
+<li>Handles premium items (Honey Walnut Shrimp, Black Pepper Sirloin)</li>
+<li>Size options: Small, Medium, Large for applicable items</li>
+</ul>
+</li>
+<li><strong>Returns</strong>: kiosk.ejs view with menu data</li>
+</ul>
+<h3>GET /builder/:type</h3>
+<p><strong>Combo builder interface</strong></p>
+<ul>
+<li><strong>Access</strong>: Public</li>
+<li><strong>Params</strong>: <code>type</code> - 'bowl' | 'plate' | 'bigger-plate'</li>
+<li><strong>Description</strong>:
+<ul>
+<li>Interactive combo builder</li>
+<li>Bowl: 1 side + 1 entree</li>
+<li>Plate: 1 side + 2 entrees</li>
+<li>Bigger Plate: 1 side + 3 entrees</li>
+</ul>
+</li>
+<li><strong>Returns</strong>: builder.ejs view</li>
+</ul>
+<h3>GET /builder/edit</h3>
+<p><strong>Edit combo builder</strong></p>
+<ul>
+<li><strong>Query</strong>:
+<ul>
+<li><code>index</code>: Cart item index to edit</li>
+<li><code>type</code>: Combo type</li>
+</ul>
+</li>
+<li><strong>Description</strong>: Loads existing combo for editing</li>
+<li><strong>Returns</strong>: builder.ejs view with pre-filled data</li>
+</ul>
+<h3>GET /menu-board</h3>
+<p><strong>Digital menu board</strong></p>
+<ul>
+<li><strong>Access</strong>: Public</li>
+<li><strong>Query</strong>: <code>page</code> - 'entrees' | 'a_la_carte' | 'sides' | 'appetizers' | 'featured'</li>
+<li><strong>Description</strong>: Customer-facing digital signage with auto-cycling pages</li>
+<li><strong>Returns</strong>: menu-board.ejs view</li>
+</ul>
+<hr>
+<h2>Cart &amp; Checkout</h2>
+<h3>POST /api/cart/add</h3>
+<p><strong>Add item to cart</strong></p>
+<ul>
+<li><strong>Access</strong>: Authenticated users</li>
+<li><strong>Body</strong>: <code>{ name: string, price: number }</code></li>
+<li><strong>Description</strong>: Adds item to session cart. Increments quantity if item exists.</li>
+<li><strong>Returns</strong>: <code>{ success: true, cart: Array }</code></li>
+</ul>
+<h3>GET /api/cart</h3>
+<p><strong>Retrieve cart</strong></p>
+<ul>
+<li><strong>Description</strong>: Returns current session cart</li>
+<li><strong>Returns</strong>: <code>{ cart: Array }</code></li>
+</ul>
+<h3>DELETE /api/cart/clear</h3>
+<p><strong>Clear cart</strong></p>
+<ul>
+<li><strong>Description</strong>: Empties session cart</li>
+<li><strong>Returns</strong>: <code>{ success: true }</code></li>
+</ul>
+<h3>POST /api/checkout</h3>
+<p><strong>Kiosk checkout</strong></p>
+<ul>
+<li><strong>Access</strong>: Authenticated users</li>
+<li><strong>Body</strong>:<pre class="prettyprint source lang-javascript"><code>{
+  cart: Array&lt;{
+    name: string,
+    baseName?: string,
+    price: number,
+    quantity: number,
+    options?: Array&lt;{name: string, qty: number}>
+  }>,
+  paymentMethod: 'credit' | 'debit' | 'cash' | 'mobile',
+  dineOption: 'dine_in' | 'takeout'
+}
+</code></pre>
+</li>
+<li><strong>Description</strong>:
+<ul>
+<li>Creates order, order_items, order_item_options, payment</li>
+<li>Calculates tax from database</li>
+<li>Stores per-item tax amounts</li>
+<li>Status: 'queued'</li>
+</ul>
+</li>
+<li><strong>Returns</strong>: <code>{ success: true, order_id: number }</code></li>
+<li><strong>Errors</strong>:
+<ul>
+<li>400: Empty cart, missing payment method, invalid dine option</li>
+<li>500: Database error</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2>Cashier Routes</h2>
+<h3>POST /api/clock/in</h3>
+<p><strong>Clock in employee</strong></p>
+<ul>
+<li><strong>Access</strong>: Cashier role required</li>
+<li><strong>Body</strong>: <code>{ employee_id: number }</code></li>
+<li><strong>Description</strong>: Verifies employee exists and is active</li>
+<li><strong>Returns</strong>: <code>{ success: true, employee_id: number, display_name: string }</code></li>
+<li><strong>Errors</strong>:
+<ul>
+<li>400: Missing employee_id or inactive employee</li>
+<li>404: Employee not found</li>
+</ul>
+</li>
+</ul>
+<h3>POST /api/clock/out</h3>
+<p><strong>Clock out employee</strong></p>
+<ul>
+<li><strong>Access</strong>: Cashier role required</li>
+<li><strong>Description</strong>: Simple acknowledgment (tracking handled client-side)</li>
+<li><strong>Returns</strong>: <code>{ success: true }</code></li>
+</ul>
+<h3>POST /api/cashier/checkout</h3>
+<p><strong>Cashier checkout</strong></p>
+<ul>
+<li><strong>Access</strong>: Cashier role required</li>
+<li><strong>Body</strong>:<pre class="prettyprint source lang-javascript"><code>{
+  cart: Array,
+  paymentMethod: 'cash' | 'card' | 'giftcard' | 'dining_dollars' | 'meal_swipe',
+  dineOption: 'dine_in' | 'takeout',
+  clockedInEmployeeId: number
+}
+</code></pre>
+</li>
+<li><strong>Description</strong>:
+<ul>
+<li>Creates order marked as 'done' immediately</li>
+<li>Associates with employee</li>
+<li>Updates daily store statistics</li>
+<li>Calculates tax from database</li>
+</ul>
+</li>
+<li><strong>Returns</strong>: <code>{ success: true, order_id: number }</code></li>
+<li><strong>Errors</strong>:
+<ul>
+<li>400: Empty cart or invalid payment method</li>
+<li>500: Database error</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2>Employee Management</h2>
+<h3>GET /api/employees</h3>
+<p><strong>List all employees</strong></p>
+<ul>
+<li><strong>Description</strong>: Returns all employees with their roles and active status</li>
+<li><strong>Returns</strong>: <code>{ employees: Array&lt;Employee&gt; }</code></li>
+</ul>
+<h3>POST /api/employees</h3>
+<p><strong>Create employee</strong></p>
+<ul>
+<li><strong>Body</strong>:<pre class="prettyprint source lang-javascript"><code>{
+  name: string,
+  email: string,
+  role: 'manager' | 'cashier' | 'cook',
+  password_hash: string,
+  hourly_rate?: number
+}
+</code></pre>
+</li>
+<li><strong>Returns</strong>: <code>{ success: true, employee: Employee }</code></li>
+<li><strong>Errors</strong>:
+<ul>
+<li>400: Missing required fields or duplicate email</li>
+<li>500: Database error</li>
+</ul>
+</li>
+</ul>
+<h3>PUT /api/employees/:id</h3>
+<p><strong>Update employee</strong></p>
+<ul>
+<li><strong>Params</strong>: <code>id</code> - Employee ID</li>
+<li><strong>Body</strong>: <code>{ name?: string, email?: string, hourly_rate?: number }</code></li>
+<li><strong>Returns</strong>: <code>{ success: true, employee: Employee }</code></li>
+</ul>
+<h3>PUT /api/employees/:id/role</h3>
+<p><strong>Update employee role</strong></p>
+<ul>
+<li><strong>Params</strong>: <code>id</code> - Employee ID</li>
+<li><strong>Body</strong>: <code>{ role: 'manager' | 'cashier' | 'cook' }</code></li>
+<li><strong>Returns</strong>: <code>{ success: true, employee: Employee }</code></li>
+</ul>
+<h3>PUT /api/employees/:id/deactivate</h3>
+<p><strong>Deactivate employee</strong></p>
+<ul>
+<li><strong>Params</strong>: <code>id</code> - Employee ID</li>
+<li><strong>Description</strong>: Sets is_active to false</li>
+<li><strong>Returns</strong>: <code>{ success: true, employee: Employee }</code></li>
+</ul>
+<h3>PUT /api/employees/:id/reactivate</h3>
+<p><strong>Reactivate employee</strong></p>
+<ul>
+<li><strong>Params</strong>: <code>id</code> - Employee ID</li>
+<li><strong>Description</strong>: Sets is_active to true</li>
+<li><strong>Returns</strong>: <code>{ success: true, employee: Employee }</code></li>
+</ul>
+<h3>PUT /api/employees/:id/reset-password</h3>
+<p><strong>Reset employee password</strong></p>
+<ul>
+<li><strong>Params</strong>: <code>id</code> - Employee ID</li>
+<li><strong>Body</strong>: <code>{ password_hash: string }</code></li>
+<li><strong>Returns</strong>: <code>{ success: true, employee: Employee }</code></li>
+</ul>
+<h3>DELETE /api/employees/:id</h3>
+<p><strong>Delete employee</strong></p>
+<ul>
+<li><strong>Params</strong>: <code>id</code> - Employee ID</li>
+<li><strong>Description</strong>: Permanently deletes employee record</li>
+<li><strong>Returns</strong>: <code>{ success: true }</code></li>
+</ul>
+<hr>
+<h2>Shift Management</h2>
+<h3>POST /api/shifts</h3>
+<p><strong>Create shift schedule</strong></p>
+<ul>
+<li><strong>Body</strong>:<pre class="prettyprint source lang-javascript"><code>{
+  start_time: string (ISO 8601),
+  end_time: string (ISO 8601),
+  required_role: 'manager' | 'cashier' | 'cook'
+}
+</code></pre>
+</li>
+<li><strong>Returns</strong>: <code>{ success: true, shift: ShiftSchedule }</code></li>
+</ul>
+<h3>DELETE /api/shifts/:id</h3>
+<p><strong>Delete shift</strong></p>
+<ul>
+<li><strong>Params</strong>: <code>id</code> - Shift schedule ID</li>
+<li><strong>Returns</strong>: <code>{ success: true }</code></li>
+</ul>
+<h3>POST /api/shifts/:id/assign</h3>
+<p><strong>Assign employee to shift</strong></p>
+<ul>
+<li><strong>Params</strong>: <code>id</code> - Shift schedule ID</li>
+<li><strong>Body</strong>: <code>{ employee_id: number }</code></li>
+<li><strong>Returns</strong>: <code>{ success: true, assignment: ShiftAssignment }</code></li>
+</ul>
+<h3>POST /api/shifts/:id/remove</h3>
+<p><strong>Remove employee from shift</strong></p>
+<ul>
+<li><strong>Params</strong>: <code>id</code> - Shift schedule ID</li>
+<li><strong>Body</strong>: <code>{ employee_id: number }</code></li>
+<li><strong>Returns</strong>: <code>{ success: true }</code></li>
+</ul>
+<h3>GET /api/shifts/date/:date</h3>
+<p><strong>Get shifts for date</strong></p>
+<ul>
+<li><strong>Params</strong>: <code>date</code> - Date string (YYYY-MM-DD)</li>
+<li><strong>Returns</strong>: <code>{ success: true, shifts: Array&lt;ShiftWithAssignments&gt; }</code></li>
+</ul>
+<h3>GET /api/shifts/employee/:id</h3>
+<p><strong>Get employee shifts</strong></p>
+<ul>
+<li><strong>Params</strong>: <code>id</code> - Employee ID</li>
+<li><strong>Query</strong>: <code>start_date</code>, <code>end_date</code> (optional)</li>
+<li><strong>Returns</strong>: <code>{ success: true, shifts: Array&lt;ShiftSchedule&gt; }</code></li>
+</ul>
+<hr>
+<h2>Menu Management</h2>
+<h3>GET /api/menu</h3>
+<p><strong>List all menu items</strong></p>
+<ul>
+<li><strong>Returns</strong>: <code>{ menu: Array&lt;MenuItem&gt; }</code></li>
+</ul>
+<h3>GET /api/menu/:id</h3>
+<p><strong>Get menu item details</strong></p>
+<ul>
+<li><strong>Params</strong>: <code>id</code> - Menu item ID</li>
+<li><strong>Returns</strong>: <code>{ item: MenuItem }</code></li>
+</ul>
+<h3>POST /api/menu</h3>
+<p><strong>Create menu item</strong></p>
+<ul>
+<li><strong>Body</strong>:<pre class="prettyprint source lang-javascript"><code>{
+  name: string,
+  price: number,
+  category_id: number,
+  is_active?: boolean
+}
+</code></pre>
+</li>
+<li><strong>Returns</strong>: <code>{ success: true, item: MenuItem }</code></li>
+</ul>
+<h3>PUT /api/menu/:id</h3>
+<p><strong>Update menu item</strong></p>
+<ul>
+<li><strong>Params</strong>: <code>id</code> - Menu item ID</li>
+<li><strong>Body</strong>: <code>{ name?: string, price?: number, category_id?: number, is_active?: boolean }</code></li>
+<li><strong>Returns</strong>: <code>{ success: true, item: MenuItem }</code></li>
+</ul>
+<h3>DELETE /api/menu/:id</h3>
+<p><strong>Delete menu item</strong></p>
+<ul>
+<li><strong>Params</strong>: <code>id</code> - Menu item ID</li>
+<li><strong>Returns</strong>: <code>{ success: true }</code></li>
+</ul>
+<h3>GET /api/menu/:id/recipe</h3>
+<p><strong>Get menu item recipe</strong></p>
+<ul>
+<li><strong>Params</strong>: <code>id</code> - Menu item ID</li>
+<li><strong>Returns</strong>: <code>{ recipe: Array&lt;{ingredient_id, units_required, inventory}&gt; }</code></li>
+</ul>
+<h3>PUT /api/menu/:id/recipe</h3>
+<p><strong>Update menu item recipe</strong></p>
+<ul>
+<li><strong>Params</strong>: <code>id</code> - Menu item ID</li>
+<li><strong>Body</strong>: <code>{ recipe: Array&lt;{ingredient_id: number, units_required: number}&gt; }</code></li>
+<li><strong>Description</strong>: Replaces entire recipe. Deletes old recipe entries and creates new ones.</li>
+<li><strong>Returns</strong>: <code>{ success: true, recipe: Array&lt;Recipe&gt; }</code></li>
+</ul>
+<hr>
+<h2>Inventory Management</h2>
+<h3>GET /api/inventory</h3>
+<p><strong>List all inventory items</strong></p>
+<ul>
+<li><strong>Returns</strong>: <code>{ inventory: Array&lt;Inventory&gt; }</code></li>
+</ul>
+<h3>POST /api/inventory</h3>
+<p><strong>Create inventory item</strong></p>
+<ul>
+<li><strong>Body</strong>:<pre class="prettyprint source lang-javascript"><code>{
+  name: string,
+  current_quantity: number,
+  reorder_level?: number,
+  cost_per_unit?: number,
+  supplier?: string,
+  allergen_info?: string
+}
+</code></pre>
+</li>
+<li><strong>Returns</strong>: <code>{ success: true, item: Inventory }</code></li>
+</ul>
+<h3>PUT /api/inventory/:id</h3>
+<p><strong>Update inventory item</strong></p>
+<ul>
+<li><strong>Params</strong>: <code>id</code> - Inventory item ID</li>
+<li><strong>Body</strong>: Partial Inventory fields</li>
+<li><strong>Returns</strong>: <code>{ success: true, item: Inventory }</code></li>
+</ul>
+<h3>DELETE /api/inventory/:id</h3>
+<p><strong>Delete inventory item</strong></p>
+<ul>
+<li><strong>Params</strong>: <code>id</code> - Inventory item ID</li>
+<li><strong>Returns</strong>: <code>{ success: true }</code></li>
+</ul>
+<hr>
+<h2>Reporting</h2>
+<h3>GET /api/sales-report</h3>
+<p><strong>Sales report</strong></p>
+<ul>
+<li><strong>Query</strong>: <code>start_date</code>, <code>end_date</code> (YYYY-MM-DD format)</li>
+<li><strong>Description</strong>: Returns hourly sales data for date range</li>
+<li><strong>Returns</strong>:<pre class="prettyprint source lang-javascript"><code>{
+  success: true,
+  data: Array&lt;{
+    hour: string,
+    orders: number,
+    revenue: number
+  }>
+}
+</code></pre>
+</li>
+</ul>
+<h3>GET /api/x-report</h3>
+<p><strong>X-Report (hourly summary)</strong></p>
+<ul>
+<li><strong>Query</strong>: <code>date</code> (YYYY-MM-DD format)</li>
+<li><strong>Description</strong>: Hourly breakdown of sales for a specific day</li>
+<li><strong>Returns</strong>:<pre class="prettyprint source lang-javascript"><code>{
+  success: true,
+  date: string,
+  hourly: Array&lt;{hour, orders, revenue}>,
+  total_orders: number,
+  total_revenue: number
+}
+</code></pre>
+</li>
+</ul>
+<h3>GET /api/z-report</h3>
+<p><strong>Z-Report (end-of-day summary)</strong></p>
+<ul>
+<li><strong>Query</strong>: <code>date</code> (YYYY-MM-DD format)</li>
+<li><strong>Description</strong>: Complete daily summary with statistics</li>
+<li><strong>Returns</strong>:<pre class="prettyprint source lang-javascript"><code>{
+  success: true,
+  date: string,
+  total_orders: number,
+  subtotal: number,
+  discounts: number,
+  tax: number,
+  revenue: number,
+  hourly: Array&lt;{hour, orders, revenue}>
+}
+</code></pre>
+</li>
+</ul>
+<h3>GET /api/restock-report</h3>
+<p><strong>Restock report</strong></p>
+<ul>
+<li><strong>Description</strong>: Lists inventory items below reorder level</li>
+<li><strong>Returns</strong>:<pre class="prettyprint source lang-javascript"><code>{
+  success: true,
+  items: Array&lt;{
+    ingredient_id,
+    name,
+    current_quantity,
+    reorder_level,
+    supplier
+  }>
+}
+</code></pre>
+</li>
+</ul>
+<hr>
+<h2>Utility Routes</h2>
+<h3>GET /api/tax-rate</h3>
+<p><strong>Get current tax rate</strong></p>
+<ul>
+<li><strong>Description</strong>: Fetches tax rate from database for dynamic calculations</li>
+<li><strong>Returns</strong>: <code>{ rate: number }</code> (decimal, e.g., 0.0825 for 8.25%)</li>
+</ul>
+<h3>GET /api/weather</h3>
+<p><strong>Get current weather</strong></p>
+<ul>
+<li><strong>Description</strong>: Fetches weather data from external API (location-based)</li>
+<li><strong>Returns</strong>:<pre class="prettyprint source lang-javascript"><code>{
+  success: true,
+  temperature: number,
+  condition: string,
+  location: string
+}
+</code></pre>
+</li>
+</ul>
+<h3>POST /api/translate</h3>
+<p><strong>Translate text</strong></p>
+<ul>
+<li><strong>Body</strong>: <code>{ text: string, targetLang: string }</code></li>
+<li><strong>Description</strong>: Translates text using external translation API</li>
+<li><strong>Returns</strong>: <code>{ success: true, translatedText: string }</code></li>
+</ul>
+<h3>GET /api/call-staff/stream</h3>
+<p><strong>Staff call SSE stream</strong></p>
+<ul>
+<li><strong>Description</strong>: Server-Sent Events for staff call notifications</li>
+<li><strong>Events</strong>: <code>staff-called</code> - Staff assistance requested</li>
+</ul>
+<h3>POST /api/call-staff</h3>
+<p><strong>Request staff assistance</strong></p>
+<ul>
+<li><strong>Body</strong>: <code>{ kioskId: string, message?: string }</code></li>
+<li><strong>Description</strong>: Sends notification to staff via SSE</li>
+<li><strong>Returns</strong>: <code>{ success: true }</code></li>
+</ul>
+<hr>
+<h2>Database Schema Notes</h2>
+<h3>Key Models</h3>
+<ul>
+<li><strong>employee</strong>: Stores employee data, roles, credentials</li>
+<li><strong>menu_item</strong>: Menu items with prices, categories</li>
+<li><strong>category</strong>: Menu categories (Entrees, Appetizers, A La Carte, Sides, Beverages, Combos)</li>
+<li><strong>inventory</strong>: Raw ingredients with quantities and reorder levels</li>
+<li><strong>recipe</strong>: Junction table linking menu items to ingredients</li>
+<li><strong>order</strong>: Customer orders with status tracking</li>
+<li><strong>order_item</strong>: Individual items within an order</li>
+<li><strong>order_item_option</strong>: Selected options (sides/entrees) for order items</li>
+<li><strong>option</strong>: Available menu options (linked to menu_item)</li>
+<li><strong>payment</strong>: Payment records linked to orders</li>
+<li><strong>tax_rate</strong>: Current tax rate (single row table)</li>
+<li><strong>store_statistics</strong>: Daily aggregated stats (orders, revenue, tax)</li>
+<li><strong>size_pricing</strong>: Alternative pricing for small/large sizes and premium items</li>
+<li><strong>nutrition</strong>: Nutritional information (calories, protein, fat, carbs) per menu item</li>
+<li><strong>shift_schedule</strong>: Work shift schedules</li>
+<li><strong>shift_assignment</strong>: Employee-to-shift assignments</li>
+<li><strong>clock_log</strong>: Employee clock in/out records</li>
+</ul>
+<h3>Order Workflow</h3>
+<ol>
+<li><strong>Kiosk</strong>: status='queued'</li>
+<li><strong>Kitchen</strong>: queued → prepping → done</li>
+<li><strong>Cashier</strong>: status='done' immediately</li>
+</ol>
+<h3>Statistics Tracking</h3>
+<ul>
+<li>Incremented when order marked 'done'</li>
+<li>Decremented when order moved from 'done' to another status</li>
+<li>Daily aggregation by stats_date</li>
+</ul>
+<h3>Premium Items</h3>
+<ul>
+<li>Honey Walnut Shrimp</li>
+<li>Black Pepper Sirloin Steak</li>
+<li>Use capitalized size keys (Small/Large) in size_pricing table</li>
+<li>Regular items use lowercase (small/large)</li>
+</ul>
+<h3>Tax Calculation</h3>
+<ul>
+<li>Fetched dynamically from tax_rate table</li>
+<li>Stored per-item in order_item.tax_amount</li>
+<li>Included in store_statistics</li>
+</ul>
+<hr>
+<h2>Middleware</h2>
+<h3>requireAuth(allowedRole)</h3>
+<p><strong>Authentication middleware factory</strong></p>
+<ul>
+<li><strong>Parameters</strong>: <code>allowedRole</code> - string | string[] | undefined</li>
+<li><strong>Description</strong>:
+<ul>
+<li>Checks if user is authenticated</li>
+<li>Validates user role matches allowed roles</li>
+<li>Managers bypass all role checks</li>
+</ul>
+</li>
+<li><strong>Example</strong>:<pre class="prettyprint source lang-javascript"><code>app.get('/cashier', requireAuth('cashier'), (req, res) => {...});
+app.get('/profile', requireAuth(), (req, res) => {...});
+app.get('/orders', requireAuth(['cashier', 'cook']), (req, res) => {...});
+</code></pre>
+</li>
+</ul>
+<hr>
+<h2>Authentication Strategies</h2>
+<h3>Local Strategy</h3>
+<ul>
+<li><strong>Field</strong>: employee_id (number), password_hash (string)</li>
+<li><strong>Description</strong>: Validates employee credentials against database</li>
+<li><strong>Password</strong>: Plain text comparison (should be hashed in production)</li>
+</ul>
+<h3>Google OAuth Strategy</h3>
+<ul>
+<li><strong>Scope</strong>: profile, email</li>
+<li><strong>Description</strong>:
+<ul>
+<li>Checks if google_id exists in database</li>
+<li>If not found, looks up by email</li>
+<li>Links google_id to existing employee record</li>
+<li>Denies login if no matching employee email</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2>Environment Variables</h2>
+<p>Required in <code>postgres.env</code>:</p>
+<ul>
+<li><code>PSQL_HOST</code>: PostgreSQL host</li>
+<li><code>PSQL_PORT</code>: PostgreSQL port (usually 5432)</li>
+<li><code>PSQL_USER</code>: Database user</li>
+<li><code>PSQL_PASSWORD</code>: Database password</li>
+<li><code>PSQL_DATABASE</code>: Database name</li>
+<li><code>DATABASE_URL</code>: Full connection string</li>
+<li><code>GOOGLE_CLIENT_ID</code>: Google OAuth client ID</li>
+<li><code>GOOGLE_CLIENT_SECRET</code>: Google OAuth client secret</li>
+<li><code>SESSION_SECRET</code>: Session encryption secret</li>
+<li><code>NODE_ENV</code>: 'production' or 'development'</li>
+<li><code>PORT</code>: Server port (default 3000)</li>
+</ul>
+<hr>
+<h2>Real-time Features</h2>
+<h3>Server-Sent Events (SSE)</h3>
+<ol>
+<li>
+<p><strong>Kitchen Events</strong> (<code>/kitchen/events</code>)</p>
+<ul>
+<li><code>queued-changed</code>: New order or status update</li>
+<li><code>stock-updated</code>: Prepared item stock changed</li>
+<li><code>stock-refresh</code>: Full refresh needed</li>
+</ul>
+</li>
+<li>
+<p><strong>Staff Call Events</strong> (<code>/api/call-staff/stream</code>)</p>
+<ul>
+<li><code>staff-called</code>: Customer needs assistance</li>
+</ul>
+</li>
+</ol>
+<h3>Polling Endpoints</h3>
+<ul>
+<li><code>/kitchen/queued-count</code>: Get count of queued orders (for auto-refresh)</li>
+</ul>
+<hr>
+<h2>Error Handling</h2>
+<h3>Standard Error Responses</h3>
+<pre class="prettyprint source lang-javascript"><code>{
+  error: string,           // Human-readable error message
+  details?: any            // Additional error details
+}
+</code></pre>
+<h3>HTTP Status Codes</h3>
+<ul>
+<li><strong>200</strong>: Success</li>
+<li><strong>400</strong>: Bad request (validation error, missing fields)</li>
+<li><strong>401</strong>: Unauthorized (not logged in)</li>
+<li><strong>403</strong>: Forbidden (insufficient permissions)</li>
+<li><strong>404</strong>: Not found</li>
+<li><strong>500</strong>: Internal server error (database error, unexpected error)</li>
+</ul>
+<hr>
+<h2>Session Management</h2>
+<h3>Session Storage</h3>
+<ul>
+<li><strong>Store</strong>: Server-side session (express-session)</li>
+<li><strong>Timeout</strong>: 30 minutes of inactivity</li>
+<li><strong>Cookie</strong>: Secure in production, maxAge 30 minutes</li>
+</ul>
+<h3>Session Data</h3>
+<ul>
+<li><code>cart</code>: Array of cart items</li>
+<li>User authentication via passport (req.user)</li>
+<li>Flash messages (req.flash)</li>
+</ul>
+<hr>
+<h2>Security Notes</h2>
+<h3>Current Implementation</h3>
+<ul>
+<li>⚠️ <strong>IMPORTANT</strong>: Passwords stored as plain text (for development only)</li>
+<li>Session-based authentication with Passport.js</li>
+<li>Google OAuth integration for SSO</li>
+<li>Role-based access control (RBAC)</li>
+<li>CSRF protection not implemented (should be added for production)</li>
+</ul>
+<h3>Production Recommendations</h3>
+<ol>
+<li>Hash passwords with bcrypt</li>
+<li>Implement CSRF tokens</li>
+<li>Enable HTTPS only (secure cookies)</li>
+<li>Add rate limiting</li>
+<li>Sanitize user inputs</li>
+<li>Implement SQL injection protection (Prisma helps with this)</li>
+<li>Add request validation middleware</li>
+<li>Enable audit logging</li>
+<li>Implement password complexity requirements</li>
+<li>Add 2FA for manager accounts</li>
+</ol>
+<hr>
+<h2>Performance Considerations</h2>
+<h3>Caching</h3>
+<ul>
+<li>Menu cache object (currently basic, can be improved)</li>
+<li>Session-based cart storage</li>
+<li>Prepared stock in key-value pricing_settings table</li>
+</ul>
+<h3>Database Optimization</h3>
+<ul>
+<li>Indexes on foreign keys</li>
+<li>Compound indexes for common queries</li>
+<li>Transaction usage for critical operations</li>
+<li>Prisma query optimization with select/include</li>
+</ul>
+<h3>Real-time Updates</h3>
+<ul>
+<li>SSE instead of WebSockets (simpler, one-way communication)</li>
+<li>Broadcast to multiple clients efficiently</li>
+<li>Keep-alive pings every 15 seconds</li>
+</ul>
+<hr>
+<h2>Testing Endpoints</h2>
+<h3>GET /test-db</h3>
+<p><strong>Database connection test</strong></p>
+<ul>
+<li><strong>Description</strong>: Verifies Prisma database connection</li>
+<li><strong>Returns</strong>: <code>{ connected: true, message: string }</code></li>
+</ul>
+<hr>
+<p><em>Documentation auto-generated for TypeDoc compatibility. Last updated: 2025-12-10</em></p></article>
+    </section>
+
+
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.5</a> on Wed Dec 10 2025 19:23:03 GMT-0600 (Central Standard Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+
+
+</body>
+</html>
